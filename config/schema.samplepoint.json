@@ -1,0 +1,167 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.org/schema.samplepoint.json",
+  "title": "SamplePoint",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "source_id",
+    "record_class",
+    "site_name",
+    "sample_id",
+    "latitude",
+    "longitude",
+    "coordinate_source",
+    "coordinate_uncertainty_m",
+    "elevation_m",
+    "elevation_reference",
+    "depth_source",
+    "indicator_type",
+    "indicator_subtype",
+    "indicative_range_m",
+    "age_ka",
+    "dating_method",
+    "description",
+    "location_name",
+    "bibliographic_reference",
+    "doi_or_url",
+    "confidence_score",
+    "notes",
+    "source_locator",
+    "reported_observations",
+    "derived_observations",
+    "age_models"
+  ],
+  "properties": {
+    "id": {"type": "string", "minLength": 1},
+    "source_id": {"type": "string", "minLength": 1},
+    "record_class": {
+      "type": "string",
+      "enum": ["sea_level_indicator", "marine_limiting", "terrestrial_limiting"]
+    },
+    "site_name": {"type": "string"},
+    "sample_id": {"type": "string"},
+    "latitude": {"type": ["number", "null"], "minimum": -90, "maximum": 90},
+    "longitude": {"type": ["number", "null"], "minimum": -180, "maximum": 180},
+    "coordinate_source": {
+      "type": "string",
+      "enum": ["reported", "inferred_text", "inferred_map"]
+    },
+    "coordinate_uncertainty_m": {"type": ["number", "null"], "minimum": 0},
+    "elevation_m": {"type": ["number", "string", "null"]},
+    "elevation_reference": {
+      "type": "string",
+      "enum": ["MSL", "LAT", "unknown"]
+    },
+    "depth_source": {
+      "type": "string",
+      "enum": ["reported", "SRTM15+V2", "other"]
+    },
+    "indicator_type": {"type": "string"},
+    "indicator_subtype": {"type": "string"},
+    "indicative_range_m": {
+      "oneOf": [
+        {"type": "null"},
+        {
+          "type": "array",
+          "items": {"type": ["number", "null"]},
+          "minItems": 2,
+          "maxItems": 2
+        }
+      ]
+    },
+    "age_ka": {
+      "oneOf": [
+        {"type": ["number", "null"]},
+        {
+          "type": "array",
+          "items": {"type": ["number", "null"]},
+          "minItems": 2,
+          "maxItems": 2
+        },
+        {"type": "string"}
+      ]
+    },
+    "dating_method": {"type": "string"},
+    "description": {"type": "string"},
+    "location_name": {"type": "string"},
+    "bibliographic_reference": {"type": "string"},
+    "doi_or_url": {"type": "string"},
+    "confidence_score": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+    "notes": {"type": "string"},
+    "source_locator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["page", "figure", "table", "section", "quote_or_paraphrase"],
+      "properties": {
+        "page": {"type": ["string", "null"]},
+        "figure": {"type": ["string", "null"]},
+        "table": {"type": ["string", "null"]},
+        "section": {"type": ["string", "null"]},
+        "quote_or_paraphrase": {"type": "string"}
+      }
+    },
+    "reported_observations": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "reported_elevation_m",
+        "reported_depth_m",
+        "reported_datum",
+        "reported_uncertainty_m"
+      ],
+      "properties": {
+        "reported_elevation_m": {"type": ["number", "null"]},
+        "reported_depth_m": {"type": ["number", "null"]},
+        "reported_datum": {"type": ["string", "null"]},
+        "reported_uncertainty_m": {"type": ["number", "null"], "minimum": 0}
+      }
+    },
+    "derived_observations": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "raw_raster_value_m",
+        "applied_correction_m",
+        "derived_elevation_m",
+        "derived_depth_m",
+        "derivation_notes"
+      ],
+      "properties": {
+        "raw_raster_value_m": {"type": ["number", "null"]},
+        "applied_correction_m": {"type": ["number", "null"]},
+        "derived_elevation_m": {"type": ["number", "null"]},
+        "derived_depth_m": {"type": ["number", "null"]},
+        "derivation_notes": {"type": "string"}
+      }
+    },
+    "age_models": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["method", "relation", "age_ka", "uncertainty_ka", "material", "notes"],
+        "properties": {
+          "method": {"type": "string"},
+          "relation": {"type": "string", "enum": ["equal", "older_than", "younger_than", "range", "unknown"]},
+          "age_ka": {
+            "oneOf": [
+              {"type": ["number", "null"]},
+              {
+                "type": "array",
+                "items": {"type": ["number", "null"]},
+                "minItems": 2,
+                "maxItems": 2
+              },
+              {"type": "string"}
+            ]
+          },
+          "uncertainty_ka": {"type": ["number", "null"]},
+          "material": {"type": ["string", "null"]},
+          "notes": {"type": "string"}
+        }
+      }
+    }
+  }
+}

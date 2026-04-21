@@ -1,0 +1,5 @@
+gazetteers:
+  - name: placeholder
+    enabled: false
+    type: local_or_remote
+    notes: Add gazetteer backends here when corpus ingestion begins.

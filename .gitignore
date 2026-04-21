@@ -1,0 +1,39 @@
+# LITTORAL generated and local runtime artifacts
+
+# Python runtime/cache artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Local operating-system/editor artifacts
+.DS_Store
+*.swp
+*.swo
+*.tmp
+*.bak
+
+# Source documents, MinerU intermediates, and generated datasets
+data/incoming/
+data/staged/
+outputs/
+logs/
+
+# Large local geospatial rasters and model/data assets
+*.tif
+*.tiff
+*.vrt
+*.mbtiles
+*.gpkg
+
+# Local environment/secrets
+.env
+.env.*
+!.env.example
+venv/
+.venv/
+

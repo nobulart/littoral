@@ -1,0 +1,46 @@
+{
+  "mineru": {
+    "enabled": true,
+    "skip_existing": true,
+    "command": "mineru",
+    "backend": "hybrid-auto-engine",
+    "method": "auto",
+    "lang": "en",
+    "timeout_seconds": 3600
+  },
+  "mineru_inference": {
+    "enabled": true,
+    "llm_enabled": true,
+    "max_llm_contexts": 4
+  },
+  "pdf": {
+    "ocr_enabled": true,
+    "ocr_max_pages": 12,
+    "ocr_dpi": 200,
+    "native_text_min_length": 1500,
+    "min_quality_score": 0.55,
+    "page_ocr_enabled": true,
+    "page_ocr_max_pages": 3,
+    "page_cue_pattern": "table|fig\\.|figure|plate|map|caption"
+  },
+  "ollama": {
+    "enabled": true,
+    "document_interpretation_enabled": true,
+    "place_normalization_enabled": true,
+    "model": "glm-4.7-flash:latest",
+    "api_url": "http://localhost:11434",
+    "timeout_seconds": 180,
+    "max_input_chars": 24000,
+    "candidate_only_when_needed": true
+  },
+  "geocoding": {
+    "enabled": true,
+    "service": "nominatim",
+    "url": "https://nominatim.openstreetmap.org/search",
+    "user_agent": "LITTORAL/0.1",
+    "timeout_seconds": 20,
+    "limit": 3,
+    "max_contextual_queries": 8,
+    "min_delay_seconds": 1.0
+  }
+}

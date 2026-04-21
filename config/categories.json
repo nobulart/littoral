@@ -1,0 +1,349 @@
+{
+  "version": "0.1.0",
+  "ontology_name": "paleo_rsl_controlled_vocabulary",
+  "description": "Controlled vocabulary for paleo-relative sea-level indicators, qualifiers, and measurement semantics. Downstream records must map to these controlled terms.",
+  "record_classes": {
+    "sea_level_indicator": {
+      "definition": "A sample point with an interpretable indicative meaning relative to sea level.",
+      "diagnostic_criteria": [
+        "Indicator type has a defensible modern analog or geomorphic meaning relative to sea level.",
+        "Elevation or depth can be associated with the indicator horizon or landform.",
+        "Interpretation is not purely terrestrial or marine limiting unless explicitly encoded as such."
+      ],
+      "typical_uncertainty_bounds_m": [0.5, 5.0]
+    },
+    "marine_limiting": {
+      "definition": "A sample point indicating sea level was at or above a minimum marine threshold, without a narrow indicative meaning.",
+      "diagnostic_criteria": [
+        "Marine influence is clear.",
+        "Record constrains only one side of sea-level position.",
+        "Indicative range is not sufficiently narrow for an index point."
+      ],
+      "typical_uncertainty_bounds_m": [1.0, 10.0]
+    },
+    "terrestrial_limiting": {
+      "definition": "A sample point indicating sea level was at or below a maximum terrestrial threshold, without a narrow indicative meaning.",
+      "diagnostic_criteria": [
+        "Terrestrial setting is clear.",
+        "Record constrains only one side of sea-level position.",
+        "Indicative range is not sufficiently narrow for an index point."
+      ],
+      "typical_uncertainty_bounds_m": [1.0, 10.0]
+    }
+  },
+  "secondary_qualifiers": {
+    "in_situ": {
+      "definition": "Material or landform preserved in original depositional or growth context."
+    },
+    "reworked": {
+      "definition": "Material transported or redeposited after original formation."
+    },
+    "dated": {
+      "definition": "Record has at least one explicit age constraint."
+    },
+    "undated": {
+      "definition": "Record lacks a direct or associated age constraint."
+    },
+    "growth_position": {
+      "definition": "Biogenic material is preserved in life position or growth position."
+    },
+    "ex_situ": {
+      "definition": "Material is not preserved in original position and requires interpretive caution."
+    },
+    "anthropogenically_disturbed": {
+      "definition": "Record has likely been modified by excavation, fill, quarrying, or other human disturbance."
+    },
+    "uncertain_interpretation": {
+      "definition": "Marine versus terrestrial meaning, facies interpretation, or sea-level significance remains ambiguous."
+    }
+  },
+  "measurement_types": {
+    "elevation_above_msl": {
+      "definition": "Elevation reported or derived relative to mean sea level."
+    },
+    "depth_below_msl": {
+      "definition": "Depth reported or derived below mean sea level."
+    },
+    "indicative_range": {
+      "definition": "Range of vertical occurrence of the modern analog or interpreted sea-level meaning."
+    },
+    "upper_lower_elevation_bounds": {
+      "definition": "Measured upper and lower limits bounding the indicator horizon or landform."
+    },
+    "reported_rsl": {
+      "definition": "Paleo relative sea level reported directly by the source."
+    },
+    "derived_rsl": {
+      "definition": "Paleo relative sea level derived during normalization from elevation and indicative meaning."
+    }
+  },
+  "dating_methods": {
+    "u_series": "U-series dating",
+    "radiocarbon": "Radiocarbon dating",
+    "luminescence": "Luminescence dating",
+    "esr": "Electron spin resonance dating",
+    "aar": "Amino acid racemization",
+    "stratigraphic_context": "Stratigraphic or chronostratigraphic attribution",
+    "tephrochronology": "Tephrochronology",
+    "cosmogenic": "Cosmogenic nuclide dating",
+    "archaeological": "Archaeological attribution",
+    "other": "Other dating or age attribution method"
+  },
+  "coordinate_sources": {
+    "reported": {
+      "definition": "Coordinates explicitly reported in the source.",
+      "default_uncertainty_m": 100.0
+    },
+    "inferred_text": {
+      "definition": "Coordinates inferred from explicit place names or textual descriptions.",
+      "default_uncertainty_m": 5000.0
+    },
+    "inferred_map": {
+      "definition": "Coordinates inferred from map or figure interpretation.",
+      "default_uncertainty_m": 20000.0
+    }
+  },
+  "elevation_references": {
+    "MSL": "Mean Sea Level",
+    "LAT": "Lowest Astronomical Tide",
+    "unknown": "Unknown or unstated vertical reference"
+  },
+  "depth_sources": {
+    "reported": "Depth explicitly reported in source",
+    "SRTM15+V2": "Derived from SRTM15+V2 raster",
+    "other": "Derived from another bathymetry or topography source"
+  },
+  "primary_categories": {
+    "raised_beach": {
+      "definition": "Emergent beach deposit or ridge preserving a former shoreline position above present sea level.",
+      "diagnostic_criteria": [
+        "Beach gravel, sand, or ridge morphology with shoreline organization.",
+        "Sedimentary structures or landform geometry consistent with wave action.",
+        "Stratigraphic or geomorphic context ties the deposit to former coastal conditions."
+      ],
+      "typical_uncertainty_bounds_m": [1.0, 4.0],
+      "default_record_class": "sea_level_indicator",
+      "allowed_qualifiers": ["dated", "undated", "reworked", "uncertain_interpretation"]
+    },
+    "submerged_beach": {
+      "definition": "Submerged beach deposit or ridge below present sea level representing a former shoreline.",
+      "diagnostic_criteria": [
+        "Submerged beach morphology or sedimentology is documented.",
+        "Marine context is explicit.",
+        "Depth or elevation can be tied to the feature."
+      ],
+      "typical_uncertainty_bounds_m": [1.0, 5.0],
+      "default_record_class": "sea_level_indicator",
+      "allowed_qualifiers": ["dated", "undated", "reworked", "uncertain_interpretation"]
+    },
+    "beachrock": {
+      "definition": "Cemented beach sediment formed within the intertidal to supratidal coastal zone.",
+      "diagnostic_criteria": [
+        "Lithified beach deposit with shoreline-parallel geometry or beach facies.",
+        "Marine cementation context is reported or inferred.",
+        "Elevation can be associated with the cemented horizon."
+      ],
+      "typical_uncertainty_bounds_m": [0.5, 2.5],
+      "default_record_class": "sea_level_indicator",
+      "allowed_qualifiers": ["dated", "undated", "in_situ", "reworked", "uncertain_interpretation"]
+    },
+    "coral_reef": {
+      "definition": "Reef framework or reef terrace preserving coral growth within a known water-depth envelope.",
+      "diagnostic_criteria": [
+        "Coral reef facies or reef framework is described.",
+        "Ecological or taxonomic context supports marine depth interpretation.",
+        "Elevation/depth can be associated with the reef surface or dated horizon."
+      ],
+      "typical_uncertainty_bounds_m": [0.5, 6.0],
+      "default_record_class": "sea_level_indicator",
+      "allowed_qualifiers": ["dated", "undated", "in_situ", "growth_position", "reworked", "uncertain_interpretation"]
+    },
+    "coral_head": {
+      "definition": "Individual coral colony or coral head used as a paleo sea-level indicator.",
+      "diagnostic_criteria": [
+        "Individual coral sample is identifiable.",
+        "Growth position or ecological depth range is reported or inferable.",
+        "Age can be tied to the sampled colony or associated analysis."
+      ],
+      "typical_uncertainty_bounds_m": [0.5, 4.0],
+      "default_record_class": "sea_level_indicator",
+      "allowed_qualifiers": ["dated", "undated", "in_situ", "growth_position", "reworked", "uncertain_interpretation"]
+    },
+    "marine_terrace": {
+      "definition": "Wave-cut or wave-built terrace formed by prolonged shoreline occupation.",
+      "diagnostic_criteria": [
+        "Terrace morphology and coastal origin are described.",
+        "Terrace tread, shoreline angle, or correlated deposit is measured.",
+        "Marine genesis is explicit and not purely tectonic or fluvial."
+      ],
+      "typical_uncertainty_bounds_m": [1.0, 8.0],
+      "default_record_class": "sea_level_indicator",
+      "allowed_qualifiers": ["dated", "undated", "uncertain_interpretation"]
+    },
+    "tidal_notch": {
+      "definition": "Erosional notch or bioerosional notch formed in a narrow vertical range around sea level.",
+      "diagnostic_criteria": [
+        "Notch morphology is documented.",
+        "Sea-level linkage is explicit through modern analog or process interpretation.",
+        "Measurement references the notch apex, retreat point, or comparable horizon."
+      ],
+      "typical_uncertainty_bounds_m": [0.2, 1.5],
+      "default_record_class": "sea_level_indicator",
+      "allowed_qualifiers": ["dated", "undated", "uncertain_interpretation"]
+    },
+    "lagoonal_sediment": {
+      "definition": "Lagoonal facies indicating a protected shallow-water environment tied to relative sea level.",
+      "diagnostic_criteria": [
+        "Lagoonal lithofacies, fauna, flora, or geochemistry are described.",
+        "Environmental interpretation is marine to brackish and coastal.",
+        "Vertical position of the lagoonal horizon is constrained."
+      ],
+      "typical_uncertainty_bounds_m": [1.0, 5.0],
+      "default_record_class": "sea_level_indicator",
+      "allowed_qualifiers": ["dated", "undated", "in_situ", "uncertain_interpretation"]
+    },
+    "estuarine_sediment": {
+      "definition": "Estuarine facies preserving tidal or brackish-water conditions relevant to sea-level position.",
+      "diagnostic_criteria": [
+        "Estuarine sedimentology or paleoecology is identified.",
+        "Marine influence is explicit.",
+        "Record can be located within a vertical coastal framework."
+      ],
+      "typical_uncertainty_bounds_m": [1.0, 5.0],
+      "default_record_class": "sea_level_indicator",
+      "allowed_qualifiers": ["dated", "undated", "in_situ", "uncertain_interpretation"]
+    },
+    "deltaic_sequence": {
+      "definition": "Deltaic facies succession whose marine-terrestrial transition constrains relative sea level.",
+      "diagnostic_criteria": [
+        "Deltaic depositional environment is explicit.",
+        "Vertical facies transition relevant to shoreline position is described.",
+        "Point-level sample or horizon can be isolated from site-level interpretation."
+      ],
+      "typical_uncertainty_bounds_m": [2.0, 8.0],
+      "default_record_class": "sea_level_indicator",
+      "allowed_qualifiers": ["dated", "undated", "uncertain_interpretation"]
+    },
+    "saltmarsh_peat_or_mud": {
+      "definition": "Saltmarsh peat or mud used as a sea-level indicator through tidal-elevation ecology.",
+      "diagnostic_criteria": [
+        "Saltmarsh setting is supported by sediment, macrofossils, microfossils, or geochemistry.",
+        "Tidal-elevation relation is documented or inferable.",
+        "Horizon elevation is tied to a sample point or core depth."
+      ],
+      "typical_uncertainty_bounds_m": [0.1, 1.5],
+      "default_record_class": "sea_level_indicator",
+      "allowed_qualifiers": ["dated", "undated", "in_situ", "uncertain_interpretation"]
+    },
+    "mangrove_peat_or_mud": {
+      "definition": "Mangrove peat or mud indicating intertidal to supratidal coastal conditions.",
+      "diagnostic_criteria": [
+        "Mangrove botanical or sedimentological evidence is present.",
+        "Coastal tidal setting is explicit.",
+        "Vertical position is constrained by elevation or core depth."
+      ],
+      "typical_uncertainty_bounds_m": [0.5, 2.0],
+      "default_record_class": "sea_level_indicator",
+      "allowed_qualifiers": ["dated", "undated", "in_situ", "uncertain_interpretation"]
+    },
+    "tidal_flat_sediment": {
+      "definition": "Intertidal flat sediment or facies indicating a constrained tidal elevation range.",
+      "diagnostic_criteria": [
+        "Tidal-flat environment is explicit from facies or biota.",
+        "Marine-tidal influence is clear.",
+        "Sample horizon can be related to an intertidal vertical zone."
+      ],
+      "typical_uncertainty_bounds_m": [0.5, 2.5],
+      "default_record_class": "sea_level_indicator",
+      "allowed_qualifiers": ["dated", "undated", "in_situ", "uncertain_interpretation"]
+    },
+    "shore_platform": {
+      "definition": "Shore platform or wave-cut bench formed near sea level.",
+      "diagnostic_criteria": [
+        "Planar erosional platform geometry is described.",
+        "Marine wave-cut origin is explicit.",
+        "Measurement references tread or shoreline angle with stated assumptions."
+      ],
+      "typical_uncertainty_bounds_m": [1.0, 5.0],
+      "default_record_class": "sea_level_indicator",
+      "allowed_qualifiers": ["dated", "undated", "uncertain_interpretation"]
+    },
+    "wave_cut_notch_or_bench": {
+      "definition": "Wave-cut notch or small bench linked to shoreline processes.",
+      "diagnostic_criteria": [
+        "Erosional morphology is coastal and wave-related.",
+        "Vertical reference horizon is defined.",
+        "Interpretation distinguishes it from non-marine weathering features."
+      ],
+      "typical_uncertainty_bounds_m": [0.3, 2.0],
+      "default_record_class": "sea_level_indicator",
+      "allowed_qualifiers": ["dated", "undated", "uncertain_interpretation"]
+    },
+    "marine_shell_bed": {
+      "definition": "Marine shell-bearing deposit used to indicate marine inundation or shoreline position.",
+      "diagnostic_criteria": [
+        "Marine shells are explicitly described.",
+        "Depositional context and reworking state are considered.",
+        "Vertical and stratigraphic position are constrained."
+      ],
+      "typical_uncertainty_bounds_m": [1.0, 6.0],
+      "default_record_class": "marine_limiting",
+      "allowed_qualifiers": ["dated", "undated", "in_situ", "reworked", "uncertain_interpretation"]
+    },
+    "intertidal_bioconstruction": {
+      "definition": "Biogenic coastal construction such as vermetids, oysters, or algal rims formed within a narrow tidal range.",
+      "diagnostic_criteria": [
+        "Bioconstruction type is identified.",
+        "Modern ecological vertical range is known or inferable.",
+        "Measurement references the biogenic growth horizon."
+      ],
+      "typical_uncertainty_bounds_m": [0.2, 1.5],
+      "default_record_class": "sea_level_indicator",
+      "allowed_qualifiers": ["dated", "undated", "in_situ", "growth_position", "uncertain_interpretation"]
+    },
+    "speleothem_sea_level_proxy": {
+      "definition": "Coastal cave speleothem, phreatic overgrowth, or related proxy used to constrain relative sea level.",
+      "diagnostic_criteria": [
+        "Cave coastal setting is explicit.",
+        "Proxy type has recognized sea-level significance.",
+        "Elevation and age can be tied to the sampled feature."
+      ],
+      "typical_uncertainty_bounds_m": [0.2, 2.0],
+      "default_record_class": "sea_level_indicator",
+      "allowed_qualifiers": ["dated", "undated", "in_situ", "uncertain_interpretation"]
+    },
+    "subtidal_facies": {
+      "definition": "Subtidal marine facies constraining relative sea level through water-depth interpretation.",
+      "diagnostic_criteria": [
+        "Subtidal depositional environment is described.",
+        "Water-depth interpretation is explicit or defensible.",
+        "Sample horizon can be isolated as a point-level record."
+      ],
+      "typical_uncertainty_bounds_m": [1.0, 8.0],
+      "default_record_class": "marine_limiting",
+      "allowed_qualifiers": ["dated", "undated", "in_situ", "uncertain_interpretation"]
+    },
+    "terrestrial_over_marine_contact": {
+      "definition": "Contact where terrestrial deposits overlie marine deposits, constraining relative sea-level fall or emergence.",
+      "diagnostic_criteria": [
+        "Contact is stratigraphically explicit.",
+        "Marine and terrestrial facies are both supported.",
+        "Point-level elevation or depth references the contact."
+      ],
+      "typical_uncertainty_bounds_m": [0.5, 3.0],
+      "default_record_class": "sea_level_indicator",
+      "allowed_qualifiers": ["dated", "undated", "uncertain_interpretation"]
+    },
+    "marine_over_terrestrial_contact": {
+      "definition": "Contact where marine deposits overlie terrestrial deposits, constraining transgression or marine inundation.",
+      "diagnostic_criteria": [
+        "Contact is stratigraphically explicit.",
+        "Marine and terrestrial facies are both supported.",
+        "Point-level elevation or depth references the contact."
+      ],
+      "typical_uncertainty_bounds_m": [0.5, 3.0],
+      "default_record_class": "sea_level_indicator",
+      "allowed_qualifiers": ["dated", "undated", "uncertain_interpretation"]
+    }
+  }
+}

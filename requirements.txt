@@ -1,0 +1,11 @@
+# Python runtime requirements for LITTORAL.
+#
+# The pipeline code itself uses the Python standard library. MinerU is pinned
+# here because LITTORAL shells out to the `mineru` CLI and consumes its staged
+# Markdown/JSON outputs.
+mineru==3.1.1
+
+# Non-Python runtime tools expected on PATH for full PDF/OCR/LLM operation:
+# - poppler utilities: pdfinfo, pdftotext, pdftoppm
+# - tesseract
+# - ollama, with configured local models such as glm-4.7-flash and glm-ocr

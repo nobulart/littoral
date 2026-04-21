@@ -54,6 +54,125 @@ Important settings:
 - `geocoding.max_contextual_queries`: cap gazetteer attempts for inferred coordinates.
 - `geocoding.min_delay_seconds`: rate-limit public gazetteer requests.
 
+## Local Ollama Inference
+
+LITTORAL can use local Ollama models for targeted reasoning over MinerU tables, maps, figures, and OCR-derived page contexts. This stage is intentionally optional: deterministic extraction and validation still run when Ollama is disabled, but local models improve recovery of evidence buried in complex layouts.
+
+### Install Ollama
+
+Ollama runs on macOS, Linux, and Windows and serves its local API at `http://localhost:11434`.
+
+macOS:
+
+```bash
+curl -fsSL https://ollama.com/install.sh | sh
+```
+
+Linux:
+
+```bash
+curl -fsSL https://ollama.com/install.sh | sh
+ollama serve
+```
+
+Windows PowerShell:
+
+```powershell
+irm https://ollama.com/install.ps1 | iex
+```
+
+Verify the installation:
+
+```bash
+ollama --version
+curl http://localhost:11434/api/tags
+```
+
+Official installation references:
+
+- macOS: <https://docs.ollama.com/macos>
+- Linux: <https://docs.ollama.com/linux>
+- Windows: <https://docs.ollama.com/windows>
+- Quickstart and API: <https://docs.ollama.com/quickstart>
+
+### Recommended Models
+
+Use separate models for text reasoning and visual/OCR-heavy page interpretation when possible.
+
+| Purpose | Recommended model | Use when | Notes |
+| --- | --- | --- | --- |
+| Default text reasoning | `mistral-small:24b` or `mistral-small:latest` | You want strong local extraction over MinerU Markdown, tables, and captions on a workstation with enough memory. | Good general reasoning model for JSON-style extraction prompts. |
+| Lightweight text reasoning | `qwen3:8b` or another compact Qwen/Gemma-class instruct model | You need faster iteration on CPU or lower-memory machines. | Lower cost, but expect weaker table synthesis and more missed records. |
+| Vision and document understanding | `qwen2.5vl:7b` | You want richer interpretation of page images, maps, charts, and figure labels. | Requires Ollama 0.7.0 or newer. Strong fit for structured visual/document extraction. |
+| Vision fallback | `llama3.2-vision:11b` | Qwen2.5-VL is unavailable or performs poorly on a given page type. | Useful general image reasoning model with 128K context variants. |
+| Existing local default | `glm-4.7-flash:latest` | You already have this model installed and want continuity with the checked-in configuration. | This is the current `config/extraction.json` default; Ollama's model page notes that it requires a newer pre-release Ollama build. |
+
+Pull the default recommended text and vision models:
+
+```bash
+ollama pull mistral-small:24b
+ollama pull qwen2.5vl:7b
+```
+
+Alternative pulls:
+
+```bash
+ollama pull llama3.2-vision:11b
+ollama pull qwen3:8b
+ollama pull glm-4.7-flash:latest
+```
+
+Inspect installed models:
+
+```bash
+ollama list
+```
+
+Before changing a production run, test a model interactively:
+
+```bash
+ollama run mistral-small:24b
+```
+
+### Configure LITTORAL
+
+Set the primary reasoning model in `config/extraction.json`:
+
+```json
+{
+  "ollama": {
+    "enabled": true,
+    "model": "mistral-small:24b",
+    "api_url": "http://localhost:11434",
+    "timeout_seconds": 180,
+    "max_input_chars": 24000
+  }
+}
+```
+
+For smaller machines, reduce context and model size:
+
+```json
+{
+  "ollama": {
+    "model": "qwen3:8b",
+    "timeout_seconds": 120,
+    "max_input_chars": 12000
+  },
+  "mineru_inference": {
+    "max_llm_contexts": 2
+  }
+}
+```
+
+For maximum recall on difficult papers, keep `mineru_inference.llm_enabled` enabled and run with timed progress:
+
+```bash
+python3 run_pipeline.py data/incoming/cawthra2015.pdf --verbosity 2
+```
+
+Model choice affects reproducibility. Record the model name, Ollama version, and `config/extraction.json` used for any dataset release.
+
 ## Running the Pipeline
 
 Default batch mode processes files in `data/incoming/`:

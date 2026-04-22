@@ -11,10 +11,13 @@
   "mineru_inference": {
     "enabled": true,
     "llm_enabled": true,
-    "max_llm_contexts": 4
+    "max_llm_contexts": 4,
+    "run_on_partial_success": true
   },
   "narrative_fallback": {
-    "enabled": true
+    "enabled": true,
+    "run_on_partial_success": true,
+    "promote_unique_when_points_exist": true
   },
   "pdf": {
     "ocr_enabled": true,

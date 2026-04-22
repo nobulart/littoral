@@ -20,6 +20,12 @@ DEFAULT_SETTINGS: dict[str, Any] = {
         "enabled": True,
         "llm_enabled": True,
         "max_llm_contexts": 4,
+        "run_on_partial_success": True,
+    },
+    "narrative_fallback": {
+        "enabled": True,
+        "run_on_partial_success": True,
+        "promote_unique_when_points_exist": True,
     },
     "pdf": {
         "ocr_enabled": True,

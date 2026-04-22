@@ -56,8 +56,8 @@ flowchart TD
     M --> N
     N --> O["Deterministic extractors: known tables, features, manual map rows"]
     O --> P["Targeted local LLM extraction when enabled"]
-    P --> Q["Narrative fallback extraction"]
-    Q --> R["Candidate SamplePoints"]
+    P --> Q["Narrative fallback evidence scan"]
+    Q --> R["Candidate/evidence ledger and promoted SamplePoints"]
     R --> S{"Manual geocode CSV exists?"}
     S -- "Coordinate match" --> T["Use manual coordinates and provenance"]
     S -- "Exists but no usable match/columns" --> U["Suppress fuzzy geocoding"]
@@ -89,6 +89,8 @@ At a record level, the spatial decision order is:
 
 Elevation normalization follows the same conservative pattern: reported elevations are preserved; DEM values are derived only for reported/manual authoritative coordinates; approximate contextual geocodes are not used for DEM-derived elevations.
 
+The extraction architecture is additive: deterministic parsers, targeted LLM contexts, narrative fallback clusters, and manual geocode rows contribute evidence independently. Earlier success no longer suppresses later evidence scans. Per-source summaries include a candidate/evidence ledger showing how many records each stage promoted and how many fallback clusters were seen.
+
 ## Data Products
 
 - `outputs/per_source/<source>.summary.md`: source-level extraction report.
@@ -117,6 +119,9 @@ Important settings:
 - `mineru.skip_existing`: reuse staged MinerU artifacts when complete.
 - `mineru_inference.llm_enabled`: enable targeted local LLM interpretation of MinerU contexts.
 - `mineru_inference.max_llm_contexts`: cap expensive targeted LLM calls per document.
+- `mineru_inference.run_on_partial_success`: inspect targeted MinerU contexts even when deterministic extractors have already promoted some records.
+- `narrative_fallback.run_on_partial_success`: scan prose evidence even when earlier extraction stages succeeded.
+- `narrative_fallback.promote_unique_when_points_exist`: add fallback records that are not semantic duplicates of existing promoted records.
 - `ollama.model`: local Ollama model used for reasoning.
 - `geocoding.max_contextual_queries`: cap gazetteer attempts for inferred coordinates.
 - `geocoding.min_delay_seconds`: rate-limit public gazetteer requests.

@@ -193,6 +193,29 @@ Check staged MinerU cache completeness without processing:
 python3 run_pipeline.py --check-mineru-cache
 ```
 
+By default, LITTORAL protects completed outputs:
+
+- Existing `outputs/per_source/<source>.summary.md` or `<source>.csv` files cause that source to be skipped.
+- Existing merged master outputs are preserved, and newly discovered records are appended by stable record id.
+- Existing MinerU staged artifacts are reused when complete.
+
+Refresh specific stages explicitly when needed:
+
+```bash
+python3 run_pipeline.py --overwrite-per-source
+python3 run_pipeline.py --merge-mode overwrite
+python3 run_pipeline.py --refresh-mineru-cache
+python3 run_pipeline.py --skip-mineru-cache
+```
+
+Global controls are available for full rebuilds or cache-safe incremental runs:
+
+```bash
+python3 run_pipeline.py --overwrite-existing
+python3 run_pipeline.py --clear-outputs --overwrite-existing
+python3 run_pipeline.py --per-source-mode skip --merge-mode append --mineru-cache-mode reuse
+```
+
 Run a fast structural test that skips MinerU, Ollama, and geocoding:
 
 ```bash

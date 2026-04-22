@@ -63,7 +63,66 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser.add_argument("--raster-path", type=Path, default=DEFAULT_RASTER_PATH, help="Path to elevation raster.")
     parser.add_argument("--source", action="append", dest="source_ids", help="Process only this source id or filename. May be repeated.")
     parser.add_argument("--limit", type=int, help="Process only the first N selected input files.")
-    parser.add_argument("--no-clear", action="store_true", help="Do not clear output directories before running.")
+    parser.add_argument("--no-clear", action="store_true", help="Retained for compatibility; outputs are protected by default.")
+    parser.add_argument("--clear-outputs", action="store_true", help="Delete per-source and merged outputs before running.")
+    parser.add_argument("--overwrite-existing", action="store_true", help="Overwrite existing per-source and merged outputs unless a step-specific mode is supplied.")
+    parser.add_argument(
+        "--per-source-mode",
+        choices=("skip", "overwrite"),
+        help="How to handle existing per-source summary/CSV outputs.",
+    )
+    parser.add_argument(
+        "--overwrite-per-source",
+        action="store_const",
+        const="overwrite",
+        dest="per_source_mode",
+        help="Overwrite existing per-source summary/CSV outputs.",
+    )
+    parser.add_argument(
+        "--merge-mode",
+        choices=("append", "overwrite", "skip"),
+        help="How to handle existing merged master outputs.",
+    )
+    parser.add_argument(
+        "--append-merged",
+        action="store_const",
+        const="append",
+        dest="merge_mode",
+        help="Append new records to existing merged outputs.",
+    )
+    parser.add_argument(
+        "--overwrite-merged",
+        action="store_const",
+        const="overwrite",
+        dest="merge_mode",
+        help="Rebuild and overwrite merged master outputs.",
+    )
+    parser.add_argument(
+        "--skip-merged",
+        action="store_const",
+        const="skip",
+        dest="merge_mode",
+        help="Leave existing merged master outputs unchanged.",
+    )
+    parser.add_argument(
+        "--mineru-cache-mode",
+        choices=("reuse", "refresh", "skip"),
+        help="How to manage MinerU staged artifacts for PDFs.",
+    )
+    parser.add_argument(
+        "--refresh-mineru-cache",
+        action="store_const",
+        const="refresh",
+        dest="mineru_cache_mode",
+        help="Regenerate MinerU staged artifacts for processed PDFs.",
+    )
+    parser.add_argument(
+        "--skip-mineru-cache",
+        action="store_const",
+        const="skip",
+        dest="mineru_cache_mode",
+        help="Do not read or create MinerU staged artifacts during this run.",
+    )
     parser.add_argument("--quiet", action="store_true", help="Suppress progress output. Equivalent to --verbosity 0.")
     parser.add_argument("-v", "--verbose", action="count", default=0, help="Increase progress detail. Use -v for timings and -vv for per-candidate diagnostics.")
     parser.add_argument("--verbosity", type=int, choices=range(0, 4), metavar="{0,1,2,3}", help="Set progress verbosity directly: 0=quiet, 1=normal, 2=timed stages, 3=per-candidate diagnostics.")
@@ -102,7 +161,10 @@ def _build_config(args: argparse.Namespace, workspace_root: Path) -> PipelineCon
         ontology_path=_resolve_path(args.ontology_path, workspace_root),
         schema_path=_resolve_path(args.schema_path, workspace_root),
         raster_path=_resolve_path(args.raster_path, workspace_root),
-        clear_outputs=not args.no_clear,
+        clear_outputs=args.clear_outputs,
+        per_source_mode=args.per_source_mode or ("overwrite" if args.overwrite_existing else "skip"),
+        merged_mode=args.merge_mode or ("overwrite" if args.overwrite_existing else "append"),
+        mineru_cache_mode=args.mineru_cache_mode or "reuse",
         source_ids=source_ids,
         limit=limit,
         progress_callback=None if verbosity == 0 else _print_progress,

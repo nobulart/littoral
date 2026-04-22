@@ -54,15 +54,30 @@ def write_csv(path: Path, sample_points: Iterable[SamplePoint]) -> None:
         writer = csv.DictWriter(handle, fieldnames=CSV_COLUMNS)
         writer.writeheader()
         for point in sample_points:
-            row = point.to_dict()
-            row["elevation_m"] = json.dumps(row["elevation_m"])
-            row["indicative_range_m"] = json.dumps(row["indicative_range_m"])
-            row["age_ka"] = json.dumps(row["age_ka"])
-            row["source_locator"] = json.dumps(row["source_locator"])
-            row["reported_observations"] = json.dumps(row["reported_observations"])
-            row["derived_observations"] = json.dumps(row["derived_observations"])
-            row["age_models"] = json.dumps(row["age_models"])
-            writer.writerow(row)
+            writer.writerow(sample_point_csv_row(point))
+
+
+def append_csv(path: Path, sample_points: Iterable[SamplePoint]) -> None:
+    ensure_parent(path)
+    write_header = not path.exists() or path.stat().st_size == 0
+    with path.open("a", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=CSV_COLUMNS)
+        if write_header:
+            writer.writeheader()
+        for point in sample_points:
+            writer.writerow(sample_point_csv_row(point))
+
+
+def sample_point_csv_row(point: SamplePoint) -> dict:
+    row = point.to_dict()
+    row["elevation_m"] = json.dumps(row["elevation_m"])
+    row["indicative_range_m"] = json.dumps(row["indicative_range_m"])
+    row["age_ka"] = json.dumps(row["age_ka"])
+    row["source_locator"] = json.dumps(row["source_locator"])
+    row["reported_observations"] = json.dumps(row["reported_observations"])
+    row["derived_observations"] = json.dumps(row["derived_observations"])
+    row["age_models"] = json.dumps(row["age_models"])
+    return row
 
 
 def write_geojson(path: Path, sample_points: Iterable[SamplePoint]) -> None:

@@ -31,7 +31,10 @@ class PipelineConfig:
     ontology_path: Path
     schema_path: Path
     raster_path: Path
-    clear_outputs: bool = True
+    clear_outputs: bool = False
+    per_source_mode: str = "skip"
+    merged_mode: str = "append"
+    mineru_cache_mode: str = "reuse"
     source_ids: tuple[str, ...] | None = None
     limit: int | None = None
     progress_callback: Callable[[str], None] | None = None
@@ -60,6 +63,7 @@ def run_pipeline(config: PipelineConfig) -> None:
     schema = load_schema(config.schema_path)
     extractors = _extractor_registry()
     processed_files: list[str] = []
+    skipped_files: list[str] = []
     extracted_records = 0
     unresolved_count = 0
 
@@ -83,6 +87,12 @@ def run_pipeline(config: PipelineConfig) -> None:
         file_started = time.perf_counter()
         source_id = _source_id_for_path(source_path)
         _emit_progress(config, f"[{index}/{len(source_paths)}] {source_path.name}")
+        summary_path, csv_path = _per_source_output_paths(config.per_source_dir, source_id)
+        if config.per_source_mode == "skip" and _per_source_outputs_exist(summary_path, csv_path):
+            _emit_progress(config, "  existing per-source outputs found; skipping")
+            skipped_files.append(source_path.name)
+            continue
+
         extractor = extractors.get(source_path.suffix.lower())
         if extractor is None:
             _emit_progress(config, f"  unsupported file type: {source_path.suffix}")
@@ -93,7 +103,11 @@ def run_pipeline(config: PipelineConfig) -> None:
         if source_path.suffix.lower() == ".pdf":
             mineru_started = time.perf_counter()
             stage_dir = _mineru_stage_dir(config.staged_dir, source_id)
-            if _mineru_artifacts_complete(stage_dir, source_id):
+            if config.mineru_cache_mode == "skip":
+                _emit_progress(config, "  MinerU cache bypassed")
+            elif config.mineru_cache_mode == "refresh":
+                _emit_progress(config, "  MinerU cache refresh requested")
+            elif _mineru_artifacts_complete(stage_dir, source_id):
                 _emit_progress(config, "  MinerU cache hit")
             else:
                 _emit_progress(config, "  MinerU cache missing or incomplete; attempting extraction")
@@ -137,8 +151,8 @@ def run_pipeline(config: PipelineConfig) -> None:
             summary_lines.extend(["", "## Validation errors"])
             summary_lines.extend([f"- {error}" for error in validation_errors])
 
-        write_summary(config.per_source_dir / f"{source_id}.summary.md", summary_lines)
-        write_csv(config.per_source_dir / f"{source_id}.csv", normalized_points)
+        write_summary(summary_path, summary_lines)
+        write_csv(csv_path, normalized_points)
 
         for line in result.unresolved_lines:
             append_log(config.unresolved_log, line)
@@ -150,13 +164,14 @@ def run_pipeline(config: PipelineConfig) -> None:
         _emit_progress(config, f"  file completed in {_format_elapsed(file_started)}", level=2)
 
     merge_started = time.perf_counter()
-    _emit_progress(config, "Building merged outputs")
-    csv_path, geojson_path, merged_count = build_master_outputs(config.per_source_dir, config.merged_dir)
+    _emit_progress(config, f"Building merged outputs ({config.merged_mode})")
+    csv_path, geojson_path, merged_count = build_master_outputs(config.per_source_dir, config.merged_dir, mode=config.merged_mode)
     _emit_progress(config, f"Merge completed in {_format_elapsed(merge_started)}", level=2)
     _write_processing_report(
         config.report_path,
         ontology,
         processed_files,
+        skipped_files,
         extracted_records,
         merged_count,
         unresolved_count,
@@ -165,7 +180,7 @@ def run_pipeline(config: PipelineConfig) -> None:
         config.staged_dir,
         config.workspace_root,
     )
-    _emit_progress(config, f"Done: {extracted_records} extracted, {merged_count} merged, {unresolved_count} unresolved")
+    _emit_progress(config, f"Done: {extracted_records} extracted, {len(skipped_files)} skipped, {merged_count} merged, {unresolved_count} unresolved")
     _emit_progress(config, f"Pipeline completed in {_format_elapsed(pipeline_started)}", level=2)
 
 
@@ -185,8 +200,12 @@ def _ensure_mineru_artifacts(source_path: Path, source_id: str, config: Pipeline
         return ""
 
     stage_dir = _mineru_stage_dir(config.staged_dir, source_id)
-    if mineru_settings.get("skip_existing", True) and _mineru_artifacts_complete(stage_dir, source_id):
+    if config.mineru_cache_mode == "skip":
         return ""
+    if config.mineru_cache_mode == "reuse" and mineru_settings.get("skip_existing", True) and _mineru_artifacts_complete(stage_dir, source_id):
+        return ""
+    if config.mineru_cache_mode == "refresh" and stage_dir.exists():
+        _clear_directory(stage_dir)
 
     config.staged_dir.mkdir(parents=True, exist_ok=True)
     command = [
@@ -263,6 +282,14 @@ def _clear_directory(directory: Path) -> None:
             path.unlink()
 
 
+def _per_source_output_paths(per_source_dir: Path, source_id: str) -> tuple[Path, Path]:
+    return per_source_dir / f"{source_id}.summary.md", per_source_dir / f"{source_id}.csv"
+
+
+def _per_source_outputs_exist(summary_path: Path, csv_path: Path) -> bool:
+    return summary_path.exists() or csv_path.exists()
+
+
 def _source_id_for_path(path: Path) -> str:
     return path.stem.replace(" ", "_").lower()
 
@@ -288,6 +315,7 @@ def _write_processing_report(
     path: Path,
     ontology: Ontology,
     processed_files: list[str],
+    skipped_files: list[str],
     extracted_records: int,
     merged_count: int,
     unresolved_count: int,
@@ -301,6 +329,7 @@ def _write_processing_report(
         "",
         f"- Ontology version: `{ontology.version}`",
         f"- Files processed: `{len(processed_files)}`",
+        f"- Files skipped with existing per-source outputs: `{len(skipped_files)}`",
         f"- Records extracted before merge: `{extracted_records}`",
         f"- Records in merged dataset: `{merged_count}`",
         f"- Unresolved entries logged: `{unresolved_count}`",
@@ -313,7 +342,12 @@ def _write_processing_report(
     if processed_files:
         lines.extend([f"- `{name}`" for name in processed_files])
     else:
-        lines.append("- No input files were present in `data/incoming/`.")
+        lines.append("- No files were processed in this run.")
+    lines.extend(["", "## Files skipped"])
+    if skipped_files:
+        lines.extend([f"- `{name}`" for name in skipped_files])
+    else:
+        lines.append("- No files were skipped due to existing per-source outputs.")
     lines.extend(
         [
             "",
@@ -329,6 +363,7 @@ def _write_processing_report(
             "- Any unresolved coordinate, datum, age, or indicator interpretation remains in the unresolved log until specialized extraction rules or human review resolve it.",
         ]
     )
+    path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
 
 

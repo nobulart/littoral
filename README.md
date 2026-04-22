@@ -23,7 +23,7 @@ The pipeline emphasizes provenance and uncertainty. It distinguishes reported ob
    Deterministic extractors mine known table and feature patterns. Optional local Ollama models interpret high-value MinerU table, map, figure, and chart contexts when deterministic parsing is insufficient.
 
 5. **Manual geocode precedence**
-   When `data/manual_geocodes/<source>.csv` exists, LITTORAL treats it as the spatial authority for that source. Matching manual coordinates override contextual geocoding. If a manual table exists but lacks usable latitude/longitude columns or no row matches a candidate record, fuzzy gazetteer geocoding is suppressed rather than substituted.
+   When `data/manual_geocodes/<source>.csv`, `.geojson`, or `.json` exists, LITTORAL treats it as the spatial authority for that source. Matching manual coordinates override contextual geocoding. If a manual table exists but lacks usable coordinates or no row matches a candidate record, fuzzy gazetteer geocoding is suppressed rather than substituted.
 
 6. **Contextual geocoding**
    When exact source coordinates and manual geocodes are absent, LITTORAL attempts contextual geocoding from the paper title, locality names, captions, table rows, and nearby descriptive text. These coordinates are written with inferred coordinate provenance and should be interpreted as approximate locality anchors.
@@ -83,8 +83,8 @@ flowchart TD
 At a record level, the spatial decision order is:
 
 1. Use coordinates explicitly reported in the source record.
-2. Use matching coordinates from `data/manual_geocodes/<source>.csv`.
-3. If a manual geocode CSV exists but cannot provide coordinates for the record, leave coordinates empty and record the suppression note.
+2. Use matching coordinates from `data/manual_geocodes/<source>.csv`, `.geojson`, or `.json`.
+3. If a manual geocode file exists but cannot provide coordinates for the record, leave coordinates empty and record the suppression note.
 4. Only when no manual geocode CSV exists, infer approximate coordinates from contextual place-name geocoding.
 
 Elevation normalization follows the same conservative pattern: reported elevations are preserved; DEM values are derived only for reported/manual authoritative coordinates; approximate contextual geocodes are not used for DEM-derived elevations.
@@ -328,19 +328,21 @@ Approximate geocodes are suitable for discovery, mapping, deduplication, and reg
 
 ## Manual Geocoding
 
-Manual geocoding is the preferred way to handle papers where useful point locations are available from source maps, published supplements, interpreted figures, or another authoritative geospatial layer. A manual geocode file is source-scoped and must be named:
+Manual geocoding is the preferred way to handle papers where useful point locations are available from source maps, published supplements, interpreted figures, or another authoritative geospatial layer. A manual geocode file is source-scoped and must use one of these names:
 
 ```text
 data/manual_geocodes/<source_id>.csv
+data/manual_geocodes/<source_id>.geojson
+data/manual_geocodes/<source_id>.json
 ```
 
-For example, `data/incoming/soerensen2010.pdf` uses `data/manual_geocodes/soerensen2010.csv`.
+For example, `data/incoming/soerensen2010.pdf` can use `data/manual_geocodes/soerensen2010.geojson`.
 
 ### Accepted Files
 
-The pipeline currently reads UTF-8 CSV files only. GIS-native formats such as GeoPackage, Shapefile, GeoJSON, KML, and QGIS project/layer metadata should be exported to CSV before running the pipeline. A sidecar `.qmd` file may be kept for human notes, but it is not parsed by the pipeline.
+The pipeline reads UTF-8 CSV files and GeoJSON FeatureCollections. GIS-native formats such as GeoPackage, Shapefile, and KML should be exported to CSV or GeoJSON before running the pipeline. A sidecar `.qmd` file may be kept for human notes, but it is not parsed by the pipeline.
 
-CSV exports from QGIS are acceptable when geometry is exported as decimal-degree columns. Use EPSG:4326 / WGS84 longitude and latitude. If the working layer is in another CRS, reproject or export transformed coordinates before saving the CSV.
+CSV exports from QGIS are acceptable when geometry is exported as decimal-degree columns. GeoJSON exports are acceptable when features use `Point` geometry or single-point `MultiPoint` geometry. Use EPSG:4326 / WGS84 or CRS84 longitude and latitude. If the working layer is in another CRS, reproject or export transformed coordinates before saving the manual geocode file.
 
 ### Required Columns
 
@@ -357,6 +359,8 @@ Recognized coordinate column names:
 | --- | --- |
 | Latitude | `latitude`, `lat`, `y` |
 | Longitude | `longitude`, `lon`, `lng`, `long`, `x` |
+
+For GeoJSON, coordinates are read from feature geometry and properties are used for matching keys and optional metadata. The geometry longitude/latitude values are synthesized internally as `longitude` and `latitude`.
 
 Recognized matching key columns:
 
@@ -387,19 +391,20 @@ When `depth_m` is provided and no explicit elevation is present, applicable extr
 
 Manual geocode files are authoritative for their source. This has two important consequences:
 
-- If the CSV contains matching latitude/longitude values, those coordinates override inferred place-name geocoding.
-- If the CSV exists but lacks coordinate columns, has blank coordinates, or does not contain a matching row, LITTORAL suppresses fuzzy geocoding for affected records and records that decision in `notes`.
+- If the manual geocode file contains matching coordinates, those coordinates override inferred place-name geocoding.
+- If the manual geocode file exists but lacks coordinate geometry/columns, has blank coordinates, or does not contain a matching row, LITTORAL suppresses fuzzy geocoding for affected records and records that decision in `notes`.
 
-This prevents an authoritative manually geocoded dataset from being distorted by locality-level gazetteer results. A source can therefore be intentionally held in a "manual geocode pending" state by adding a key-only CSV, but the final analytical dataset should include coordinate-bearing manual rows.
+This prevents an authoritative manually geocoded dataset from being distorted by locality-level gazetteer results. A source can therefore be intentionally held in a "manual geocode pending" state by adding a key-only CSV, but the final analytical dataset should include coordinate-bearing manual rows or GeoJSON point features.
 
 ### QGIS Export Checklist
 
 1. Reproject or export the layer in EPSG:4326 / WGS84.
 2. Ensure the attribute table contains a key that appears in the extracted records, such as sample id, site number, lab number, or specimen number.
-3. Add decimal-degree `latitude` and `longitude` fields, or export geometry as `y` and `x`.
-4. Include `coordinate_uncertainty_m` where possible.
-5. Include `figure` and `description` so provenance survives into record notes.
-6. Save as UTF-8 CSV at `data/manual_geocodes/<source_id>.csv`.
+3. For CSV, add decimal-degree `latitude` and `longitude` fields, or export geometry as `y` and `x`.
+4. For GeoJSON, export point geometry as EPSG:4326 / CRS84.
+5. Include `coordinate_uncertainty_m` where possible.
+6. Include `figure` and `description` so provenance survives into record notes.
+7. Save as UTF-8 CSV or GeoJSON at `data/manual_geocodes/<source_id>.<ext>`.
 
 ## Reproducibility Notes
 

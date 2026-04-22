@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import csv
+import json
 import re
 from dataclasses import dataclass
 from functools import lru_cache
@@ -102,6 +103,16 @@ def load_manual_geocodes(source_id: str, source_path: Path) -> ManualGeocodeTabl
     manual_path = _manual_path(source_id, source_path)
     if manual_path is None or not manual_path.exists():
         return ManualGeocodeTable(source_id=source_id, path=Path(), rows=(), latitude_column=None, longitude_column=None)
+    if manual_path.suffix.lower() in {".geojson", ".json"}:
+        rows = _load_geojson_rows(manual_path)
+        fieldnames = tuple(dict.fromkeys(key for row in rows for key in row.keys()))
+        return ManualGeocodeTable(
+            source_id=source_id,
+            path=manual_path,
+            rows=rows,
+            latitude_column=_first_column(fieldnames, LATITUDE_COLUMNS),
+            longitude_column=_first_column(fieldnames, LONGITUDE_COLUMNS),
+        )
     with manual_path.open("r", encoding="utf-8", newline="") as handle:
         reader = csv.DictReader(handle)
         rows = tuple({str(key or "").strip(): str(value or "").strip() for key, value in row.items()} for row in reader)
@@ -134,13 +145,74 @@ def manual_geocode_note(table: ManualGeocodeTable, match: ManualGeocodeMatch | N
 
 def _manual_path(source_id: str, source_path: Path) -> Path | None:
     for parent in (source_path.parent, *source_path.parents):
-        candidate = parent / "manual_geocodes" / f"{source_id}.csv"
+        candidate = _first_existing_manual_path(parent / "manual_geocodes", source_id)
         if candidate.exists():
             return candidate
         if parent.name == "data":
-            candidate = parent / "manual_geocodes" / f"{source_id}.csv"
+            candidate = _first_existing_manual_path(parent / "manual_geocodes", source_id)
             return candidate
-    return source_path.parent.parent / "manual_geocodes" / f"{source_id}.csv" if len(source_path.parents) >= 2 else None
+    return _first_existing_manual_path(source_path.parent.parent / "manual_geocodes", source_id) if len(source_path.parents) >= 2 else None
+
+
+def _first_existing_manual_path(manual_dir: Path, source_id: str) -> Path:
+    candidates = [
+        manual_dir / f"{source_id}.csv",
+        manual_dir / f"{source_id}.geojson",
+        manual_dir / f"{source_id}.json",
+    ]
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+    return candidates[0]
+
+
+def _load_geojson_rows(path: Path) -> tuple[dict[str, str], ...]:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return ()
+
+    features = payload.get("features") if isinstance(payload, dict) else None
+    if not isinstance(features, list):
+        return ()
+
+    rows: list[dict[str, str]] = []
+    for feature in features:
+        if not isinstance(feature, dict):
+            continue
+        properties = feature.get("properties")
+        geometry = feature.get("geometry")
+        if not isinstance(properties, dict) or not isinstance(geometry, dict):
+            continue
+        lon_lat = _point_lon_lat(geometry)
+        row = {str(key or "").strip(): "" if value is None else str(value).strip() for key, value in properties.items()}
+        if lon_lat is not None:
+            longitude, latitude = lon_lat
+            row.setdefault("longitude", str(longitude))
+            row.setdefault("latitude", str(latitude))
+        rows.append(row)
+    return tuple(rows)
+
+
+def _point_lon_lat(geometry: dict) -> tuple[float, float] | None:
+    geometry_type = str(geometry.get("type") or "")
+    coordinates = geometry.get("coordinates")
+    if geometry_type == "Point":
+        point = coordinates
+    elif geometry_type == "MultiPoint" and isinstance(coordinates, list) and len(coordinates) == 1:
+        point = coordinates[0]
+    else:
+        return None
+    if not isinstance(point, (list, tuple)) or len(point) < 2:
+        return None
+    try:
+        longitude = float(point[0])
+        latitude = float(point[1])
+    except (TypeError, ValueError):
+        return None
+    if not (-180 <= longitude <= 180 and -90 <= latitude <= 90):
+        return None
+    return longitude, latitude
 
 
 def _first_column(fieldnames: tuple[str, ...], candidates: tuple[str, ...]) -> str | None:

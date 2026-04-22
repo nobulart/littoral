@@ -13,6 +13,9 @@
     "llm_enabled": true,
     "max_llm_contexts": 4
   },
+  "narrative_fallback": {
+    "enabled": true
+  },
   "pdf": {
     "ocr_enabled": true,
     "ocr_max_pages": 12,

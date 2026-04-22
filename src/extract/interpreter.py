@@ -7,6 +7,7 @@ from src.extract.base import ExtractionResult
 from src.extract.document_loader import DocumentPayload
 from src.extract.heuristics import build_heuristic_sample_points, build_page_block_sample_points, clean_title, llm_candidate_to_sample_point, summarize_payload
 from src.extract.mineru_inference import mine_mineru_outputs
+from src.extract.narrative_fallback import build_narrative_fallback_sample_points
 from src.extract.ollama_client import OllamaClient
 from src.extract.settings import load_extraction_settings, source_workspace_root
 from src.extract.text_analysis import analyze_text, build_unresolved_line
@@ -29,6 +30,7 @@ def interpret_document(source_path: Path, source_id: str, payload: DocumentPaylo
     llm_payload = None
     mineru_llm_payloads: list[dict] = []
     llm_points: list[SamplePoint] = []
+    narrative_fallback_result = None
     has_structured_artifacts = _contains_table_or_figure(payload.text)
 
     should_try_llm = ollama.can_run() and (
@@ -60,6 +62,10 @@ def interpret_document(source_path: Path, source_id: str, payload: DocumentPaylo
                     llm_points.append(point)
 
     sample_points = _deduplicate_points(heuristic_points + page_block_points + mineru_points + llm_points)
+    fallback_settings = settings.get("narrative_fallback", {})
+    if not sample_points and fallback_settings.get("enabled", True):
+        narrative_fallback_result = build_narrative_fallback_sample_points(source_id, source_path, payload)
+        sample_points = _deduplicate_points(narrative_fallback_result.sample_points)
     unresolved = []
     if not sample_points:
         unresolved.append(build_unresolved_line(source_id, source_path.name, str(analysis["source_classification"])))
@@ -90,6 +96,12 @@ def interpret_document(source_path: Path, source_id: str, payload: DocumentPaylo
     summary_lines.append(f"- MinerU LLM candidate contexts: `{len(mineru_result.llm_contexts)}`")
     summary_lines.append(f"- Table/figure cues detected: `{has_structured_artifacts}`")
     summary_lines.append(f"- Page OCR candidate records: `{len(page_block_points)}`")
+    if narrative_fallback_result:
+        summary_lines.append(f"- Narrative fallback evidence clusters: `{narrative_fallback_result.evidence_count}`")
+        summary_lines.append(f"- Narrative fallback candidate records: `{len(narrative_fallback_result.sample_points)}`")
+        if narrative_fallback_result.ledger_lines:
+            summary_lines.extend(["", "## Narrative fallback evidence ledger"])
+            summary_lines.extend(narrative_fallback_result.ledger_lines)
     summary_lines.extend(
         [
             "",

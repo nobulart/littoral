@@ -28,6 +28,9 @@ The pipeline emphasizes provenance and uncertainty. It distinguishes reported ob
 6. **Validation and merge**
    Candidate records are validated against the controlled vocabulary and schema before per-source outputs are merged into master CSV and GeoJSON products.
 
+7. **Elevation context**
+   Raster-backed elevation normalization uses the local DEM at `data/elevation/SRTM15+V2.tiff` by default. Override this path with `--raster-path` when running against another DEM.
+
 ## Data Products
 
 - `outputs/per_source/<source>.summary.md`: source-level extraction report.
@@ -44,6 +47,12 @@ Primary configuration files:
 - `config/extraction.json`: MinerU, PDF/OCR, Ollama, and geocoding settings.
 - `config/categories.json`: controlled vocabulary for record classes, coordinate sources, depth sources, indicators, and measurement semantics.
 - `config/schema.samplepoint.json`: canonical SamplePoint validation schema.
+
+Default local data paths:
+
+- `data/incoming/`: source PDFs and other input documents.
+- `data/staged/`: reusable MinerU staged artifacts.
+- `data/elevation/SRTM15+V2.tiff`: default DEM used by elevation normalization. Large raster files are local runtime assets and are not tracked by git.
 
 Important settings:
 

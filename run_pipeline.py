@@ -24,7 +24,7 @@ DEFAULT_UNRESOLVED_LOG = Path("logs/UnresolvedRecords.log")
 DEFAULT_REPORT_PATH = Path("logs/processing_report.md")
 DEFAULT_ONTOLOGY_PATH = Path("config/categories.json")
 DEFAULT_SCHEMA_PATH = Path("config/schema.samplepoint.json")
-DEFAULT_RASTER_PATH = Path("SRTM15+V2.tiff")
+DEFAULT_RASTER_PATH = Path("data/elevation/SRTM15+V2.tiff")
 
 
 def main(argv: list[str] | None = None) -> int:

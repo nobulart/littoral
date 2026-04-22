@@ -1,0 +1,7 @@
+site_name,sample_id,latitude,longitude,depth_m,age_ka,coordinate_uncertainty_m,figure,description
+Hovland IA,Hovland IA,61.2980758597294,2.00849577453861,158,12.0,1000,Fig. 1,Manually geocoded from original paper map; submerged beach Location I northern segment.
+Hovland IB,Hovland IB,61.2515381721722,2.09206195668655,150,12.0,1000,Fig. 1,Manually geocoded from original paper map; submerged beach Location I segment.
+Hovland IC,Hovland IC,61.1716900657302,2.20480998021948,145,12.0,1000,Fig. 1,Manually geocoded from original paper map; submerged beach Location I segment.
+Hovland ID,Hovland ID,61.0068852013966,2.47872135503773,136,12.0,1000,Fig. 1,Manually geocoded from original paper map; submerged beach Location I segment.
+Hovland IE,Hovland IE,60.8088897520742,2.76125463753791,132,12.0,1000,Fig. 1,Manually geocoded from original paper map; submerged beach Location I southern segment.
+Hovland II,Hovland II,58.1346078950472,4.0141023439074,89,12.0,1000,Fig. 1,Manually geocoded from original paper map; submerged beach Location II.

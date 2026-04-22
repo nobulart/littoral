@@ -32,13 +32,21 @@ def interpret_document(source_path: Path, source_id: str, payload: DocumentPaylo
     llm_points: list[SamplePoint] = []
     narrative_fallback_result = None
     has_structured_artifacts = _contains_table_or_figure(payload.text)
+    ancient_non_rsl_source = _looks_like_ancient_non_rsl_source(title, payload.text)
 
-    should_try_llm = ollama.can_run() and (
+    should_try_llm = not ancient_non_rsl_source and ollama.can_run() and (
         not settings["ollama"].get("candidate_only_when_needed", True)
         or (analysis["source_classification"] == "candidate_review_needed" and not heuristic_points and not page_block_points and not mineru_points)
         or (has_structured_artifacts and not heuristic_points and not page_block_points and not mineru_points)
     )
-    if mineru_settings.get("enabled", True) and ollama.can_run() and mineru_settings.get("llm_enabled", True):
+    should_try_targeted_llm = not (heuristic_points or page_block_points or mineru_points)
+    if (
+        should_try_targeted_llm
+        and not ancient_non_rsl_source
+        and mineru_settings.get("enabled", True)
+        and ollama.can_run()
+        and mineru_settings.get("llm_enabled", True)
+    ):
         for context_index, (context_label, context_text) in enumerate(mineru_result.llm_contexts[: int(mineru_settings.get("max_llm_contexts", 4))], start=1):
             context_payload = ollama.interpret_mineru_context(context_label, context_text, source_path.name, sorted(ontology.categories.keys()))
             if not context_payload:
@@ -95,6 +103,7 @@ def interpret_document(source_path: Path, source_id: str, payload: DocumentPaylo
     summary_lines.append(f"- MinerU deterministic records: `{mineru_result.deterministic_records}`")
     summary_lines.append(f"- MinerU LLM candidate contexts: `{len(mineru_result.llm_contexts)}`")
     summary_lines.append(f"- Table/figure cues detected: `{has_structured_artifacts}`")
+    summary_lines.append(f"- Ancient/non-RSL LLM guard: `{ancient_non_rsl_source}`")
     summary_lines.append(f"- Page OCR candidate records: `{len(page_block_points)}`")
     if narrative_fallback_result:
         summary_lines.append(f"- Narrative fallback evidence clusters: `{narrative_fallback_result.evidence_count}`")
@@ -122,3 +131,39 @@ def _deduplicate_points(points: list[SamplePoint]) -> list[SamplePoint]:
 def _contains_table_or_figure(text: str) -> bool:
     lowered = text.lower()
     return any(token in lowered for token in ["table", "fig.", "figure", "plate", "map"])
+
+
+def _looks_like_ancient_non_rsl_source(title: str, text: str) -> bool:
+    lowered = f"{title}\n{text[:4000]}".lower()
+    ancient_terms = [
+        "permian",
+        "eocene",
+        "cretaceous",
+        "jurassic",
+        "triassic",
+        "palaeontology",
+        "paleontology",
+        "conodont",
+        "bryozoan",
+        "foraminifera",
+        "trace fossils",
+        "stratigraphic",
+        "submarine channel",
+        "sedimentology",
+        "basin floor",
+    ]
+    rsl_terms = [
+        "holocene",
+        "pleistocene",
+        "radiocarbon",
+        "raised beach",
+        "submerged beach",
+        "marine terrace",
+        "relative sea level",
+        "relative sea-level",
+        "yrs b.p",
+        "years b.p",
+    ]
+    ancient_hits = sum(1 for term in ancient_terms if term in lowered)
+    rsl_hits = sum(1 for term in rsl_terms if term in lowered)
+    return ancient_hits >= 2 and rsl_hits == 0

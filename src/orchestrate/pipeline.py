@@ -52,7 +52,7 @@ def default_config(workspace_root: Path) -> PipelineConfig:
         report_path=workspace_root / "logs" / "processing_report.md",
         ontology_path=workspace_root / "config" / "categories.json",
         schema_path=workspace_root / "config" / "schema.samplepoint.json",
-        raster_path=workspace_root / "SRTM15+V2.tiff",
+        raster_path=workspace_root / "data" / "elevation" / "SRTM15+V2.tiff",
     )
 
 

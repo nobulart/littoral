@@ -8,6 +8,7 @@ from src.common.models import AgeModel, SamplePoint, SourceLocator, deterministi
 from src.extract.document_loader import DocumentPayload
 from src.extract.geocode import geocode_contextual_location
 from src.extract.heuristics import clean_title, infer_record_class
+from src.extract.manual_geocodes import load_manual_geocodes, manual_geocode_note
 
 
 FEET_TO_M = 0.3048
@@ -364,11 +365,30 @@ def _is_promotable_cluster(cluster: EvidenceCluster) -> bool:
 
 def _cluster_to_sample_point(source_id: str, source_path: Path, title: str, cluster: EvidenceCluster, index: int) -> SamplePoint:
     locator = SourceLocator(section=cluster.section, quote_or_paraphrase=cluster.quote)
-    geocode_result = geocode_contextual_location(source_path, [cluster.site_name, cluster.description, title], title, cluster.quote)
-    latitude = geocode_result.latitude if geocode_result is not None else None
-    longitude = geocode_result.longitude if geocode_result is not None else None
-    location_name = geocode_result.display_name if geocode_result is not None else cluster.site_name
-    coordinate_uncertainty_m = geocode_result.uncertainty_m if geocode_result is not None else None
+    manual_table = load_manual_geocodes(source_id, source_path)
+    manual_match = manual_table.match([cluster.site_name, cluster.description])
+    geocode_result = None
+    manual_note = ""
+    latitude = manual_match.latitude if manual_match is not None else None
+    longitude = manual_match.longitude if manual_match is not None else None
+    location_name = cluster.site_name
+    coordinate_uncertainty_m = manual_match.coordinate_uncertainty_m if manual_match is not None else None
+    coordinate_source = "inferred_map"
+    if latitude is not None and longitude is not None:
+        coordinate_uncertainty_m = coordinate_uncertainty_m or 1000.0
+        manual_note = manual_geocode_note(manual_table, manual_match)
+    elif manual_table.suppresses_fuzzy_geocoding:
+        latitude = None
+        longitude = None
+        coordinate_uncertainty_m = None
+        manual_note = manual_geocode_note(manual_table, manual_match)
+    else:
+        geocode_result = geocode_contextual_location(source_path, [cluster.site_name, cluster.description, title], title, cluster.quote)
+        latitude = geocode_result.latitude if geocode_result is not None else None
+        longitude = geocode_result.longitude if geocode_result is not None else None
+        location_name = geocode_result.display_name if geocode_result is not None else cluster.site_name
+        coordinate_uncertainty_m = geocode_result.uncertainty_m if geocode_result is not None else None
+        coordinate_source = "inferred_text" if geocode_result is not None else "inferred_map"
     point = SamplePoint(
         id="",
         source_id=source_id,
@@ -377,7 +397,7 @@ def _cluster_to_sample_point(source_id: str, source_path: Path, title: str, clus
         sample_id=f"narrative_fallback_{index}",
         latitude=latitude,
         longitude=longitude,
-        coordinate_source="inferred_text" if geocode_result is not None else "inferred_map",
+        coordinate_source=coordinate_source,
         coordinate_uncertainty_m=coordinate_uncertainty_m,
         elevation_m=cluster.elevation_m,
         elevation_reference=cluster.elevation_reference,
@@ -392,7 +412,7 @@ def _cluster_to_sample_point(source_id: str, source_path: Path, title: str, clus
         bibliographic_reference=title,
         doi_or_url="",
         confidence_score=None,
-        notes=cluster.notes + (f" Geocoded from contextual query '{geocode_result.query}'." if geocode_result is not None else " No contextual geocode result was found."),
+        notes=cluster.notes + manual_note + (f" Geocoded from contextual query '{geocode_result.query}'." if geocode_result is not None else ""),
         source_locator=locator,
         age_models=[
             AgeModel(

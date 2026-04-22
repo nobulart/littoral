@@ -7,6 +7,7 @@ from pathlib import Path
 from src.common.models import AgeModel, SamplePoint, SourceLocator, deterministic_sample_id
 from src.extract.document_loader import DocumentPayload, PageOCRBlock
 from src.extract.geocode import geocode_contextual_location, geocode_place_query
+from src.extract.manual_geocodes import load_manual_geocodes, manual_geocode_note
 
 
 TITLE_KEYWORDS = re.compile(r"submerged beach|ancient beach|submerged forest|marine terrace|raised beach", re.IGNORECASE)
@@ -21,7 +22,14 @@ TITLE_FALLBACK_PATTERN = re.compile(r'(?m)^[A-Z][A-Za-z0-9.,;:\'"()\-–— ]{20
 
 def clean_title(raw_title: str, text: str, source_path: Path) -> str:
     title = raw_title.strip()
-    if not title or title.startswith("PII:") or title == source_path.stem:
+    if not title or title.startswith("PII:") or title == source_path.stem or title.lower() == "terms of use":
+        whale_title = re.search(
+            r"Late Pleistocene and Holocene whale remains.*?trace element concentrations",
+            text,
+            re.IGNORECASE | re.DOTALL,
+        )
+        if whale_title:
+            return " ".join(whale_title.group(0).split())[:180]
         lines = [" ".join(line.split()) for line in text.splitlines() if line.strip()]
         for line in lines[:20]:
             if TITLE_KEYWORDS.search(line) and len(line) > 20:
@@ -361,7 +369,29 @@ def llm_candidate_to_sample_point(source_id: str, source_path: Path, candidate: 
         coordinate_uncertainty_m = candidate.get("coordinate_uncertainty_m")
         place_query = candidate.get("place_query")
         geocode_result = None
-        if latitude is None or longitude is None:
+        manual_table = load_manual_geocodes(source_id, source_path)
+        manual_match = manual_table.match(
+            [
+                candidate.get("sample_id"),
+                candidate.get("site_name"),
+                candidate.get("location_name"),
+                place_query,
+            ]
+        )
+        manual_note = ""
+        if manual_match is not None and manual_match.latitude is not None and manual_match.longitude is not None:
+            latitude = manual_match.latitude
+            longitude = manual_match.longitude
+            coordinate_source = "inferred_map"
+            coordinate_uncertainty_m = manual_match.coordinate_uncertainty_m or coordinate_uncertainty_m or 1000.0
+            manual_note = manual_geocode_note(manual_table, manual_match)
+        elif manual_table.suppresses_fuzzy_geocoding and coordinate_source != "reported":
+            latitude = None
+            longitude = None
+            coordinate_source = "inferred_map"
+            coordinate_uncertainty_m = None
+            manual_note = manual_geocode_note(manual_table, manual_match)
+        if (latitude is None or longitude is None) and not manual_table.suppresses_fuzzy_geocoding:
             geocode_queries = [
                 str(value)
                 for value in [
@@ -420,6 +450,7 @@ def llm_candidate_to_sample_point(source_id: str, source_path: Path, candidate: 
             doi_or_url=str(candidate.get("doi_or_url") or ""),
             confidence_score=None,
             notes=str(candidate.get("notes") or "Optional Ollama interpretation output.")
+            + manual_note
             + (f" Geocoded from contextual query '{geocode_result.query}'." if geocode_result is not None else " No contextual geocode result was found."),
             source_locator=locator,
             age_models=[AgeModel(method=dating_method, relation="unknown", age_ka=age_ka, notes="LLM-assisted extraction; raw BP-like numeric ages are normalized to ka.")],

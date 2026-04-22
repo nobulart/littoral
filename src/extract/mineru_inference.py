@@ -11,6 +11,7 @@ from src.common.models import AgeModel, SamplePoint, SourceLocator, deterministi
 from src.extract.document_loader import DocumentPayload
 from src.extract.geocode import geocode_contextual_location
 from src.extract.heuristics import clean_title, infer_record_class
+from src.extract.manual_geocodes import load_manual_geocodes, manual_geocode_note
 
 
 DEPTH_PATTERN = re.compile(r"~?\s*(\d+(?:\.\d+)?)\s*(?:[–-]\s*~?\s*(\d+(?:\.\d+)?))?\s*m?", re.IGNORECASE)
@@ -118,6 +119,8 @@ def _mine_manual_map_geocodes(source_id: str, source_path: Path, payload: Docume
 def _mine_tables(source_id: str, source_path: Path, payload: DocumentPayload, content_items: list[dict]) -> list[SamplePoint]:
     points: list[SamplePoint] = []
     title = clean_title(payload.title, payload.text, source_path)
+    if source_id == "soerensen2010":
+        return _points_from_soerensen_whale_tables(source_id, source_path, _soerensen_title(title, payload.text), content_items)
     for item in content_items:
         if item.get("type") != "table":
             continue
@@ -137,6 +140,137 @@ def _mine_tables(source_id: str, source_path: Path, payload: DocumentPayload, co
         elif _looks_like_dated_beach_name_table(header):
             points.extend(_points_from_dated_beach_name_table(source_id, source_path, title, item, caption, rows))
     return points
+
+
+def _points_from_soerensen_whale_tables(
+    source_id: str,
+    source_path: Path,
+    title: str,
+    content_items: list[dict],
+) -> list[SamplePoint]:
+    points: list[SamplePoint] = []
+    for item in content_items:
+        if item.get("type") != "table":
+            continue
+        rows = _parse_table_rows(str(item.get("table_body") or ""))
+        if not rows:
+            continue
+        if not _looks_like_soerensen_whale_table(rows):
+            continue
+        caption = _join_text(item.get("table_caption")) or "Table 2. Radiocarbon dated subfossil whale remains."
+        for row in rows:
+            point = _soerensen_row_to_point(source_id, source_path, title, item, caption, row)
+            if point is not None:
+                points.append(point)
+    return _deduplicate_soerensen_points(points)
+
+
+def _looks_like_soerensen_whale_table(rows: list[list[str]]) -> bool:
+    joined = " ".join(" ".join(row) for row in rows[:3]).lower()
+    if "zmuc" in joined and "locality" in joined and "calibrated age" in joined:
+        return True
+    first_cells = [row[0].strip() for row in rows[:3] if row]
+    return any(re.fullmatch(r"\d{1,2}", cell) for cell in first_cells) and any("aar-" in " ".join(row).lower() or "k-" in " ".join(row).lower() for row in rows[:3])
+
+
+def _soerensen_row_to_point(
+    source_id: str,
+    source_path: Path,
+    title: str,
+    item: dict,
+    caption: str,
+    row: list[str],
+) -> SamplePoint | None:
+    cells = [cell.strip() for cell in row]
+    if len(cells) < 10 or not re.fullmatch(r"\d{1,2}", cells[0]):
+        return None
+    specimen_no, species, element, zmuc_file, locality, method, lab_no, age_text, isotope_text, calibrated_text = cells[:10]
+    if not locality or not lab_no:
+        return None
+    age_ka, uncertainty_ka = _soerensen_radiocarbon_age_to_ka(age_text)
+    calibrated_age = _soerensen_calibrated_age_to_ka(calibrated_text)
+    age_value = calibrated_age if calibrated_age is not None else age_ka
+    dating_method = "radiocarbon" if age_value is not None else "other"
+    specimen_label = specimen_no.zfill(2)
+    quote = " | ".join(cells)[:800]
+    locator = SourceLocator(
+        page=str(int(item.get("page_idx", 0)) + 1) if isinstance(item.get("page_idx"), int) else None,
+        table=caption,
+        quote_or_paraphrase=quote,
+    )
+    point = _make_direct_point(
+        source_id=source_id,
+        source_path=source_path,
+        title=title,
+        site_name=locality,
+        sample_id=lab_no or f"soerensen_whale_{specimen_label}",
+        location_name=locality,
+        indicator_type="subtidal_facies",
+        record_class="marine_limiting",
+        indicator_subtype="radiocarbon-dated subfossil cetacean remain; marine limiting",
+        elevation_m=None,
+        elevation_reference="unknown",
+        indicative_range_m=None,
+        age_ka=age_value,
+        dating_method=dating_method,
+        description=f"Specimen {specimen_label}: {species} {element} from {locality}; 14C age {age_text}; calibrated age {calibrated_text}.",
+        bibliographic_reference=title,
+        locator=locator,
+        notes=(
+            "Extracted from Soerensen et al. Table 2 of dated subfossil whale remains. "
+            "Cetacean remains are treated as marine-limiting constraints; no source elevation was reported in the table."
+        ),
+        material=f"{species}; {element}; ZMUC {zmuc_file}; delta13C {isotope_text}".strip(),
+        age_uncertainty_ka=uncertainty_ka,
+        manual_keys=[specimen_no, specimen_label, zmuc_file],
+    )
+    if point.age_models:
+        point.age_models[0].relation = "range" if isinstance(age_value, list) else "equal"
+        point.age_models[0].notes = f"14C age {age_text}; calibrated age BP {calibrated_text}; method {method}."
+    return point
+
+
+def _deduplicate_soerensen_points(points: list[SamplePoint]) -> list[SamplePoint]:
+    unique: dict[str, SamplePoint] = {}
+    for point in points:
+        unique[point.sample_id or point.id] = point
+    return list(unique.values())
+
+
+def _soerensen_radiocarbon_age_to_ka(text: str) -> tuple[float | str | None, float | None]:
+    lowered = text.lower().strip()
+    if lowered == "modern":
+        return 0.0, None
+    numbers = [float(value.replace(",", "")) for value in re.findall(r"\d+(?:,\d{3})*(?:\.\d+)?", text)]
+    if not numbers:
+        return None, None
+    if text.strip().startswith(">"):
+        return f">{round(numbers[0] / 1000.0, 3)}", None
+    age_ka = numbers[0] / 1000.0
+    uncertainty_ka = numbers[1] / 1000.0 if len(numbers) > 1 else None
+    return round(age_ka, 3), round(uncertainty_ka, 3) if uncertainty_ka is not None else None
+
+
+def _soerensen_calibrated_age_to_ka(text: str) -> float | list[float | None] | None:
+    cleaned = text.replace(",", "").replace("–", "-").strip()
+    if cleaned in {"", "-"}:
+        return None
+    numbers = [float(value) for value in re.findall(r"\d+(?:\.\d+)?", cleaned)]
+    if not numbers:
+        return None
+    if len(numbers) >= 2:
+        low, high = numbers[0] / 1000.0, numbers[1] / 1000.0
+        return [round(low, 3), round(high, 3)]
+    return round(numbers[0] / 1000.0, 3)
+
+
+def _soerensen_title(title: str, text: str) -> str:
+    if title.lower() != "terms of use":
+        return title
+    match = re.search(r"Late Pleistocene and Holocene whale remains.*?trace element concentrations", text, re.IGNORECASE | re.DOTALL)
+    if not match:
+        return title
+    return " ".join(match.group(0).split())
 
 
 def _points_from_palaeoshoreline_table(
@@ -458,18 +592,38 @@ def _make_point(
     allow_bare_depth_cell: bool = False,
 ) -> SamplePoint:
     depth_midpoint, indicative_range = _depth_summary(depth_text, allow_bare_table_cell=allow_bare_depth_cell)
-    geocode_result = geocode_contextual_location(
-        source_path,
-        [site_name, description, title],
-        title,
-        locator.quote_or_paraphrase,
-    )
-    latitude = geocode_result.latitude if geocode_result is not None else None
-    longitude = geocode_result.longitude if geocode_result is not None else None
-    coordinate_source = "inferred_text" if geocode_result is not None else "inferred_map"
-    coordinate_uncertainty_m = geocode_result.uncertainty_m if geocode_result is not None else None
-    location_name = geocode_result.display_name if geocode_result is not None else site_name
+    manual_table = load_manual_geocodes(source_id, source_path)
+    manual_match = manual_table.match([sample_id, site_name])
+    geocode_result = None
+    latitude = manual_match.latitude if manual_match is not None else None
+    longitude = manual_match.longitude if manual_match is not None else None
+    coordinate_source = "inferred_map"
+    coordinate_uncertainty_m = manual_match.coordinate_uncertainty_m if manual_match is not None else None
+    location_name = site_name
+    if latitude is not None and longitude is not None:
+        coordinate_uncertainty_m = coordinate_uncertainty_m or 1000.0
+        notes += manual_geocode_note(manual_table, manual_match)
+    elif manual_table.suppresses_fuzzy_geocoding:
+        latitude = None
+        longitude = None
+        notes += manual_geocode_note(manual_table, manual_match)
+    else:
+        geocode_result = geocode_contextual_location(
+            source_path,
+            [site_name, description, title],
+            title,
+            locator.quote_or_paraphrase,
+        )
+        latitude = geocode_result.latitude if geocode_result is not None else None
+        longitude = geocode_result.longitude if geocode_result is not None else None
+        coordinate_source = "inferred_text" if geocode_result is not None else "inferred_map"
+        coordinate_uncertainty_m = geocode_result.uncertainty_m if geocode_result is not None else None
+        location_name = geocode_result.display_name if geocode_result is not None else site_name
+    if depth_midpoint is None and manual_match is not None and manual_match.depth_m is not None:
+        depth_midpoint = manual_match.depth_m
     elevation_m = -depth_midpoint if depth_midpoint is not None else None
+    if elevation_m is None and manual_match is not None and manual_match.elevation_m is not None:
+        elevation_m = manual_match.elevation_m
     point = SamplePoint(
         id="",
         source_id=source_id,
@@ -493,7 +647,7 @@ def _make_point(
         bibliographic_reference=bibliographic_reference,
         doi_or_url="",
         confidence_score=None,
-        notes=notes + (f" Geocoded from contextual query '{geocode_result.query}'." if geocode_result is not None else " No contextual geocode result was found."),
+        notes=notes + (f" Geocoded from contextual query '{geocode_result.query}'." if geocode_result is not None else ""),
         source_locator=locator,
         age_models=[AgeModel(method="stratigraphic_context", relation="unknown", age_ka=_age_summary(depth_text), notes="Age context inferred from table/text when present.")],
     )
@@ -526,12 +680,34 @@ def _make_direct_point(
     reported_elevation_m: float | None = None,
     material: str | None = None,
     age_uncertainty_ka: float | None = None,
+    manual_keys: list[str | int | float | None] | None = None,
 ) -> SamplePoint:
     latitude = None
     longitude = None
     coordinate_source = "inferred_map"
     coordinate_uncertainty_m = None
-    if site_name or location_name:
+    manual_table = load_manual_geocodes(source_id, source_path)
+    manual_match = manual_table.match([sample_id, site_name, location_name, *(manual_keys or [])])
+    if manual_match is not None:
+        latitude = manual_match.latitude
+        longitude = manual_match.longitude
+        coordinate_uncertainty_m = manual_match.coordinate_uncertainty_m
+    if latitude is not None and longitude is not None:
+        coordinate_uncertainty_m = coordinate_uncertainty_m or 1000.0
+        notes += manual_geocode_note(manual_table, manual_match)
+        if manual_match is not None and manual_match.description and not description:
+            description = manual_match.description
+        if elevation_m is None and manual_match is not None and manual_match.elevation_m is not None:
+            elevation_m = manual_match.elevation_m
+        if reported_depth_m is None and manual_match is not None and manual_match.depth_m is not None:
+            reported_depth_m = manual_match.depth_m
+        if age_ka is None and manual_match is not None and manual_match.age_ka is not None:
+            age_ka = manual_match.age_ka
+    elif manual_table.suppresses_fuzzy_geocoding:
+        latitude = None
+        longitude = None
+        notes += manual_geocode_note(manual_table, manual_match)
+    elif site_name or location_name:
         geocode_result = geocode_contextual_location(source_path, [site_name, location_name, title], title, locator.quote_or_paraphrase)
         if geocode_result is not None:
             latitude = geocode_result.latitude

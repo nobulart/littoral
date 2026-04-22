@@ -10,6 +10,7 @@ from src.extract.mineru_inference import mine_mineru_outputs
 from src.extract.narrative_fallback import build_narrative_fallback_sample_points
 from src.extract.ollama_client import OllamaClient
 from src.extract.settings import load_extraction_settings, source_workspace_root
+from src.extract.source_links import determine_source_link
 from src.extract.text_analysis import analyze_text, build_unresolved_line
 from src.ontology.catalog import load_ontology
 
@@ -17,6 +18,7 @@ from src.ontology.catalog import load_ontology
 def interpret_document(source_path: Path, source_id: str, payload: DocumentPayload) -> ExtractionResult:
     analysis = analyze_text(payload.text)
     title = clean_title(payload.title, payload.text, source_path)
+    source_link = determine_source_link(source_path, payload)
     heuristic_points = build_heuristic_sample_points(source_id, source_path, payload)
     page_block_points = build_page_block_sample_points(source_id, source_path, payload)
     mineru_result = mine_mineru_outputs(source_id, source_path, payload)
@@ -52,7 +54,7 @@ def interpret_document(source_path: Path, source_id: str, payload: DocumentPaylo
             if not context_payload:
                 continue
             mineru_llm_payloads.append(context_payload)
-            for candidate_index, candidate in enumerate(context_payload.get("candidate_records", []), start=1):
+            for candidate_index, candidate in enumerate(_candidate_records(context_payload), start=1):
                 if not candidate.get("sample_id"):
                     candidate["sample_id"] = f"mineru_llm_{context_index}_{candidate_index}"
                 point = llm_candidate_to_sample_point(source_id, source_path, candidate, title)
@@ -62,7 +64,7 @@ def interpret_document(source_path: Path, source_id: str, payload: DocumentPaylo
     if should_try_llm:
         llm_payload = ollama.interpret_document(payload, source_path.name, sorted(ontology.categories.keys()))
         if llm_payload:
-            for index, candidate in enumerate(llm_payload.get("candidate_records", []), start=1):
+            for index, candidate in enumerate(_candidate_records(llm_payload), start=1):
                 if not candidate.get("sample_id"):
                     candidate["sample_id"] = f"llm_feature_{index}"
                 point = llm_candidate_to_sample_point(source_id, source_path, candidate, title)
@@ -74,6 +76,8 @@ def interpret_document(source_path: Path, source_id: str, payload: DocumentPaylo
     if not sample_points and fallback_settings.get("enabled", True):
         narrative_fallback_result = build_narrative_fallback_sample_points(source_id, source_path, payload)
         sample_points = _deduplicate_points(narrative_fallback_result.sample_points)
+    if source_link is not None:
+        _apply_source_link(sample_points, source_link.url)
     unresolved = []
     if not sample_points:
         unresolved.append(build_unresolved_line(source_id, source_path.name, str(analysis["source_classification"])))
@@ -85,6 +89,7 @@ def interpret_document(source_path: Path, source_id: str, payload: DocumentPaylo
         f"- File type: `{source_path.suffix}`",
         f"- Title: `{title}`",
         f"- Source classification: `{analysis['source_classification']}`",
+        f"- DOI/source link: `{source_link.url if source_link is not None else ''}`",
         f"- Coordinate-like strings detected: `{len(analysis['coordinate_hits'])}`",
         f"- Age-like strings detected: `{len(analysis['age_hits'])}`",
         f"- Elevation/depth-like strings detected: `{len(analysis['elevation_hits'])}`",
@@ -119,6 +124,19 @@ def interpret_document(source_path: Path, source_id: str, payload: DocumentPaylo
         ]
     )
     return ExtractionResult(source_id=source_id, summary_lines=summary_lines, sample_points=sample_points, unresolved_lines=unresolved)
+
+
+def _apply_source_link(points: list[SamplePoint], doi_or_url: str) -> None:
+    for point in points:
+        if not point.doi_or_url.strip():
+            point.doi_or_url = doi_or_url
+
+
+def _candidate_records(payload: dict) -> list[dict]:
+    records = payload.get("candidate_records", [])
+    if not isinstance(records, list):
+        return []
+    return [record for record in records if isinstance(record, dict)]
 
 
 def _deduplicate_points(points: list[SamplePoint]) -> list[SamplePoint]:

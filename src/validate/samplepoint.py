@@ -53,4 +53,8 @@ def score_confidence(point: SamplePoint) -> float:
     completeness += 0.10 if point.coordinate_source == "reported" else 0.05 if point.coordinate_source == "inferred_text" else 0.02
     completeness += 0.15 if point.record_class == "sea_level_indicator" else 0.08
     completeness += 0.15 if point.indicative_range_m is not None else 0.05
+    if point.latitude is None or point.longitude is None:
+        completeness = min(completeness, 0.55)
+    if point.elevation_m is None and point.age_ka is None:
+        completeness = min(completeness, 0.45)
     return round(min(completeness, 1.0), 3)

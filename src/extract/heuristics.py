@@ -387,8 +387,12 @@ def llm_candidate_to_sample_point(source_id: str, source_path: Path, candidate: 
             return None
         if coordinate_source not in {"reported", "inferred_text", "inferred_map"}:
             coordinate_source = "inferred_text" if latitude is not None and longitude is not None else "inferred_map"
+        if (latitude is None or longitude is None) and coordinate_source != "reported":
+            coordinate_source = "inferred_map"
         coordinate_uncertainty_m = float(coordinate_uncertainty_m) if coordinate_uncertainty_m is not None else None
         indicator_type = str(candidate.get("indicator_type") or "submerged_beach")
+        dating_method = str(candidate.get("dating_method") or "other")
+        age_ka = normalize_candidate_age_ka(candidate.get("age_ka"), dating_method)
         location_name = str(candidate.get("location_name") or candidate.get("site_name") or (geocode_result.display_name if geocode_result is not None else source_path.stem))
         quote = str(candidate.get("quote_or_paraphrase") or "")[:800]
         locator = SourceLocator(page=str(candidate.get("page") or ""), figure=str(candidate.get("figure") or "") or None, table=str(candidate.get("table") or "") or None, quote_or_paraphrase=quote)
@@ -408,8 +412,8 @@ def llm_candidate_to_sample_point(source_id: str, source_path: Path, candidate: 
             indicator_type=indicator_type,
             indicator_subtype=str(candidate.get("indicator_subtype") or "llm-extracted candidate"),
             indicative_range_m=candidate.get("indicative_range_m"),
-            age_ka=candidate.get("age_ka"),
-            dating_method=str(candidate.get("dating_method") or "other"),
+            age_ka=age_ka,
+            dating_method=dating_method,
             description=str(candidate.get("description") or title),
             location_name=location_name,
             bibliographic_reference=str(candidate.get("bibliographic_reference") or title),
@@ -418,9 +422,23 @@ def llm_candidate_to_sample_point(source_id: str, source_path: Path, candidate: 
             notes=str(candidate.get("notes") or "Optional Ollama interpretation output.")
             + (f" Geocoded from contextual query '{geocode_result.query}'." if geocode_result is not None else " No contextual geocode result was found."),
             source_locator=locator,
-            age_models=[AgeModel(method=str(candidate.get("dating_method") or "other"), relation="unknown", age_ka=candidate.get("age_ka"), notes="LLM-assisted extraction")],
+            age_models=[AgeModel(method=dating_method, relation="unknown", age_ka=age_ka, notes="LLM-assisted extraction; raw BP-like numeric ages are normalized to ka.")],
         )
         point.id = deterministic_sample_id(source_id, point.site_name, point.sample_id, point.latitude, point.longitude, point.indicator_type, locator)
         return point
     except (TypeError, ValueError, json.JSONDecodeError):
         return None
+
+
+def normalize_candidate_age_ka(value, dating_method: str = ""):
+    method = dating_method.lower()
+    if isinstance(value, list):
+        return [normalize_candidate_age_ka(item, dating_method) if isinstance(item, (int, float)) else item for item in value]
+    if not isinstance(value, (int, float)):
+        return value
+    numeric = float(value)
+    if numeric <= 0:
+        return numeric
+    if numeric > 1000 or ("14c" in method or "radiocarbon" in method) and numeric > 300:
+        return round(numeric / 1000.0, 3)
+    return numeric

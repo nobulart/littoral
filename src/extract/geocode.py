@@ -30,9 +30,13 @@ def geocode_place_query(source_path: Path, query: str, context_title: str, conte
     geocoding = settings["geocoding"]
     if not geocoding.get("enabled", True):
         return None
+    if _is_non_place_query(query):
+        return None
 
     normalized_query = _normalize_query_with_ollama(source_path, query, context_title, context_text) if normalize_with_ollama else None
     normalized_query = normalized_query or query
+    if _is_non_place_query(normalized_query):
+        return None
     cache_key = normalized_query.casefold()
     if not normalize_with_ollama and cache_key in _NOMINATIM_CACHE:
         return _NOMINATIM_CACHE[cache_key]
@@ -58,7 +62,7 @@ def geocode_place_query(source_path: Path, query: str, context_title: str, conte
             _NOMINATIM_CACHE[cache_key] = None
         return None
 
-    best = _choose_best_geocode_result(normalized_query, payload)
+    best = _choose_best_geocode_result(normalized_query, payload, context_title, context_text)
     if best is None:
         if not normalize_with_ollama:
             _NOMINATIM_CACHE[cache_key] = None
@@ -98,15 +102,20 @@ def _contextual_query_variants(queries: list[str], title: str, text: str) -> lis
         variants.extend([f"{query}, Australia" for query in queries if query and "australia" not in query.lower()])
     if "south africa" in f"{title} {text[:2000]}".lower():
         variants.extend([f"{query}, South Africa" for query in queries if query and "south africa" not in query.lower()])
+    if "malta" in f"{title} {text[:2000]}".lower():
+        variants.extend([f"{query}, Malta" for query in queries if query and "malta" not in query.lower()])
+    if "taiwan" in f"{title} {text[:2000]}".lower():
+        variants.extend([f"{query}, Taiwan" for query in queries if query and "taiwan" not in query.lower()])
     return _dedupe_queries(variants)
 
 
 def _query_variants(query: str) -> list[str]:
     cleaned = " ".join(str(query).replace("–", "-").split()).strip(" ,.;:")
-    if not cleaned:
+    if not cleaned or _is_non_place_query(cleaned):
         return []
-    variants = [cleaned]
+    variants = []
     variants.extend(_known_place_variants(cleaned))
+    variants.append(cleaned)
     variants.append(re.sub(r"\bcontinental shelf\b", "", cleaned, flags=re.IGNORECASE).strip(" ,.;:"))
     variants.append(re.sub(r"\bshelf\b", "", cleaned, flags=re.IGNORECASE).strip(" ,.;:"))
     variants.append(re.sub(r"\boffshore\b", "", cleaned, flags=re.IGNORECASE).strip(" ,.;:"))
@@ -124,10 +133,21 @@ def _known_place_variants(query: str) -> list[str]:
     lowered = query.lower()
     variants: list[str] = []
     known_places = {
+        "wilderness": ["Wilderness, Western Cape, South Africa"],
+        "seaward barrier": ["Wilderness, Western Cape, South Africa"],
+        "landward barrier": ["Wilderness, Western Cape, South Africa"],
         "mossel bay": ["Mossel Bay, South Africa"],
         "cape st blaize": ["Cape St Blaize, Mossel Bay, South Africa"],
         "cape saint blaize": ["Cape St Blaize, Mossel Bay, South Africa"],
         "groot brak": ["Groot Brak River, Western Cape, South Africa"],
+        "nw malta": ["northwest Malta, Malta"],
+        "nw gozo": ["northwest Gozo, Malta"],
+        "sikka il-bajda": ["Sikka il-Bajda, Malta"],
+        "malta": ["Malta"],
+        "gozo": ["Gozo, Malta"],
+        "robe": ["Robe, South Australia"],
+        "beachport": ["Beachport, South Australia"],
+        "southeast south australia": ["Southeast South Australia, Australia"],
         "rottnest": ["Rottnest Island, Western Australia", "Rottnest Shelf, Western Australia"],
         "recherche": ["Esperance, Western Australia", "Recherche Archipelago, Western Australia"],
         "lacepede": ["Lacepede Bay, South Australia"],
@@ -141,11 +161,30 @@ def _known_place_variants(query: str) -> list[str]:
         "bonaparte": ["Joseph Bonaparte Gulf, Australia"],
         "carnarvon": ["Carnarvon, Western Australia"],
         "esperance": ["Esperance, Western Australia"],
+        "shihniuchiao": ["Hengchun, Taiwan"],
+        "haikou": ["Haikou, Hengchun, Taiwan"],
+        "akungtien": ["Gangshan, Kaohsiung, Taiwan"],
+        "tainan": ["Tainan, Taiwan"],
     }
     for cue, cue_variants in known_places.items():
         if cue in lowered:
             variants.extend(cue_variants)
     return variants
+
+
+def _is_non_place_query(query: str) -> bool:
+    cleaned = " ".join(str(query).split()).strip(" ,.;:").lower()
+    if not cleaned:
+        return True
+    if cleaned in {"site", "regional setting", "figure", "table", "map", "plate", "pretorius2016"}:
+        return True
+    if re.fullmatch(r"(?:boring|core|station|sample)\s*\d+[a-z-]*", cleaned):
+        return True
+    if re.fullmatch(r"[a-z]?\d{2,}(?:-\d+)?", cleaned):
+        return True
+    if "submerged palaeolandscape" in cleaned and "malta" not in cleaned:
+        return True
+    return False
 
 
 def _expand_australian_abbreviations(query: str) -> str:
@@ -213,7 +252,7 @@ def _estimate_uncertainty(query: str, display_name: str) -> float:
     return 10000.0
 
 
-def _choose_best_geocode_result(query: str, payload: list[dict]) -> dict | None:
+def _choose_best_geocode_result(query: str, payload: list[dict], context_title: str = "", context_text: str = "") -> dict | None:
     acceptable: list[dict] = []
     for item in payload:
         item_class = str(item.get("class") or item.get("category") or "").lower()
@@ -229,11 +268,34 @@ def _choose_best_geocode_result(query: str, payload: list[dict]) -> dict | None:
             continue
         if query_tokens and not all(token in display for token in query_tokens[:1]):
             continue
+        if not _display_compatible_with_context(display, context_title, context_text):
+            continue
         acceptable.append(item)
     if not acceptable:
         return None
     acceptable.sort(key=lambda item: float(item.get("importance", 0.0)), reverse=True)
     return acceptable[0]
+
+
+def _display_compatible_with_context(display: str, title: str, text: str) -> bool:
+    context = f"{title} {text[:3000]}".lower()
+    if "south africa" in context and "south africa" not in display:
+        return False
+    if "malta" in context:
+        if "malta" not in display:
+            return False
+        if any(token in display for token in ["united states", "new york", "saratoga county"]):
+            return False
+    if "taiwan" in context and "taiwan" not in display:
+        return False
+    if "bermuda" in context and "bermuda" not in display:
+        return False
+    if "north sea" in context and not any(token in display for token in ["north sea", "norway", "norge", "united kingdom", "scotland", "denmark"]):
+        return False
+    if any(token in context for token in ["australia", "western australia", "south australia", "new south wales", "tasmania", "queensland"]):
+        if "australia" not in display:
+            return False
+    return True
 
 
 def re_split_query(query: str) -> list[str]:

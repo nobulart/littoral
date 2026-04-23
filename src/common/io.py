@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import csv
 import json
+import os
 from pathlib import Path
+import tempfile
 from typing import Iterable
 
 from src.common.models import SamplePoint
@@ -47,18 +49,46 @@ def ensure_parent(path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
 
 
-def write_summary(path: Path, lines: list[str]) -> None:
+def write_text_atomic(path: Path, content: str, encoding: str = "utf-8") -> None:
     ensure_parent(path)
-    path.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
+    with tempfile.NamedTemporaryFile(
+        "w",
+        encoding=encoding,
+        dir=path.parent,
+        prefix=f"{path.name}.tmp-",
+        suffix=".part",
+        delete=False,
+    ) as handle:
+        handle.write(content)
+        temp_path = Path(handle.name)
+    os.replace(temp_path, path)
+
+
+def write_json_atomic(path: Path, payload: object) -> None:
+    write_text_atomic(path, json.dumps(payload, indent=2, sort_keys=True) + "\n")
+
+
+def write_summary(path: Path, lines: list[str]) -> None:
+    write_text_atomic(path, "\n".join(lines).rstrip() + "\n")
 
 
 def write_csv(path: Path, sample_points: Iterable[SamplePoint]) -> None:
     ensure_parent(path)
-    with path.open("w", encoding="utf-8", newline="") as handle:
+    with tempfile.NamedTemporaryFile(
+        "w",
+        encoding="utf-8",
+        newline="",
+        dir=path.parent,
+        prefix=f"{path.name}.tmp-",
+        suffix=".part",
+        delete=False,
+    ) as handle:
         writer = csv.DictWriter(handle, fieldnames=CSV_COLUMNS)
         writer.writeheader()
         for point in sample_points:
             writer.writerow(sample_point_csv_row(point))
+        temp_path = Path(handle.name)
+    os.replace(temp_path, path)
 
 
 def append_csv(path: Path, sample_points: Iterable[SamplePoint]) -> None:
@@ -156,7 +186,7 @@ def write_geojson(path: Path, sample_points: Iterable[SamplePoint]) -> None:
             }
         features.append(feature)
     payload = {"type": "FeatureCollection", "features": features}
-    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    write_text_atomic(path, json.dumps(payload, indent=2, sort_keys=True) + "\n")
 
 
 def append_log(path: Path, line: str) -> None:

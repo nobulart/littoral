@@ -1,0 +1,20 @@
+{
+  "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/brookfield1970.csv",
+  "detail": "cache miss; attempting extraction",
+  "finished_at": null,
+  "heartbeat_at": 1776977018.270966,
+  "lease_key": "brookfield1970",
+  "owner": {
+    "host": "Mac-Studio.local",
+    "pid": 13381,
+    "run_id": "f6e33ac3aec34980abe6c42769c39dea"
+  },
+  "source_id": "brookfield1970",
+  "source_name": "brookfield1970.pdf",
+  "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/brookfield1970.pdf",
+  "stage": "mineru",
+  "started_at": 1776976761.527252,
+  "status": "running",
+  "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/brookfield1970.summary.md",
+  "updated_at": 1776977018.270966
+}

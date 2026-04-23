@@ -9,7 +9,7 @@ import subprocess
 import time
 from collections.abc import Callable
 
-from src.common.io import append_log, write_csv, write_summary
+from src.common.io import append_log, write_csv, write_summary, write_text_atomic
 from src.extract.base import BaseExtractor
 from src.extract.csv_extractor import CsvExtractor
 from src.extract.pdf_extractor import PdfExtractor
@@ -18,6 +18,7 @@ from src.extract.txt_extractor import TextExtractor
 from src.merge.build import build_master_outputs
 from src.normalize.elevation import apply_elevation_normalization
 from src.ontology.catalog import Ontology, load_ontology
+from src.orchestrate.locking import LeaseDenied, ManagedLease, PipelineLockManager
 from src.orchestrate.progress import PipelineProgressReporter
 from src.orchestrate.runtime import PipelineRuntime, auto_document_workers, auto_gpu_slots, hardware_profile_summary
 from src.validate.samplepoint import load_schema, score_confidence, validate_sample_point
@@ -32,6 +33,7 @@ class PipelineConfig:
     merged_dir: Path
     unresolved_log: Path
     report_path: Path
+    lock_dir: Path
     ontology_path: Path
     schema_path: Path
     raster_path: Path
@@ -68,6 +70,7 @@ def default_config(workspace_root: Path) -> PipelineConfig:
         merged_dir=workspace_root / "outputs" / "merged",
         unresolved_log=workspace_root / "logs" / "UnresolvedRecords.log",
         report_path=workspace_root / "logs" / "processing_report.md",
+        lock_dir=workspace_root / "locks",
         ontology_path=workspace_root / "config" / "categories.json",
         schema_path=workspace_root / "config" / "schema.samplepoint.json",
         raster_path=workspace_root / "data" / "elevation" / "SRTM15+V2.tiff",
@@ -90,6 +93,8 @@ def run_pipeline(config: PipelineConfig) -> None:
             ontology=ontology,
             gpu_slots=config.gpu_slots or auto_gpu_slots(),
         )
+        lock_manager = PipelineLockManager(config.lock_dir)
+        lock_manager.ensure_dirs()
         extractors = _extractor_registry()
         processed_files: list[str] = []
         skipped_files: list[str] = []
@@ -115,18 +120,24 @@ def run_pipeline(config: PipelineConfig) -> None:
         document_workers = config.document_workers or auto_document_workers()
         emit(f"Concurrency profile: {hardware_profile_summary(document_workers, runtime.gpu_slots)}", level=2)
         work_items: list[tuple[int, Path, str, BaseExtractor]] = []
+        source_index_map: dict[str, tuple[int, str]] = {}
         for index, source_path in enumerate(source_paths, start=1):
             source_id = _source_id_for_path(source_path)
+            source_index_map[source_id] = (index, source_path.name)
             reporter.queue_file(index, source_path.name)
-            summary_path, csv_path = _per_source_output_paths(config.per_source_dir, source_id)
-            if config.per_source_mode == "skip" and _per_source_outputs_exist(summary_path, csv_path):
-                reporter.skip_file(index, source_path.name, "existing per-source outputs found")
-                skipped_files.append(source_path.name)
-                continue
+            lock_manager.note_discovered(source_id, source_path.name, source_path)
 
             extractor = extractors.get(source_path.suffix.lower())
             if extractor is None:
                 reporter.mark_unsupported(index, source_path.name, f"unsupported file type: {source_path.suffix}")
+                lock_manager.mark_source_state(
+                    source_id,
+                    source_path.name,
+                    source_path,
+                    status="unsupported",
+                    stage="unsupported",
+                    detail=f"unsupported file type: {source_path.suffix}",
+                )
                 append_log(config.unresolved_log, f"{source_id}\t{source_path.name}\tUnsupported file type")
                 unresolved_count += 1
                 continue
@@ -135,8 +146,9 @@ def run_pipeline(config: PipelineConfig) -> None:
         if work_items:
             with ThreadPoolExecutor(max_workers=max(1, min(document_workers, len(work_items)))) as executor:
                 pending = deque(work_items)
-                active_futures: set = set()
+                active_futures: dict = {}
                 while pending or active_futures:
+                    _refresh_reporter_from_shared_statuses(reporter, lock_manager, source_index_map)
                     reporter.tick()
                     if reporter.abort_requested():
                         pending.clear()
@@ -156,6 +168,19 @@ def run_pipeline(config: PipelineConfig) -> None:
                         selected_position = next(i for i, item in enumerate(pending) if item[0] == next_index)
                         index, source_path, source_id, extractor = pending[selected_position]
                         del pending[selected_position]
+                        summary_path, csv_path = _per_source_output_paths(config.per_source_dir, source_id)
+                        lease = lock_manager.claim_source(
+                            source_id,
+                            source_path.name,
+                            source_path,
+                            summary_path=summary_path,
+                            csv_path=csv_path,
+                            per_source_mode=config.per_source_mode,
+                        )
+                        if isinstance(lease, LeaseDenied):
+                            reporter.skip_file(index, source_path.name, lease.reason)
+                            skipped_files.append(source_path.name)
+                            continue
                         reporter.note_dispatch_started(index)
                         future = executor.submit(
                             _process_source_file,
@@ -168,8 +193,9 @@ def run_pipeline(config: PipelineConfig) -> None:
                             ontology,
                             schema,
                             reporter,
+                            lease,
                         )
-                        active_futures.add(future)
+                        active_futures[future] = lease
                     if not active_futures:
                         if pending and reporter.pause_requested():
                             time.sleep(0.1)
@@ -178,21 +204,52 @@ def run_pipeline(config: PipelineConfig) -> None:
                             pending.clear()
                             continue
                         break
-                    done, active_futures = wait(active_futures, timeout=0.2, return_when=FIRST_COMPLETED)
+                    done, remaining = wait(set(active_futures.keys()), timeout=0.2, return_when=FIRST_COMPLETED)
+                    future_map = active_futures
+                    active_futures = {future: future_map[future] for future in remaining}
                     for future in done:
-                        result = future.result()
+                        lease = future_map[future]
+                        try:
+                            result = future.result()
+                        except Exception as error:
+                            lease.fail(f"processing failed: {error.__class__.__name__}: {error}")
+                            raise
                         summary_path, csv_path = _per_source_output_paths(config.per_source_dir, result.source_id)
+                        lease.update("publish", "publishing per-source outputs")
                         write_summary(summary_path, result.summary_lines)
                         write_csv(csv_path, result.normalized_points)
                         for line in result.unresolved_lines:
                             append_log(config.unresolved_log, line)
                             unresolved_count += 1
+                        lease.complete(
+                            f"accepted {len(result.normalized_points)} point(s)",
+                            extra={
+                                "accepted_points": len(result.normalized_points),
+                                "unresolved_entries": len(result.unresolved_lines),
+                            },
+                        )
+                        reporter.complete_file(result.index, result.source_path.name, len(result.normalized_points))
                         processed_files.append(result.source_path.name)
                         extracted_records += len(result.normalized_points)
+                _refresh_reporter_from_shared_statuses(reporter, lock_manager, source_index_map)
 
         merge_started = time.perf_counter()
         emit(f"Building merged outputs ({config.merged_mode})")
-        csv_path, geojson_path, merged_count = build_master_outputs(config.per_source_dir, config.merged_dir, mode=config.merged_mode)
+        merge_lease = lock_manager.acquire_merge_lease("master_dataset")
+        try:
+            merge_lease.update("merge", f"building merged outputs ({config.merged_mode})")
+            csv_path, geojson_path, merged_count = build_master_outputs(config.per_source_dir, config.merged_dir, mode=config.merged_mode)
+            merge_lease.complete(
+                f"merge completed in {_format_elapsed(merge_started)}",
+                extra={
+                    "master_csv_path": str(csv_path),
+                    "master_geojson_path": str(geojson_path),
+                    "merged_count": merged_count,
+                },
+            )
+        except Exception as error:
+            merge_lease.fail(f"merge failed: {error.__class__.__name__}: {error}")
+            raise
         emit(f"Merge completed in {_format_elapsed(merge_started)}", level=2)
         _write_processing_report(
             config.report_path,
@@ -351,6 +408,30 @@ def _format_elapsed(started: float) -> str:
     return f"{int(minutes)}m {seconds:.1f}s"
 
 
+def _refresh_reporter_from_shared_statuses(
+    reporter: PipelineProgressReporter,
+    lock_manager: PipelineLockManager,
+    source_index_map: dict[str, tuple[int, str]],
+) -> None:
+    for source_id, payload in lock_manager.list_source_statuses().items():
+        mapping = source_index_map.get(source_id)
+        if mapping is None:
+            continue
+        index, name = mapping
+        reporter.sync_shared_state(
+            index,
+            name,
+            status=str(payload.get("status") or "queued"),
+            stage=str(payload.get("stage") or payload.get("status") or "queued"),
+            detail=str(payload.get("detail") or ""),
+            started_at=float(payload["started_at"]) if isinstance(payload.get("started_at"), (int, float)) else None,
+            finished_at=float(payload["finished_at"]) if isinstance(payload.get("finished_at"), (int, float)) else None,
+            candidates=int(payload["candidate_points"]) if isinstance(payload.get("candidate_points"), int) else None,
+            accepted=int(payload["accepted_points"]) if isinstance(payload.get("accepted_points"), int) else None,
+            unresolved=int(payload["unresolved_entries"]) if isinstance(payload.get("unresolved_entries"), int) else None,
+        )
+
+
 def _write_processing_report(
     path: Path,
     ontology: Ontology,
@@ -404,7 +485,7 @@ def _write_processing_report(
         ]
     )
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
+    write_text_atomic(path, "\n".join(lines).rstrip() + "\n")
 
 
 def _display_path(path: Path, workspace_root: Path) -> str:
@@ -424,36 +505,46 @@ def _process_source_file(
     ontology: Ontology,
     schema: dict,
     reporter: PipelineProgressReporter,
+    lease: ManagedLease,
 ) -> FileProcessingResult:
     file_started = time.perf_counter()
     local_unresolved_lines: list[str] = []
     reporter.start_file(index, source_path.name)
+    lease.update("start", "worker started")
 
     if source_path.suffix.lower() == ".pdf":
         mineru_started = time.perf_counter()
         stage_dir = _mineru_stage_dir(config.staged_dir, source_id)
         if config.mineru_cache_mode == "skip":
             reporter.update_stage(index, source_path.name, "mineru", "cache bypassed")
+            lease.update("mineru", "cache bypassed")
         elif config.mineru_cache_mode == "refresh":
             reporter.update_stage(index, source_path.name, "mineru", "cache refresh requested")
+            lease.update("mineru", "cache refresh requested")
         elif _mineru_artifacts_complete(stage_dir, source_id):
             reporter.update_stage(index, source_path.name, "mineru", "cache hit")
+            lease.update("mineru", "cache hit")
         else:
             reporter.update_stage(index, source_path.name, "mineru", "cache miss; attempting extraction")
+            lease.update("mineru", "cache miss; attempting extraction")
         mineru_result = _ensure_mineru_artifacts_with_runtime(source_path, source_id, config, runtime=runtime)
         if mineru_result:
             reporter.record_unresolved(index, source_path.name, detail=mineru_result.split(chr(9))[-1])
             local_unresolved_lines.append(mineru_result)
         reporter.update_stage(index, source_path.name, "mineru", f"completed in {_format_elapsed(mineru_started)}")
+        lease.update("mineru", f"completed in {_format_elapsed(mineru_started)}")
 
     extract_started = time.perf_counter()
     reporter.update_stage(index, source_path.name, "extract", "running deterministic and inference stages")
+    lease.update("extract", "running deterministic and inference stages")
     result = extractor.extract(source_path, source_id, runtime=runtime)
     reporter.update_candidates(index, source_path.name, len(result.sample_points))
     reporter.update_stage(index, source_path.name, "extract", f"completed in {_format_elapsed(extract_started)}")
+    lease.update("extract", f"completed in {_format_elapsed(extract_started)}", extra={"candidate_points": len(result.sample_points)})
 
     validation_started = time.perf_counter()
     reporter.update_stage(index, source_path.name, "validate", "normalizing elevations and validating records")
+    lease.update("validate", "normalizing elevations and validating records")
     normalized_points = []
     validation_errors: list[str] = []
     for point in result.sample_points:
@@ -469,6 +560,7 @@ def _process_source_file(
             continue
         normalized_points.append(point)
     reporter.update_stage(index, source_path.name, "validate", f"completed in {_format_elapsed(validation_started)}")
+    lease.update("validate", f"completed in {_format_elapsed(validation_started)}", extra={"accepted_points": len(normalized_points)})
 
     summary_lines = list(result.summary_lines)
     if validation_errors:
@@ -478,8 +570,8 @@ def _process_source_file(
     local_unresolved_lines.extend(result.unresolved_lines)
     if result.unresolved_lines:
         reporter.record_unresolved(index, source_path.name, count=len(result.unresolved_lines), detail="source unresolved lines logged")
-    reporter.update_stage(index, source_path.name, "write", "writing per-source outputs")
-    reporter.complete_file(index, source_path.name, len(normalized_points))
+    reporter.update_stage(index, source_path.name, "publish", "ready for atomic publish")
+    lease.update("publish", "ready for atomic publish")
 
     return FileProcessingResult(
         index=index,

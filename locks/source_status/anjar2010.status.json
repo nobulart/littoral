@@ -1,0 +1,11 @@
+{
+  "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/anjar2010.csv",
+  "detail": "existing per-source outputs found",
+  "source_id": "anjar2010",
+  "source_name": "anjar2010.pdf",
+  "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/anjar2010.pdf",
+  "stage": "existing_outputs",
+  "status": "completed",
+  "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/anjar2010.summary.md",
+  "updated_at": 1776976761.436067
+}

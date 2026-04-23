@@ -1,0 +1,11 @@
+{
+  "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/anderson2025.csv",
+  "detail": "existing per-source outputs found",
+  "source_id": "anderson2025",
+  "source_name": "anderson2025.pdf",
+  "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/anderson2025.pdf",
+  "stage": "existing_outputs",
+  "status": "completed",
+  "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/anderson2025.summary.md",
+  "updated_at": 1776976761.435764
+}

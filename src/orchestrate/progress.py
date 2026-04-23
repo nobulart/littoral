@@ -84,6 +84,43 @@ class PipelineProgressReporter:
             self._states[index] = FileProgressState(index=index, name=name)
             self._render()
 
+    def sync_shared_state(
+        self,
+        index: int,
+        name: str,
+        *,
+        status: str,
+        stage: str,
+        detail: str = "",
+        started_at: float | None = None,
+        finished_at: float | None = None,
+        candidates: int | None = None,
+        accepted: int | None = None,
+        unresolved: int | None = None,
+    ) -> None:
+        normalized_status = {
+            "completed": "done",
+            "failed": "failed",
+        }.get(status, status)
+        with self._lock:
+            state = self._states.setdefault(index, FileProgressState(index=index, name=name))
+            state.status = normalized_status
+            state.stage = stage or normalized_status
+            state.detail = detail
+            if started_at is not None:
+                state.started_at = started_at
+            if finished_at is not None:
+                state.finished_at = finished_at
+            elif normalized_status not in {"running", "queued"}:
+                state.finished_at = time.perf_counter()
+            if candidates is not None:
+                state.candidates = candidates
+            if accepted is not None:
+                state.accepted = accepted
+            if unresolved is not None:
+                state.unresolved = unresolved
+            self._render()
+
     def skip_file(self, index: int, name: str, reason: str) -> None:
         with self._lock:
             state = self._states.setdefault(index, FileProgressState(index=index, name=name))
@@ -256,6 +293,9 @@ class PipelineProgressReporter:
         completed = sum(1 for state in self._states.values() if state.status == "done")
         skipped = sum(1 for state in self._states.values() if state.status == "skipped")
         cancelled = sum(1 for state in self._states.values() if state.status == "cancelled")
+        unsupported = sum(1 for state in self._states.values() if state.status == "unsupported")
+        extracted = sum(state.accepted for state in self._states.values())
+        unresolved = sum(state.unresolved for state in self._states.values())
         elapsed = time.perf_counter() - self.started_at
         return PipelineProgressSnapshot(
             total_files=self.total_files,
@@ -264,9 +304,9 @@ class PipelineProgressReporter:
             completed=completed,
             skipped=skipped,
             cancelled=cancelled,
-            unsupported=self._unsupported,
-            extracted=self._extracted,
-            unresolved=self._unresolved,
+            unsupported=unsupported,
+            extracted=extracted,
+            unresolved=unresolved,
             elapsed_seconds=elapsed,
         )
 
@@ -476,23 +516,29 @@ class PipelineProgressReporter:
             "running": 0,
             "queued": 1,
             "done": 2,
-            "cancelled": 3,
-            "skipped": 4,
-            "unsupported": 5,
+            "failed": 3,
+            "cancelled": 4,
+            "skipped": 5,
+            "unsupported": 6,
         }
         if self._sort_mode == "status":
             return (status_rank.get(state.status, 9), state.index)
         if self._sort_mode == "name":
             return (state.name.lower(), state.index)
         if self._sort_mode == "elapsed":
-            elapsed = 0.0 if state.started_at is None else ((state.finished_at or time.perf_counter()) - state.started_at)
+            if state.started_at is None:
+                elapsed = 0.0
+            elif state.started_at > 1_000_000_000:
+                elapsed = (state.finished_at or time.time()) - state.started_at
+            else:
+                elapsed = (state.finished_at or time.perf_counter()) - state.started_at
             return (-elapsed, state.index)
         if self._sort_mode == "unresolved":
             return (-state.unresolved, status_rank.get(state.status, 9), state.index)
         return (state.index,)
 
     def _cycle_filter(self) -> None:
-        modes = ["all", "running", "queued", "done", "cancelled", "skipped", "unsupported"]
+        modes = ["all", "running", "queued", "done", "failed", "cancelled", "skipped", "unsupported"]
         current = modes.index(self._filter_mode) if self._filter_mode in modes else 0
         self._filter_mode = modes[(current + 1) % len(modes)]
         self._selected_row = 0
@@ -586,7 +632,10 @@ class PipelineProgressReporter:
     def _state_elapsed(self, state: FileProgressState) -> str:
         if state.started_at is None:
             return "0.0s"
-        end = state.finished_at if state.finished_at is not None else time.perf_counter()
+        if state.started_at > 1_000_000_000:
+            end = state.finished_at if state.finished_at is not None else time.time()
+        else:
+            end = state.finished_at if state.finished_at is not None else time.perf_counter()
         return _format_elapsed(end - state.started_at)
 
     def _style_for_mode(self, mode: str) -> int:
@@ -602,6 +651,8 @@ class PipelineProgressReporter:
         if state.status == "running":
             return self._style("warn") if state.cancel_requested else self._style("accent")
         if state.status == "cancelled":
+            return self._style("error")
+        if state.status == "failed":
             return self._style("error")
         if state.status == "skipped":
             return self._style("dim")

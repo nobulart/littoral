@@ -1,0 +1,11 @@
+{
+  "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/castillo2018.csv",
+  "detail": "existing per-source outputs found",
+  "source_id": "castillo2018",
+  "source_name": "castillo2018.pdf",
+  "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/castillo2018.pdf",
+  "stage": "existing_outputs",
+  "status": "completed",
+  "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/castillo2018.summary.md",
+  "updated_at": 1776976800.966559
+}

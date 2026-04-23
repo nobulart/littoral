@@ -22,6 +22,7 @@ DEFAULT_PER_SOURCE_DIR = Path("outputs/per_source")
 DEFAULT_MERGED_DIR = Path("outputs/merged")
 DEFAULT_UNRESOLVED_LOG = Path("logs/UnresolvedRecords.log")
 DEFAULT_REPORT_PATH = Path("logs/processing_report.md")
+DEFAULT_LOCK_DIR = Path("locks")
 DEFAULT_ONTOLOGY_PATH = Path("config/categories.json")
 DEFAULT_SCHEMA_PATH = Path("config/schema.samplepoint.json")
 DEFAULT_RASTER_PATH = Path("data/elevation/SRTM15+V2.tiff")
@@ -58,6 +59,7 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser.add_argument("--merged-dir", type=Path, default=DEFAULT_MERGED_DIR, help="Directory for merged CSV/GeoJSON outputs.")
     parser.add_argument("--unresolved-log", type=Path, default=DEFAULT_UNRESOLVED_LOG, help="Path for unresolved/rejected record log.")
     parser.add_argument("--report-path", type=Path, default=DEFAULT_REPORT_PATH, help="Path for the processing report.")
+    parser.add_argument("--lock-dir", type=Path, default=DEFAULT_LOCK_DIR, help="Directory for non-hidden per-source and merge lock/status files.")
     parser.add_argument("--ontology-path", type=Path, default=DEFAULT_ONTOLOGY_PATH, help="Path to ontology categories JSON.")
     parser.add_argument("--schema-path", type=Path, default=DEFAULT_SCHEMA_PATH, help="Path to SamplePoint schema JSON.")
     parser.add_argument("--raster-path", type=Path, default=DEFAULT_RASTER_PATH, help="Path to elevation raster.")
@@ -161,6 +163,7 @@ def _build_config(args: argparse.Namespace, workspace_root: Path) -> PipelineCon
         merged_dir=_resolve_path(args.merged_dir, workspace_root),
         unresolved_log=_resolve_path(args.unresolved_log, workspace_root),
         report_path=_resolve_path(args.report_path, workspace_root),
+        lock_dir=_resolve_path(args.lock_dir, workspace_root),
         ontology_path=_resolve_path(args.ontology_path, workspace_root),
         schema_path=_resolve_path(args.schema_path, workspace_root),
         raster_path=_resolve_path(args.raster_path, workspace_root),
@@ -238,6 +241,7 @@ def _create_missing_default_dirs(config: PipelineConfig) -> bool:
         config.merged_dir,
         config.unresolved_log.parent,
         config.report_path.parent,
+        config.lock_dir,
     ]
     missing = [directory for directory in directories if not directory.exists()]
     if not missing:
@@ -261,6 +265,7 @@ def _uses_default_layout(args: argparse.Namespace) -> bool:
         and args.merged_dir == DEFAULT_MERGED_DIR
         and args.unresolved_log == DEFAULT_UNRESOLVED_LOG
         and args.report_path == DEFAULT_REPORT_PATH
+        and args.lock_dir == DEFAULT_LOCK_DIR
     )
 
 

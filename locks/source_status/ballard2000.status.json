@@ -1,0 +1,11 @@
+{
+  "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/ballard2000.csv",
+  "detail": "existing per-source outputs found",
+  "source_id": "ballard2000",
+  "source_name": "ballard2000.pdf",
+  "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/ballard2000.pdf",
+  "stage": "existing_outputs",
+  "status": "completed",
+  "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/ballard2000.summary.md",
+  "updated_at": 1776976761.4371269
+}

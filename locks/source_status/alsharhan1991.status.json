@@ -1,0 +1,11 @@
+{
+  "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/alsharhan1991.csv",
+  "detail": "existing per-source outputs found",
+  "source_id": "alsharhan1991",
+  "source_name": "alsharhan1991.pdf",
+  "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/alsharhan1991.pdf",
+  "stage": "existing_outputs",
+  "status": "completed",
+  "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/alsharhan1991.summary.md",
+  "updated_at": 1776976761.435497
+}

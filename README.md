@@ -286,6 +286,13 @@ Dashboard controls:
 
 Note: queued items can be cancelled immediately. Running items cannot be force-killed safely from Python worker threads, so `x` on a running row records a cancel request for operator awareness rather than interrupting the task.
 
+Shared filesystem coordination:
+
+- Non-hidden lock and status files are written under `locks/` by default so LAN mirroring services can detect them immediately.
+- `locks/source_active/*.lease.json` holds the active per-source processing lease with host, pid, run id, heartbeat, stage, and detail.
+- `locks/source_status/*.status.json` records the latest known state for each source, including `queued`, `running`, `completed`, `failed`, `skipped`, and `unsupported`.
+- `locks/merge_active/*.lease.json` and `locks/merge_status/*.status.json` coordinate corpus-level merged output publishing so only one host rebuilds shared master outputs at a time.
+
 Model choice affects reproducibility. Record the model name, Ollama version, and `config/extraction.json` used for any dataset release.
 
 ## Running the Pipeline

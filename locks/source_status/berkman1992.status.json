@@ -1,0 +1,11 @@
+{
+  "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/berkman1992.csv",
+  "detail": "existing per-source outputs found",
+  "source_id": "berkman1992",
+  "source_name": "berkman1992.pdf",
+  "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/berkman1992.pdf",
+  "stage": "existing_outputs",
+  "status": "completed",
+  "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/berkman1992.summary.md",
+  "updated_at": 1776976761.442841
+}

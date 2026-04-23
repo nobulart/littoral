@@ -3,7 +3,9 @@ from __future__ import annotations
 import csv
 import json
 from dataclasses import fields
+import os
 from pathlib import Path
+import tempfile
 
 from src.common.io import CSV_COLUMNS, sample_point_csv_row, write_geojson
 from src.common.models import AgeModel, DerivedObservations, ReportedObservations, SamplePoint, SourceLocator
@@ -67,11 +69,21 @@ def build_master_outputs(per_source_dir: Path, merged_dir: Path, mode: str = "ap
 def _write_master_csv(csv_path: Path, points: list[SamplePoint]) -> None:
     csv_path.parent.mkdir(parents=True, exist_ok=True)
     fieldnames = CSV_COLUMNS
-    with csv_path.open("w", encoding="utf-8", newline="") as handle:
+    with tempfile.NamedTemporaryFile(
+        "w",
+        encoding="utf-8",
+        newline="",
+        dir=csv_path.parent,
+        prefix=f"{csv_path.name}.tmp-",
+        suffix=".part",
+        delete=False,
+    ) as handle:
         writer = csv.DictWriter(handle, fieldnames=fieldnames)
         writer.writeheader()
         for point in points:
             writer.writerow(sample_point_csv_row(point))
+        temp_path = Path(handle.name)
+    os.replace(temp_path, csv_path)
 
 
 def _row_to_sample_point(row: dict[str, str]) -> SamplePoint:

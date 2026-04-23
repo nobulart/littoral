@@ -293,6 +293,10 @@ Shared filesystem coordination:
 - `locks/source_status/*.status.json` records the latest known state for each source, including `queued`, `running`, `completed`, `failed`, `skipped`, and `unsupported`.
 - `locks/merge_active/*.lease.json` and `locks/merge_status/*.status.json` coordinate corpus-level merged output publishing so only one host rebuilds shared master outputs at a time.
 
+Interface screenshot:
+
+![LITTORAL interface](LITTORAL.png)
+
 Model choice affects reproducibility. Record the model name, Ollama version, and `config/extraction.json` used for any dataset release.
 
 ## Running the Pipeline

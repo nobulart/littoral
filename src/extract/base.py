@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from src.common.models import SamplePoint
+from src.orchestrate.runtime import PipelineRuntime
 
 
 @dataclass(slots=True)
@@ -17,5 +18,5 @@ class ExtractionResult:
 class BaseExtractor:
     supported_suffixes: tuple[str, ...] = ()
 
-    def extract(self, source_path: Path, source_id: str) -> ExtractionResult:
+    def extract(self, source_path: Path, source_id: str, runtime: PipelineRuntime | None = None) -> ExtractionResult:
         raise NotImplementedError

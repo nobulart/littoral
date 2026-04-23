@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from collections import deque
+from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
+from dataclasses import dataclass, field
 from pathlib import Path
 import shutil
 import subprocess
@@ -16,6 +18,8 @@ from src.extract.txt_extractor import TextExtractor
 from src.merge.build import build_master_outputs
 from src.normalize.elevation import apply_elevation_normalization
 from src.ontology.catalog import Ontology, load_ontology
+from src.orchestrate.progress import PipelineProgressReporter
+from src.orchestrate.runtime import PipelineRuntime, auto_document_workers, auto_gpu_slots, hardware_profile_summary
 from src.validate.samplepoint import load_schema, score_confidence, validate_sample_point
 
 
@@ -37,8 +41,22 @@ class PipelineConfig:
     mineru_cache_mode: str = "reuse"
     source_ids: tuple[str, ...] | None = None
     limit: int | None = None
+    document_workers: int | None = None
+    gpu_slots: int | None = None
+    progress_ui: str = "auto"
     progress_callback: Callable[[str], None] | None = None
     verbosity: int = 1
+
+
+@dataclass(slots=True)
+class FileProcessingResult:
+    index: int
+    source_path: Path
+    source_id: str
+    summary_lines: list[str]
+    normalized_points: list = field(default_factory=list)
+    unresolved_lines: list[str] = field(default_factory=list)
+    validation_errors: list[str] = field(default_factory=list)
 
 
 def default_config(workspace_root: Path) -> PipelineConfig:
@@ -58,130 +76,141 @@ def default_config(workspace_root: Path) -> PipelineConfig:
 
 def run_pipeline(config: PipelineConfig) -> None:
     pipeline_started = time.perf_counter()
-    _emit_progress(config, "Loading ontology and schema")
-    ontology = load_ontology(config.ontology_path)
-    schema = load_schema(config.schema_path)
-    extractors = _extractor_registry()
-    processed_files: list[str] = []
-    skipped_files: list[str] = []
-    extracted_records = 0
-    unresolved_count = 0
+    reporter = PipelineProgressReporter(total_files=len(_selected_input_files(config)), mode=config.progress_ui, enabled=config.verbosity > 0)
+    def emit(message: str, level: int = 1) -> None:
+        if config.verbosity >= level and config.progress_callback is None:
+            reporter.emit_global(message)
+        _emit_progress(config, message, level=level)
 
-    config.per_source_dir.mkdir(parents=True, exist_ok=True)
-    config.merged_dir.mkdir(parents=True, exist_ok=True)
-    config.unresolved_log.parent.mkdir(parents=True, exist_ok=True)
-    if config.clear_outputs:
-        _emit_progress(config, "Clearing previous outputs")
-        _clear_directory(config.per_source_dir)
-        _clear_directory(config.merged_dir)
-        config.unresolved_log.write_text("", encoding="utf-8")
-    elif not config.unresolved_log.exists():
-        config.unresolved_log.write_text("", encoding="utf-8")
+    try:
+        emit("Loading ontology and schema")
+        ontology = load_ontology(config.ontology_path)
+        schema = load_schema(config.schema_path)
+        runtime = PipelineRuntime(
+            ontology=ontology,
+            gpu_slots=config.gpu_slots or auto_gpu_slots(),
+        )
+        extractors = _extractor_registry()
+        processed_files: list[str] = []
+        skipped_files: list[str] = []
+        extracted_records = 0
+        unresolved_count = 0
 
-    source_paths = _selected_input_files(config)
-    _emit_progress(config, f"Processing {len(source_paths)} input file(s)")
-    _emit_progress(config, f"Inputs: {config.incoming_dir}", level=2)
-    _emit_progress(config, f"MinerU staged cache: {config.staged_dir}", level=2)
-    _emit_progress(config, f"Per-source outputs: {config.per_source_dir}", level=2)
-    for index, source_path in enumerate(source_paths, start=1):
-        file_started = time.perf_counter()
-        source_id = _source_id_for_path(source_path)
-        _emit_progress(config, f"[{index}/{len(source_paths)}] {source_path.name}")
-        summary_path, csv_path = _per_source_output_paths(config.per_source_dir, source_id)
-        if config.per_source_mode == "skip" and _per_source_outputs_exist(summary_path, csv_path):
-            _emit_progress(config, "  existing per-source outputs found; skipping")
-            skipped_files.append(source_path.name)
-            continue
+        config.per_source_dir.mkdir(parents=True, exist_ok=True)
+        config.merged_dir.mkdir(parents=True, exist_ok=True)
+        config.unresolved_log.parent.mkdir(parents=True, exist_ok=True)
+        if config.clear_outputs:
+            emit("Clearing previous outputs")
+            _clear_directory(config.per_source_dir)
+            _clear_directory(config.merged_dir)
+            config.unresolved_log.write_text("", encoding="utf-8")
+        elif not config.unresolved_log.exists():
+            config.unresolved_log.write_text("", encoding="utf-8")
 
-        extractor = extractors.get(source_path.suffix.lower())
-        if extractor is None:
-            _emit_progress(config, f"  unsupported file type: {source_path.suffix}")
-            append_log(config.unresolved_log, f"{source_id}\t{source_path.name}\tUnsupported file type")
-            unresolved_count += 1
-            continue
+        source_paths = _selected_input_files(config)
+        emit(f"Processing {len(source_paths)} input file(s)")
+        emit(f"Inputs: {config.incoming_dir}", level=2)
+        emit(f"MinerU staged cache: {config.staged_dir}", level=2)
+        emit(f"Per-source outputs: {config.per_source_dir}", level=2)
+        document_workers = config.document_workers or auto_document_workers()
+        emit(f"Concurrency profile: {hardware_profile_summary(document_workers, runtime.gpu_slots)}", level=2)
+        work_items: list[tuple[int, Path, str, BaseExtractor]] = []
+        for index, source_path in enumerate(source_paths, start=1):
+            source_id = _source_id_for_path(source_path)
+            reporter.queue_file(index, source_path.name)
+            summary_path, csv_path = _per_source_output_paths(config.per_source_dir, source_id)
+            if config.per_source_mode == "skip" and _per_source_outputs_exist(summary_path, csv_path):
+                reporter.skip_file(index, source_path.name, "existing per-source outputs found")
+                skipped_files.append(source_path.name)
+                continue
 
-        if source_path.suffix.lower() == ".pdf":
-            mineru_started = time.perf_counter()
-            stage_dir = _mineru_stage_dir(config.staged_dir, source_id)
-            if config.mineru_cache_mode == "skip":
-                _emit_progress(config, "  MinerU cache bypassed")
-            elif config.mineru_cache_mode == "refresh":
-                _emit_progress(config, "  MinerU cache refresh requested")
-            elif _mineru_artifacts_complete(stage_dir, source_id):
-                _emit_progress(config, "  MinerU cache hit")
-            else:
-                _emit_progress(config, "  MinerU cache missing or incomplete; attempting extraction")
-            mineru_result = _ensure_mineru_artifacts(source_path, source_id, config)
-            if mineru_result:
-                _emit_progress(config, f"  {mineru_result.split(chr(9))[-1]}")
-                append_log(config.unresolved_log, mineru_result)
-                unresolved_count += 1
-            _emit_progress(config, f"  MinerU stage completed in {_format_elapsed(mineru_started)}", level=2)
-
-        extract_started = time.perf_counter()
-        result = extractor.extract(source_path, source_id)
-        _emit_progress(config, f"  extracted {len(result.sample_points)} candidate point(s)")
-        _emit_progress(config, f"  extraction/inference completed in {_format_elapsed(extract_started)}", level=2)
-        validation_started = time.perf_counter()
-        normalized_points = []
-        validation_errors: list[str] = []
-        for point in result.sample_points:
-            point = apply_elevation_normalization(point, config.raster_path)
-            point.confidence_score = score_confidence(point)
-            point_errors = validate_sample_point(point, ontology, schema)
-            if point_errors:
-                validation_errors.extend(point_errors)
-                _emit_progress(config, f"  rejected {point.sample_id}: {'; '.join(point_errors)}")
-                append_log(
-                    config.unresolved_log,
-                    f"{source_id}\t{source_path.name}\tRejected candidate SamplePoint `{point.sample_id}`: {'; '.join(point_errors)}"
-                )
+            extractor = extractors.get(source_path.suffix.lower())
+            if extractor is None:
+                reporter.mark_unsupported(index, source_path.name, f"unsupported file type: {source_path.suffix}")
+                append_log(config.unresolved_log, f"{source_id}\t{source_path.name}\tUnsupported file type")
                 unresolved_count += 1
                 continue
-            _emit_progress(
-                config,
-                f"  accepted candidate {point.sample_id} ({point.site_name}; {point.latitude}, {point.longitude})",
-                level=3,
-            )
-            normalized_points.append(point)
-        _emit_progress(config, f"  validation/normalization completed in {_format_elapsed(validation_started)}", level=2)
+            work_items.append((index, source_path, source_id, extractor))
 
-        summary_lines = list(result.summary_lines)
-        if validation_errors:
-            summary_lines.extend(["", "## Validation errors"])
-            summary_lines.extend([f"- {error}" for error in validation_errors])
+        if work_items:
+            with ThreadPoolExecutor(max_workers=max(1, min(document_workers, len(work_items)))) as executor:
+                pending = deque(work_items)
+                active_futures: set = set()
+                while pending or active_futures:
+                    reporter.tick()
+                    if reporter.abort_requested():
+                        pending.clear()
+                    pending = deque(
+                        item for item in pending if not reporter.is_cancelled_before_dispatch(item[0])
+                    )
+                    while (
+                        pending
+                        and len(active_futures) < max(1, min(document_workers, len(work_items)))
+                        and not reporter.pause_requested()
+                        and not reporter.stop_requested()
+                    ):
+                        next_index = reporter.pick_pending_index([item[0] for item in pending])
+                        if next_index is None:
+                            pending.clear()
+                            break
+                        selected_position = next(i for i, item in enumerate(pending) if item[0] == next_index)
+                        index, source_path, source_id, extractor = pending[selected_position]
+                        del pending[selected_position]
+                        reporter.note_dispatch_started(index)
+                        future = executor.submit(
+                            _process_source_file,
+                            index,
+                            source_path,
+                            source_id,
+                            extractor,
+                            config,
+                            runtime,
+                            ontology,
+                            schema,
+                            reporter,
+                        )
+                        active_futures.add(future)
+                    if not active_futures:
+                        if pending and reporter.pause_requested():
+                            time.sleep(0.1)
+                            continue
+                        if pending and reporter.stop_requested():
+                            pending.clear()
+                            continue
+                        break
+                    done, active_futures = wait(active_futures, timeout=0.2, return_when=FIRST_COMPLETED)
+                    for future in done:
+                        result = future.result()
+                        summary_path, csv_path = _per_source_output_paths(config.per_source_dir, result.source_id)
+                        write_summary(summary_path, result.summary_lines)
+                        write_csv(csv_path, result.normalized_points)
+                        for line in result.unresolved_lines:
+                            append_log(config.unresolved_log, line)
+                            unresolved_count += 1
+                        processed_files.append(result.source_path.name)
+                        extracted_records += len(result.normalized_points)
 
-        write_summary(summary_path, summary_lines)
-        write_csv(csv_path, normalized_points)
-
-        for line in result.unresolved_lines:
-            append_log(config.unresolved_log, line)
-            unresolved_count += 1
-
-        processed_files.append(source_path.name)
-        extracted_records += len(normalized_points)
-        _emit_progress(config, f"  accepted {len(normalized_points)} point(s)")
-        _emit_progress(config, f"  file completed in {_format_elapsed(file_started)}", level=2)
-
-    merge_started = time.perf_counter()
-    _emit_progress(config, f"Building merged outputs ({config.merged_mode})")
-    csv_path, geojson_path, merged_count = build_master_outputs(config.per_source_dir, config.merged_dir, mode=config.merged_mode)
-    _emit_progress(config, f"Merge completed in {_format_elapsed(merge_started)}", level=2)
-    _write_processing_report(
-        config.report_path,
-        ontology,
-        processed_files,
-        skipped_files,
-        extracted_records,
-        merged_count,
-        unresolved_count,
-        csv_path,
-        geojson_path,
-        config.staged_dir,
-        config.workspace_root,
-    )
-    _emit_progress(config, f"Done: {extracted_records} extracted, {len(skipped_files)} skipped, {merged_count} merged, {unresolved_count} unresolved")
-    _emit_progress(config, f"Pipeline completed in {_format_elapsed(pipeline_started)}", level=2)
+        merge_started = time.perf_counter()
+        emit(f"Building merged outputs ({config.merged_mode})")
+        csv_path, geojson_path, merged_count = build_master_outputs(config.per_source_dir, config.merged_dir, mode=config.merged_mode)
+        emit(f"Merge completed in {_format_elapsed(merge_started)}", level=2)
+        _write_processing_report(
+            config.report_path,
+            ontology,
+            processed_files,
+            skipped_files,
+            extracted_records,
+            merged_count,
+            unresolved_count,
+            csv_path,
+            geojson_path,
+            config.staged_dir,
+            config.workspace_root,
+        )
+        emit(f"Done: {extracted_records} extracted, {len(skipped_files)} skipped, {merged_count} merged, {unresolved_count} unresolved")
+        emit(f"Pipeline completed in {_format_elapsed(pipeline_started)}", level=2)
+    finally:
+        reporter.close()
 
 
 def _extractor_registry() -> dict[str, BaseExtractor]:
@@ -194,7 +223,16 @@ def _extractor_registry() -> dict[str, BaseExtractor]:
 
 
 def _ensure_mineru_artifacts(source_path: Path, source_id: str, config: PipelineConfig) -> str:
-    settings = load_extraction_settings(source_path)
+    return _ensure_mineru_artifacts_with_runtime(source_path, source_id, config, runtime=None)
+
+
+def _ensure_mineru_artifacts_with_runtime(
+    source_path: Path,
+    source_id: str,
+    config: PipelineConfig,
+    runtime: PipelineRuntime | None,
+) -> str:
+    settings = runtime.settings_for(source_path) if runtime is not None else load_extraction_settings(source_path)
     mineru_settings = settings.get("mineru", {})
     if not mineru_settings.get("enabled", True):
         return ""
@@ -225,13 +263,15 @@ def _ensure_mineru_artifacts(source_path: Path, source_id: str, config: Pipeline
             command.extend([flag, str(value)])
 
     try:
-        subprocess.run(
-            command,
-            check=True,
-            capture_output=True,
-            text=True,
-            timeout=int(mineru_settings.get("timeout_seconds", 3600)),
-        )
+        context = runtime.gpu_task() if runtime is not None else _null_gpu_task()
+        with context:
+            subprocess.run(
+                command,
+                check=True,
+                capture_output=True,
+                text=True,
+                timeout=int(mineru_settings.get("timeout_seconds", 3600)),
+            )
     except FileNotFoundError:
         return f"{source_id}\t{source_path.name}\tMinerU command not found; falling back to legacy PDF extraction"
     except subprocess.TimeoutExpired:
@@ -372,3 +412,87 @@ def _display_path(path: Path, workspace_root: Path) -> str:
         return str(path.resolve().relative_to(workspace_root.resolve()))
     except ValueError:
         return str(path)
+
+
+def _process_source_file(
+    index: int,
+    source_path: Path,
+    source_id: str,
+    extractor: BaseExtractor,
+    config: PipelineConfig,
+    runtime: PipelineRuntime,
+    ontology: Ontology,
+    schema: dict,
+    reporter: PipelineProgressReporter,
+) -> FileProcessingResult:
+    file_started = time.perf_counter()
+    local_unresolved_lines: list[str] = []
+    reporter.start_file(index, source_path.name)
+
+    if source_path.suffix.lower() == ".pdf":
+        mineru_started = time.perf_counter()
+        stage_dir = _mineru_stage_dir(config.staged_dir, source_id)
+        if config.mineru_cache_mode == "skip":
+            reporter.update_stage(index, source_path.name, "mineru", "cache bypassed")
+        elif config.mineru_cache_mode == "refresh":
+            reporter.update_stage(index, source_path.name, "mineru", "cache refresh requested")
+        elif _mineru_artifacts_complete(stage_dir, source_id):
+            reporter.update_stage(index, source_path.name, "mineru", "cache hit")
+        else:
+            reporter.update_stage(index, source_path.name, "mineru", "cache miss; attempting extraction")
+        mineru_result = _ensure_mineru_artifacts_with_runtime(source_path, source_id, config, runtime=runtime)
+        if mineru_result:
+            reporter.record_unresolved(index, source_path.name, detail=mineru_result.split(chr(9))[-1])
+            local_unresolved_lines.append(mineru_result)
+        reporter.update_stage(index, source_path.name, "mineru", f"completed in {_format_elapsed(mineru_started)}")
+
+    extract_started = time.perf_counter()
+    reporter.update_stage(index, source_path.name, "extract", "running deterministic and inference stages")
+    result = extractor.extract(source_path, source_id, runtime=runtime)
+    reporter.update_candidates(index, source_path.name, len(result.sample_points))
+    reporter.update_stage(index, source_path.name, "extract", f"completed in {_format_elapsed(extract_started)}")
+
+    validation_started = time.perf_counter()
+    reporter.update_stage(index, source_path.name, "validate", "normalizing elevations and validating records")
+    normalized_points = []
+    validation_errors: list[str] = []
+    for point in result.sample_points:
+        point = apply_elevation_normalization(point, config.raster_path)
+        point.confidence_score = score_confidence(point)
+        point_errors = validate_sample_point(point, ontology, schema)
+        if point_errors:
+            validation_errors.extend(point_errors)
+            reporter.record_unresolved(index, source_path.name, detail=f"rejected {point.sample_id}: {'; '.join(point_errors)}")
+            local_unresolved_lines.append(
+                f"{source_id}\t{source_path.name}\tRejected candidate SamplePoint `{point.sample_id}`: {'; '.join(point_errors)}"
+            )
+            continue
+        normalized_points.append(point)
+    reporter.update_stage(index, source_path.name, "validate", f"completed in {_format_elapsed(validation_started)}")
+
+    summary_lines = list(result.summary_lines)
+    if validation_errors:
+        summary_lines.extend(["", "## Validation errors"])
+        summary_lines.extend([f"- {error}" for error in validation_errors])
+
+    local_unresolved_lines.extend(result.unresolved_lines)
+    if result.unresolved_lines:
+        reporter.record_unresolved(index, source_path.name, count=len(result.unresolved_lines), detail="source unresolved lines logged")
+    reporter.update_stage(index, source_path.name, "write", "writing per-source outputs")
+    reporter.complete_file(index, source_path.name, len(normalized_points))
+
+    return FileProcessingResult(
+        index=index,
+        source_path=source_path,
+        source_id=source_id,
+        summary_lines=summary_lines,
+        normalized_points=normalized_points,
+        unresolved_lines=local_unresolved_lines,
+        validation_errors=validation_errors,
+    )
+
+
+def _null_gpu_task():
+    from contextlib import nullcontext
+
+    return nullcontext()

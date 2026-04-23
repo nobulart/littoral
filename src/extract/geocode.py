@@ -4,12 +4,14 @@ import json
 import re
 import subprocess
 import time
+import threading
 import urllib.parse
 import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
 
 from src.extract.settings import load_extraction_settings
+from src.orchestrate.runtime import PipelineRuntime, maybe_gpu_task
 
 
 @dataclass(slots=True)
@@ -23,9 +25,17 @@ class GeocodeResult:
 
 _NOMINATIM_CACHE: dict[str, GeocodeResult | None] = {}
 _LAST_NOMINATIM_REQUEST_AT = 0.0
+_NOMINATIM_LOCK = threading.Lock()
 
 
-def geocode_place_query(source_path: Path, query: str, context_title: str, context_text: str, normalize_with_ollama: bool = True) -> GeocodeResult | None:
+def geocode_place_query(
+    source_path: Path,
+    query: str,
+    context_title: str,
+    context_text: str,
+    normalize_with_ollama: bool = True,
+    runtime: PipelineRuntime | None = None,
+) -> GeocodeResult | None:
     settings = load_extraction_settings(source_path)
     geocoding = settings["geocoding"]
     if not geocoding.get("enabled", True):
@@ -33,13 +43,19 @@ def geocode_place_query(source_path: Path, query: str, context_title: str, conte
     if _is_non_place_query(query):
         return None
 
-    normalized_query = _normalize_query_with_ollama(source_path, query, context_title, context_text) if normalize_with_ollama else None
+    normalized_query = (
+        _normalize_query_with_ollama(source_path, query, context_title, context_text, runtime=runtime)
+        if normalize_with_ollama
+        else None
+    )
     normalized_query = normalized_query or query
     if _is_non_place_query(normalized_query):
         return None
     cache_key = normalized_query.casefold()
-    if not normalize_with_ollama and cache_key in _NOMINATIM_CACHE:
-        return _NOMINATIM_CACHE[cache_key]
+    if not normalize_with_ollama:
+        with _NOMINATIM_LOCK:
+            if cache_key in _NOMINATIM_CACHE:
+                return _NOMINATIM_CACHE[cache_key]
     params = urllib.parse.urlencode(
         {
             "format": "jsonv2",
@@ -51,15 +67,17 @@ def geocode_place_query(source_path: Path, query: str, context_title: str, conte
     url = f"{geocoding.get('url')}?{params}"
     request = urllib.request.Request(url, headers={"User-Agent": str(geocoding.get("user_agent", "LITTORAL/0.1"))})
     try:
-        _respect_geocode_rate_limit(float(geocoding.get("min_delay_seconds", 1.0)))
-        with urllib.request.urlopen(request, timeout=float(geocoding.get("timeout_seconds", 20))) as response:
-            payload = json.loads(response.read().decode("utf-8"))
+        with _NOMINATIM_LOCK:
+            _respect_geocode_rate_limit(float(geocoding.get("min_delay_seconds", 1.0)))
+            with urllib.request.urlopen(request, timeout=float(geocoding.get("timeout_seconds", 20))) as response:
+                payload = json.loads(response.read().decode("utf-8"))
     except Exception:
         return None
 
     if not payload:
         if not normalize_with_ollama:
-            _NOMINATIM_CACHE[cache_key] = None
+            with _NOMINATIM_LOCK:
+                _NOMINATIM_CACHE[cache_key] = None
         return None
 
     best = _choose_best_geocode_result(normalized_query, payload, context_title, context_text)
@@ -76,17 +94,31 @@ def geocode_place_query(source_path: Path, query: str, context_title: str, conte
         uncertainty_m=uncertainty_m,
     )
     if not normalize_with_ollama:
-        _NOMINATIM_CACHE[cache_key] = result
+        with _NOMINATIM_LOCK:
+            _NOMINATIM_CACHE[cache_key] = result
     return result
 
 
-def geocode_contextual_location(source_path: Path, queries: list[str], context_title: str, context_text: str) -> GeocodeResult | None:
+def geocode_contextual_location(
+    source_path: Path,
+    queries: list[str],
+    context_title: str,
+    context_text: str,
+    runtime: PipelineRuntime | None = None,
+) -> GeocodeResult | None:
     """Try increasingly broad place queries from explicit source context."""
     settings = load_extraction_settings(source_path)
     geocoding = settings["geocoding"]
     max_queries = int(geocoding.get("max_contextual_queries", 8))
     for query in _contextual_query_variants(queries, context_title, context_text)[:max_queries]:
-        result = geocode_place_query(source_path, query, context_title, context_text, normalize_with_ollama=False)
+        result = geocode_place_query(
+            source_path,
+            query,
+            context_title,
+            context_text,
+            normalize_with_ollama=False,
+            runtime=runtime,
+        )
         if result is not None:
             return result
     return None
@@ -302,7 +334,13 @@ def re_split_query(query: str) -> list[str]:
     return [token for token in query.replace(",", " ").split() if token]
 
 
-def _normalize_query_with_ollama(source_path: Path, query: str, title: str, text: str) -> str | None:
+def _normalize_query_with_ollama(
+    source_path: Path,
+    query: str,
+    title: str,
+    text: str,
+    runtime: PipelineRuntime | None = None,
+) -> str | None:
     settings = load_extraction_settings(source_path)
     ollama = settings["ollama"]
     if not ollama.get("enabled", False) or not ollama.get("place_normalization_enabled", False):
@@ -316,14 +354,15 @@ def _normalize_query_with_ollama(source_path: Path, query: str, title: str, text
         f"Context: {' '.join(text.split())[:1200]}\n"
     )
     try:
-        result = subprocess.run(
-            ["ollama", "run", model],
-            input=prompt,
-            check=True,
-            capture_output=True,
-            text=True,
-            timeout=int(ollama.get("timeout_seconds", 45)),
-        )
+        with maybe_gpu_task(runtime):
+            result = subprocess.run(
+                ["ollama", "run", model],
+                input=prompt,
+                check=True,
+                capture_output=True,
+                text=True,
+                timeout=int(ollama.get("timeout_seconds", 45)),
+            )
     except Exception:
         return None
 

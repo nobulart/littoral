@@ -10,20 +10,22 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from src.extract.settings import load_extraction_settings
+from src.orchestrate.runtime import PipelineRuntime, maybe_gpu_task
 
 if TYPE_CHECKING:
     from src.extract.document_loader import DocumentPayload
 
 
 class OllamaClient:
-    def __init__(self, source_path: Path) -> None:
-        settings = load_extraction_settings(source_path)
+    def __init__(self, source_path: Path, runtime: PipelineRuntime | None = None) -> None:
+        settings = runtime.settings_for(source_path) if runtime is not None else load_extraction_settings(source_path)
         self.settings = settings["ollama"]
         self.enabled = bool(self.settings.get("enabled", False))
         self.model = str(self.settings.get("model", "glm-4.7-flash:latest"))
         self.timeout_seconds = int(self.settings.get("timeout_seconds", 45))
         self.max_input_chars = int(self.settings.get("max_input_chars", 12000))
         self.api_url = str(self.settings.get("api_url", "http://localhost:11434")).rstrip("/")
+        self.runtime = runtime
 
     def can_run(self) -> bool:
         if not self.enabled or not self.settings.get("document_interpretation_enabled", False):
@@ -31,7 +33,9 @@ class OllamaClient:
         return self.can_run_model(self.model)
 
     def can_run_model(self, model: str) -> bool:
-        api_models = self._list_models_from_api()
+        if self.runtime is not None:
+            return self.runtime.can_run_ollama_model(self.api_url, model, self._resolve_available_models)
+        api_models = self._resolve_available_models()
         if api_models is not None:
             return model in api_models
         try:
@@ -122,8 +126,9 @@ class OllamaClient:
             method="POST",
         )
         try:
-            with urllib.request.urlopen(request, timeout=self.timeout_seconds) as response:
-                payload = json.loads(response.read().decode("utf-8"))
+            with maybe_gpu_task(self.runtime):
+                with urllib.request.urlopen(request, timeout=self.timeout_seconds) as response:
+                    payload = json.loads(response.read().decode("utf-8"))
         except (OSError, urllib.error.URLError, json.JSONDecodeError):
             return None
         output = payload.get("response")
@@ -131,14 +136,15 @@ class OllamaClient:
 
     def _generate_with_cli(self, prompt: str) -> str | None:
         try:
-            result = subprocess.run(
-                ["ollama", "run", self.model],
-                input=prompt,
-                check=True,
-                capture_output=True,
-                text=True,
-                timeout=self.timeout_seconds,
-            )
+            with maybe_gpu_task(self.runtime):
+                result = subprocess.run(
+                    ["ollama", "run", self.model],
+                    input=prompt,
+                    check=True,
+                    capture_output=True,
+                    text=True,
+                    timeout=self.timeout_seconds,
+                )
         except (subprocess.CalledProcessError, subprocess.TimeoutExpired, FileNotFoundError):
             return None
         return result.stdout
@@ -151,13 +157,14 @@ class OllamaClient:
             return api_text
         task_prefix = _glm_ocr_task_prefix(prompt)
         try:
-            result = subprocess.run(
-                ["ollama", "run", model, f"{task_prefix}: {image_path}"],
-                check=True,
-                capture_output=True,
-                text=True,
-                timeout=max(self.timeout_seconds, 45),
-            )
+            with maybe_gpu_task(self.runtime):
+                result = subprocess.run(
+                    ["ollama", "run", model, f"{task_prefix}: {image_path}"],
+                    check=True,
+                    capture_output=True,
+                    text=True,
+                    timeout=max(self.timeout_seconds, 45),
+                )
         except (subprocess.CalledProcessError, subprocess.TimeoutExpired, FileNotFoundError):
             return None
         text = _strip_ansi_sequences(result.stdout)
@@ -178,12 +185,23 @@ class OllamaClient:
             method="POST",
         )
         try:
-            with urllib.request.urlopen(request, timeout=max(self.timeout_seconds, 45)) as response:
-                payload = json.loads(response.read().decode("utf-8"))
+            with maybe_gpu_task(self.runtime):
+                with urllib.request.urlopen(request, timeout=max(self.timeout_seconds, 45)) as response:
+                    payload = json.loads(response.read().decode("utf-8"))
         except (OSError, urllib.error.URLError, json.JSONDecodeError):
             return None
         output = payload.get("response")
         return output.strip() if isinstance(output, str) and output.strip() else None
+
+    def _resolve_available_models(self) -> set[str] | None:
+        api_models = self._list_models_from_api()
+        if api_models is not None:
+            return api_models
+        try:
+            result = subprocess.run(["ollama", "list"], check=True, capture_output=True, text=True, timeout=10)
+        except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired):
+            return None
+        return {line.split()[0] for line in result.stdout.splitlines()[1:] if line.strip()}
 
     def _build_prompt(self, payload: DocumentPayload, source_name: str, ontology_categories: list[str]) -> str:
         text = payload.text[: self.max_input_chars]

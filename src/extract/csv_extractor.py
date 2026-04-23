@@ -9,12 +9,13 @@ from src.common.models import AgeModel, DerivedObservations, ReportedObservation
 from src.extract.base import BaseExtractor, ExtractionResult
 from src.extract.document_loader import load_document_payload
 from src.extract.interpreter import interpret_document
+from src.orchestrate.runtime import PipelineRuntime
 
 
 class CsvExtractor(BaseExtractor):
     supported_suffixes = (".csv",)
 
-    def extract(self, source_path: Path, source_id: str) -> ExtractionResult:
+    def extract(self, source_path: Path, source_id: str, runtime: PipelineRuntime | None = None) -> ExtractionResult:
         with source_path.open("r", encoding="utf-8", errors="replace", newline="") as handle:
             reader = csv.DictReader(handle)
             rows = list(reader)
@@ -32,8 +33,8 @@ class CsvExtractor(BaseExtractor):
             ]
             return ExtractionResult(source_id=source_id, summary_lines=summary, sample_points=points, unresolved_lines=[])
 
-        payload = load_document_payload(source_path)
-        return interpret_document(source_path, source_id, payload)
+        payload = load_document_payload(source_path, runtime=runtime)
+        return interpret_document(source_path, source_id, payload, runtime=runtime)
 
     def _row_to_sample_point(self, row: dict[str, str]) -> SamplePoint:
         return SamplePoint(

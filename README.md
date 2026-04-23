@@ -1,7 +1,7 @@
 # LITTORAL
 ## Literature-Inferred Terrestrial and Oceanic Relative Altimetry Levels
 
-LITTORAL is a reproducible extraction pipeline for converting coastal, shelf, and relative sea-level literature into structured geospatial evidence records. The system is designed for scientific synthesis work where useful observations are distributed across narrative text, tables, maps, figures, captions, and OCR-derived page content.
+LITTORAL is a reproducible extraction pipeline for converting paleolittoral literature into structured geospatial evidence records. The system is designed for scientific synthesis work where useful observations are distributed across narrative text, tables, maps, figures, captions, and OCR-derived page content.
 
 ## Scientific Scope
 
@@ -250,6 +250,41 @@ For maximum recall on difficult papers, keep `mineru_inference.llm_enabled` enab
 ```bash
 python3 run_pipeline.py data/incoming/cawthra2015.pdf --verbosity 2
 ```
+
+LITTORAL now supports bounded parallel document processing with separate GPU admission control for MinerU/Ollama-heavy stages. On Apple Silicon, the pipeline auto-selects a conservative profile from detected memory size, and you can override it explicitly when tuning a workstation:
+
+```bash
+python3 run_pipeline.py --document-workers 4 --gpu-slots 1 --progress-ui plain --verbosity 2
+```
+
+Suggested starting points:
+
+- `M3 Max 64GB`: `--document-workers 2` to `4`, `--gpu-slots 1`
+- `M3 Ultra 512GB`: `--document-workers 6` to `10`, `--gpu-slots 2` to `4`
+
+Progress display modes:
+
+- `--progress-ui plain`: line-oriented realtime progress with active/queued/completed counters and per-file stage updates.
+- `--progress-ui ncurses`: an interactive terminal dashboard showing color-coded file states, wall-clock time, runtime, per-file elapsed time, candidate counts, accepted counts, unresolved counts, and recent log lines.
+- `--progress-ui auto`: use the dashboard automatically when running in an interactive terminal with curses support; otherwise fall back to plain output.
+
+Dashboard controls:
+
+- `p`: pause or resume dispatching new files while leaving active work running.
+- `s`: request a graceful stop; queued work stops dispatching and active work drains.
+- `q`: abort queued dispatch and drain currently running tasks.
+- `t`: trigger the selected queued item for next dispatch.
+- `x`: cancel the selected queued item, or mark a running item as cancel-requested for operator visibility.
+- `i`: toggle an inspector pane for the selected row.
+- `r`: force a visual refresh.
+- `j` / `k` or arrow keys: move through the file list.
+- `PgUp` / `PgDn`: page through the file list.
+- `g` / `G`: jump to the top or bottom of the current view.
+- `f`: cycle the status filter through `all`, `running`, `queued`, `done`, `cancelled`, `skipped`, and `unsupported`.
+- `/`: alternate shortcut for cycling the current status filter.
+- `o`: cycle sort order through `index`, `status`, `name`, `elapsed`, and `unresolved`.
+
+Note: queued items can be cancelled immediately. Running items cannot be force-killed safely from Python worker threads, so `x` on a running row records a cancel request for operator awareness rather than interrupting the task.
 
 Model choice affects reproducibility. Record the model name, Ollama version, and `config/extraction.json` used for any dataset release.
 

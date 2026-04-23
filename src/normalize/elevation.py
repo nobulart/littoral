@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import math
 from pathlib import Path
+import threading
 from typing import Any
 
 from src.common.models import SamplePoint
 
 
 _RASTER_CACHE: dict[Path, "_TiledGeoTiffSampler"] = {}
+_RASTER_CACHE_LOCK = threading.Lock()
 
 
 def apply_elevation_normalization(sample_point: SamplePoint, raster_path: Path) -> SamplePoint:
@@ -68,15 +70,17 @@ def _has_authoritative_coordinates(sample_point: SamplePoint) -> bool:
 
 def _sampler(raster_path: Path) -> "_TiledGeoTiffSampler":
     path = raster_path.resolve()
-    if path not in _RASTER_CACHE:
-        _RASTER_CACHE[path] = _TiledGeoTiffSampler(path)
-    return _RASTER_CACHE[path]
+    with _RASTER_CACHE_LOCK:
+        if path not in _RASTER_CACHE:
+            _RASTER_CACHE[path] = _TiledGeoTiffSampler(path)
+        return _RASTER_CACHE[path]
 
 
 class _TiledGeoTiffSampler:
     def __init__(self, raster_path: Path) -> None:
         import tifffile
 
+        self._lock = threading.Lock()
         self._tiff = tifffile.TiffFile(raster_path)
         self._page = self._tiff.pages[0]
         self._height, self._width = self._page.shape[:2]
@@ -87,23 +91,24 @@ class _TiledGeoTiffSampler:
         self._nodata = self._nodata_value()
 
     def sample(self, lon: float, lat: float) -> float | None:
-        column = int((lon - self._origin_x) / self._pixel_width)
-        row = int((self._origin_y - lat) / self._pixel_height)
-        if row < 0 or column < 0 or row >= self._height or column >= self._width:
-            return None
+        with self._lock:
+            column = int((lon - self._origin_x) / self._pixel_width)
+            row = int((self._origin_y - lat) / self._pixel_height)
+            if row < 0 or column < 0 or row >= self._height or column >= self._width:
+                return None
 
-        tile_column = column // self._tile_width
-        tile_row = row // self._tile_height
-        tile_index = tile_row * self._tiles_across + tile_column
-        tile = self._decode_tile(tile_index)
-        local_row = row - tile_row * self._tile_height
-        local_column = column - tile_column * self._tile_width
-        value = float(tile[local_row, local_column])
-        if math.isnan(value):
-            return None
-        if self._nodata is not None and value == self._nodata:
-            return None
-        return value
+            tile_column = column // self._tile_width
+            tile_row = row // self._tile_height
+            tile_index = tile_row * self._tiles_across + tile_column
+            tile = self._decode_tile(tile_index)
+            local_row = row - tile_row * self._tile_height
+            local_column = column - tile_column * self._tile_width
+            value = float(tile[local_row, local_column])
+            if math.isnan(value):
+                return None
+            if self._nodata is not None and value == self._nodata:
+                return None
+            return value
 
     def _decode_tile(self, tile_index: int) -> Any:
         offset = self._page.dataoffsets[tile_index]

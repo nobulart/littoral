@@ -63,6 +63,9 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser.add_argument("--raster-path", type=Path, default=DEFAULT_RASTER_PATH, help="Path to elevation raster.")
     parser.add_argument("--source", action="append", dest="source_ids", help="Process only this source id or filename. May be repeated.")
     parser.add_argument("--limit", type=int, help="Process only the first N selected input files.")
+    parser.add_argument("--document-workers", type=int, help="Number of documents to process concurrently.")
+    parser.add_argument("--gpu-slots", type=int, help="Maximum concurrent GPU-bound tasks across MinerU/Ollama/OCR.")
+    parser.add_argument("--progress-ui", choices=("auto", "plain", "ncurses"), default="auto", help="Progress display mode.")
     parser.add_argument("--no-clear", action="store_true", help="Retained for compatibility; outputs are protected by default.")
     parser.add_argument("--clear-outputs", action="store_true", help="Delete per-source and merged outputs before running.")
     parser.add_argument("--overwrite-existing", action="store_true", help="Overwrite existing per-source and merged outputs unless a step-specific mode is supplied.")
@@ -167,7 +170,10 @@ def _build_config(args: argparse.Namespace, workspace_root: Path) -> PipelineCon
         mineru_cache_mode=args.mineru_cache_mode or "reuse",
         source_ids=source_ids,
         limit=limit,
-        progress_callback=None if verbosity == 0 else _print_progress,
+        document_workers=args.document_workers,
+        gpu_slots=args.gpu_slots,
+        progress_ui=args.progress_ui,
+        progress_callback=None if verbosity == 0 or _uses_dashboard_output(args.progress_ui) else _print_progress,
         verbosity=verbosity,
     )
 
@@ -188,6 +194,22 @@ def _resolve_path(path: Path, workspace_root: Path) -> Path:
 
 def _print_progress(message: str) -> None:
     print(message, flush=True)
+
+
+def _uses_dashboard_output(mode: str) -> bool:
+    if mode == "plain":
+        return False
+    if mode == "ncurses":
+        return True
+    if not sys.stdout.isatty():
+        return False
+    if os.environ.get("TERM", "") in {"", "dumb"}:
+        return False
+    try:
+        import curses  # noqa: F401
+    except ImportError:
+        return False
+    return True
 
 
 def _check_mineru_cache(config: PipelineConfig) -> int:

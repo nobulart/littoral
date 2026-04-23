@@ -11,6 +11,7 @@ from pathlib import Path
 
 from src.extract.ollama_client import OllamaClient
 from src.extract.settings import load_extraction_settings, source_workspace_root
+from src.orchestrate.runtime import PipelineRuntime
 
 
 @dataclass(slots=True)
@@ -35,14 +36,14 @@ class DocumentPayload:
     page_blocks: list[PageOCRBlock] = field(default_factory=list)
 
 
-def load_document_payload(source_path: Path) -> DocumentPayload:
+def load_document_payload(source_path: Path, runtime: PipelineRuntime | None = None) -> DocumentPayload:
     suffix = source_path.suffix.lower()
     if suffix in {".txt", ".md"}:
         return _load_text_payload(source_path)
     if suffix == ".csv":
         return _load_csv_payload(source_path)
     if suffix == ".pdf":
-        return _load_pdf_payload(source_path)
+        return _load_pdf_payload(source_path, runtime=runtime)
     raise ValueError(f"Unsupported source format: {suffix}")
 
 
@@ -75,12 +76,12 @@ def _load_csv_payload(source_path: Path) -> DocumentPayload:
     )
 
 
-def _load_pdf_payload(source_path: Path) -> DocumentPayload:
+def _load_pdf_payload(source_path: Path, runtime: PipelineRuntime | None = None) -> DocumentPayload:
     mineru_payload = _load_mineru_payload(source_path)
     if mineru_payload is not None:
         return mineru_payload
 
-    settings = load_extraction_settings(source_path)
+    settings = runtime.settings_for(source_path) if runtime is not None else load_extraction_settings(source_path)
     pdf_settings = settings["pdf"]
     pdf_metadata = _pdfinfo_metadata(source_path)
     title = pdf_metadata.get("Title") or source_path.stem
@@ -108,7 +109,14 @@ def _load_pdf_payload(source_path: Path) -> DocumentPayload:
             best_quality = ocr_quality
 
     if pdf_settings.get("page_ocr_enabled", True):
-        page_blocks = _extract_page_ocr_blocks(source_path, page_texts, int(pdf_settings.get("page_ocr_max_pages", 6)), int(pdf_settings.get("ocr_dpi", 200)), str(pdf_settings.get("page_cue_pattern", "table|fig\\.|figure|plate|map|caption")))
+        page_blocks = _extract_page_ocr_blocks(
+            source_path,
+            page_texts,
+            int(pdf_settings.get("page_ocr_max_pages", 6)),
+            int(pdf_settings.get("ocr_dpi", 200)),
+            str(pdf_settings.get("page_cue_pattern", "table|fig\\.|figure|plate|map|caption")),
+            runtime=runtime,
+        )
         if page_blocks:
             methods.append("glm_ocr_page_blocks")
 
@@ -290,7 +298,14 @@ def _ocr_pdf_text(source_path: Path, max_pages: int, dpi: int) -> str:
         return "\n".join(page_texts)
 
 
-def _extract_page_ocr_blocks(source_path: Path, page_texts: list[str], max_pages: int, dpi: int, cue_pattern: str) -> list[PageOCRBlock]:
+def _extract_page_ocr_blocks(
+    source_path: Path,
+    page_texts: list[str],
+    max_pages: int,
+    dpi: int,
+    cue_pattern: str,
+    runtime: PipelineRuntime | None = None,
+) -> list[PageOCRBlock]:
     cue_regex = re.compile(cue_pattern, re.IGNORECASE)
     candidate_pages: list[tuple[int, str]] = []
     for index, page_text in enumerate(page_texts, start=1):
@@ -306,7 +321,7 @@ def _extract_page_ocr_blocks(source_path: Path, page_texts: list[str], max_pages
     if not candidate_pages:
         return []
 
-    ollama = OllamaClient(source_path)
+    ollama = OllamaClient(source_path, runtime=runtime)
     if not ollama.can_run_model("glm-ocr:latest"):
         return []
 

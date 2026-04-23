@@ -8,6 +8,7 @@ from src.common.models import AgeModel, SamplePoint, SourceLocator, deterministi
 from src.extract.document_loader import DocumentPayload, PageOCRBlock
 from src.extract.geocode import geocode_contextual_location, geocode_place_query
 from src.extract.manual_geocodes import load_manual_geocodes, manual_geocode_note
+from src.orchestrate.runtime import PipelineRuntime
 
 
 TITLE_KEYWORDS = re.compile(r"submerged beach|ancient beach|submerged forest|marine terrace|raised beach", re.IGNORECASE)
@@ -227,13 +228,18 @@ def build_indicator_specific_quote(text: str, indicator_type: str) -> str:
     return " ".join(text.split())[:800]
 
 
-def build_heuristic_sample_points(source_id: str, source_path: Path, payload: DocumentPayload) -> list[SamplePoint]:
+def build_heuristic_sample_points(
+    source_id: str,
+    source_path: Path,
+    payload: DocumentPayload,
+    runtime: PipelineRuntime | None = None,
+) -> list[SamplePoint]:
     title = clean_title(payload.title, payload.text, source_path)
     lat, lon, coord_method = extract_coordinates(payload.text)
     geocode_result = None
     if lat is None or lon is None:
         for place_query in extract_place_queries(title, payload.text, source_path):
-            geocode_result = geocode_place_query(source_path, place_query, title, payload.text)
+            geocode_result = geocode_place_query(source_path, place_query, title, payload.text, runtime=runtime)
             if geocode_result is not None:
                 lat = geocode_result.latitude
                 lon = geocode_result.longitude
@@ -287,7 +293,12 @@ def build_heuristic_sample_points(source_id: str, source_path: Path, payload: Do
     return points
 
 
-def build_page_block_sample_points(source_id: str, source_path: Path, payload: DocumentPayload) -> list[SamplePoint]:
+def build_page_block_sample_points(
+    source_id: str,
+    source_path: Path,
+    payload: DocumentPayload,
+    runtime: PipelineRuntime | None = None,
+) -> list[SamplePoint]:
     points: list[SamplePoint] = []
     title = clean_title(payload.title, payload.text, source_path)
     for block in payload.page_blocks:
@@ -297,7 +308,7 @@ def build_page_block_sample_points(source_id: str, source_path: Path, payload: D
         geocode_result = None
         if lat is None or lon is None:
             for place_query in extract_place_queries_from_text(block.text):
-                geocode_result = geocode_place_query(source_path, place_query, title, block.text)
+                geocode_result = geocode_place_query(source_path, place_query, title, block.text, runtime=runtime)
                 if geocode_result is not None:
                     lat = geocode_result.latitude
                     lon = geocode_result.longitude
@@ -361,7 +372,13 @@ def summarize_payload(payload: DocumentPayload) -> list[str]:
     return lines
 
 
-def llm_candidate_to_sample_point(source_id: str, source_path: Path, candidate: dict, title: str) -> SamplePoint | None:
+def llm_candidate_to_sample_point(
+    source_id: str,
+    source_path: Path,
+    candidate: dict,
+    title: str,
+    runtime: PipelineRuntime | None = None,
+) -> SamplePoint | None:
     try:
         latitude = candidate.get("latitude")
         longitude = candidate.get("longitude")
@@ -403,7 +420,13 @@ def llm_candidate_to_sample_point(source_id: str, source_path: Path, candidate: 
                 ]
                 if value
             ]
-            geocode_result = geocode_contextual_location(source_path, geocode_queries, title, str(candidate.get("quote_or_paraphrase") or title))
+            geocode_result = geocode_contextual_location(
+                source_path,
+                geocode_queries,
+                title,
+                str(candidate.get("quote_or_paraphrase") or title),
+                runtime=runtime,
+            )
             if geocode_result is not None:
                 latitude = geocode_result.latitude
                 longitude = geocode_result.longitude

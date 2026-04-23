@@ -13,22 +13,28 @@ from src.extract.settings import load_extraction_settings, source_workspace_root
 from src.extract.source_links import determine_source_link
 from src.extract.text_analysis import analyze_text, build_unresolved_line
 from src.ontology.catalog import load_ontology
+from src.orchestrate.runtime import PipelineRuntime
 
 
-def interpret_document(source_path: Path, source_id: str, payload: DocumentPayload) -> ExtractionResult:
+def interpret_document(
+    source_path: Path,
+    source_id: str,
+    payload: DocumentPayload,
+    runtime: PipelineRuntime | None = None,
+) -> ExtractionResult:
     analysis = analyze_text(payload.text)
     title = clean_title(payload.title, payload.text, source_path)
     source_link = determine_source_link(source_path, payload)
-    heuristic_points = build_heuristic_sample_points(source_id, source_path, payload)
-    page_block_points = build_page_block_sample_points(source_id, source_path, payload)
+    heuristic_points = build_heuristic_sample_points(source_id, source_path, payload, runtime=runtime)
+    page_block_points = build_page_block_sample_points(source_id, source_path, payload, runtime=runtime)
     mineru_result = mine_mineru_outputs(source_id, source_path, payload)
     mineru_points = mineru_result.sample_points
 
     workspace_root = source_workspace_root(source_path)
-    ontology = load_ontology(workspace_root / "config" / "categories.json")
-    settings = load_extraction_settings(source_path)
+    ontology = runtime.ontology if runtime is not None else load_ontology(workspace_root / "config" / "categories.json")
+    settings = runtime.settings_for(source_path) if runtime is not None else load_extraction_settings(source_path)
     mineru_settings = settings.get("mineru_inference", {})
-    ollama = OllamaClient(source_path)
+    ollama = OllamaClient(source_path, runtime=runtime)
     llm_payload = None
     mineru_llm_payloads: list[dict] = []
     llm_points: list[SamplePoint] = []
@@ -55,25 +61,25 @@ def interpret_document(source_path: Path, source_id: str, payload: DocumentPaylo
         and mineru_settings.get("llm_enabled", True)
     ):
         for context_index, (context_label, context_text) in enumerate(mineru_result.llm_contexts[: int(mineru_settings.get("max_llm_contexts", 4))], start=1):
-            context_payload = ollama.interpret_mineru_context(context_label, context_text, source_path.name, sorted(ontology.categories.keys()))
+            context_payload = ollama.interpret_mineru_context(context_label, context_text, source_path.name, runtime.ontology_categories if runtime is not None else sorted(ontology.categories.keys()))
             if not context_payload:
                 continue
             mineru_llm_payloads.append(context_payload)
             for candidate_index, candidate in enumerate(_candidate_records(context_payload), start=1):
                 if not candidate.get("sample_id"):
                     candidate["sample_id"] = f"mineru_llm_{context_index}_{candidate_index}"
-                point = llm_candidate_to_sample_point(source_id, source_path, candidate, title)
+                point = llm_candidate_to_sample_point(source_id, source_path, candidate, title, runtime=runtime)
                 if point is not None:
                     llm_points.append(point)
                     mineru_llm_points_count += 1
 
     if should_try_llm:
-        llm_payload = ollama.interpret_document(payload, source_path.name, sorted(ontology.categories.keys()))
+        llm_payload = ollama.interpret_document(payload, source_path.name, runtime.ontology_categories if runtime is not None else sorted(ontology.categories.keys()))
         if llm_payload:
             for index, candidate in enumerate(_candidate_records(llm_payload), start=1):
                 if not candidate.get("sample_id"):
                     candidate["sample_id"] = f"llm_feature_{index}"
-                point = llm_candidate_to_sample_point(source_id, source_path, candidate, title)
+                point = llm_candidate_to_sample_point(source_id, source_path, candidate, title, runtime=runtime)
                 if point is not None:
                     llm_points.append(point)
                     document_llm_points_count += 1

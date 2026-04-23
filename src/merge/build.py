@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import csv
 import json
+from dataclasses import fields
 from pathlib import Path
 
-from src.common.io import append_csv, write_csv, write_geojson
+from src.common.io import CSV_COLUMNS, sample_point_csv_row, write_geojson
 from src.common.models import AgeModel, DerivedObservations, ReportedObservations, SamplePoint, SourceLocator
 
 
@@ -32,7 +33,8 @@ def read_sample_points_csv(csv_path: Path) -> list[SamplePoint]:
 def deduplicate(points: list[SamplePoint]) -> list[SamplePoint]:
     unique: dict[str, SamplePoint] = {}
     for point in points:
-        unique[point.id] = point
+        existing = unique.get(point.id)
+        unique[point.id] = _preferred_point(existing, point) if existing is not None else point
     return list(unique.values())
 
 
@@ -47,22 +49,29 @@ def build_master_outputs(per_source_dir: Path, merged_dir: Path, mode: str = "ap
 
     points = deduplicate(read_per_source_csvs(per_source_dir))
     if mode == "overwrite":
-        write_csv(csv_path, points)
+        _write_master_csv(csv_path, points)
         write_geojson(geojson_path, points)
         return csv_path, geojson_path, len(points)
 
     existing_points = read_sample_points_csv(csv_path)
     existing_ids = {point.id for point in existing_points}
     new_points = [point for point in points if point.id not in existing_ids]
-    if not csv_path.exists():
-        write_csv(csv_path, new_points)
-    elif new_points:
-        append_csv(csv_path, new_points)
 
     combined_points = deduplicate(existing_points + new_points)
+    _write_master_csv(csv_path, combined_points)
     if not geojson_path.exists() or new_points:
         write_geojson(geojson_path, combined_points)
     return csv_path, geojson_path, len(combined_points)
+
+
+def _write_master_csv(csv_path: Path, points: list[SamplePoint]) -> None:
+    csv_path.parent.mkdir(parents=True, exist_ok=True)
+    fieldnames = CSV_COLUMNS
+    with csv_path.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fieldnames)
+        writer.writeheader()
+        for point in points:
+            writer.writerow(sample_point_csv_row(point))
 
 
 def _row_to_sample_point(row: dict[str, str]) -> SamplePoint:
@@ -104,7 +113,121 @@ def _coerce_float(value: str) -> float | None:
 
 
 def _coerce_json_scalar(value: str):
+    if value in {"", "null", "None"}:
+        return None
     try:
         return json.loads(value)
     except json.JSONDecodeError:
         return value
+
+
+def _preferred_point(existing: SamplePoint, candidate: SamplePoint) -> SamplePoint:
+    preferred = candidate
+    alternate = existing
+
+    existing_has_top_elevation = _is_present(existing.elevation_m)
+    candidate_has_top_elevation = _is_present(candidate.elevation_m)
+    if existing_has_top_elevation != candidate_has_top_elevation:
+        preferred = candidate if candidate_has_top_elevation else existing
+        alternate = existing if candidate_has_top_elevation else candidate
+        return _fill_missing_fields(preferred, alternate)
+
+    existing_has_elevation = _has_any_elevation(existing)
+    candidate_has_elevation = _has_any_elevation(candidate)
+    if existing_has_elevation != candidate_has_elevation:
+        preferred = candidate if candidate_has_elevation else existing
+        alternate = existing if candidate_has_elevation else candidate
+        return _fill_missing_fields(preferred, alternate)
+
+    existing_score = _point_completeness(existing)
+    candidate_score = _point_completeness(candidate)
+    if candidate_score > existing_score:
+        preferred = candidate
+        alternate = existing
+    elif existing_score > candidate_score:
+        preferred = existing
+        alternate = candidate
+    return _fill_missing_fields(preferred, alternate)
+
+
+def _has_any_elevation(point: SamplePoint) -> bool:
+    return any(
+        _is_present(value)
+        for value in (
+            point.elevation_m,
+            point.reported_observations.reported_elevation_m,
+            point.derived_observations.derived_elevation_m,
+        )
+    )
+
+
+def _point_completeness(point: SamplePoint) -> int:
+    score = 0
+    fields = (
+        point.latitude,
+        point.longitude,
+        point.coordinate_uncertainty_m,
+        point.elevation_m,
+        point.age_ka,
+        point.indicative_range_m,
+        point.confidence_score,
+        point.reported_observations.reported_elevation_m,
+        point.reported_observations.reported_depth_m,
+        point.reported_observations.reported_datum,
+        point.derived_observations.derived_elevation_m,
+        point.derived_observations.derived_depth_m,
+    )
+    for value in fields:
+        if _is_present(value):
+            score += 1
+    return score
+
+
+def _is_present(value: object) -> bool:
+    if value is None:
+        return False
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        return normalized not in {"", "null", "none"}
+    if isinstance(value, (list, tuple, dict, set)):
+        return len(value) > 0
+    return True
+
+
+def _fill_missing_fields(preferred: SamplePoint, alternate: SamplePoint) -> SamplePoint:
+    fill_attrs = (
+        "latitude",
+        "longitude",
+        "coordinate_uncertainty_m",
+        "elevation_m",
+        "elevation_reference",
+        "depth_source",
+        "indicative_range_m",
+        "age_ka",
+        "dating_method",
+        "description",
+        "location_name",
+        "bibliographic_reference",
+        "doi_or_url",
+        "confidence_score",
+        "notes",
+    )
+    for attr in fill_attrs:
+        preferred_value = getattr(preferred, attr)
+        alternate_value = getattr(alternate, attr)
+        if not _is_present(preferred_value) and _is_present(alternate_value):
+            setattr(preferred, attr, alternate_value)
+
+    _fill_missing_nested(preferred.reported_observations, alternate.reported_observations)
+    _fill_missing_nested(preferred.derived_observations, alternate.derived_observations)
+    if not preferred.age_models and alternate.age_models:
+        preferred.age_models = alternate.age_models
+    return preferred
+
+
+def _fill_missing_nested(preferred: object, alternate: object) -> None:
+    for field in fields(preferred):
+        preferred_value = getattr(preferred, field.name)
+        alternate_value = getattr(alternate, field.name)
+        if not _is_present(preferred_value) and _is_present(alternate_value):
+            setattr(preferred, field.name, alternate_value)

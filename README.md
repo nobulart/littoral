@@ -32,7 +32,7 @@ The pipeline emphasizes provenance and uncertainty. It distinguishes reported ob
    Candidate records are validated against the controlled vocabulary and schema before per-source outputs are merged into master CSV and GeoJSON products.
 
 8. **Elevation context**
-   Raster-backed elevation normalization uses the local DEM at `data/elevation/SRTM15+V2.tiff` by default. Override this path with `--raster-path` when running against another DEM. DEM sampling is applied only when coordinates are reported or manually/authoritatively geocoded and the source does not report a precise elevation.
+   Raster-backed elevation normalization uses the local DEM at `data/elevation/SRTM15+V2.tiff` by default. Override this path with `--raster-path` when running against another DEM. Reported source elevations are preserved. When no precise source elevation is present, DEM sampling is applied for any valid coordinates; samples from inferred-text coordinates are explicitly marked as approximate spatial context.
 
 ## Pipeline Process Map
 
@@ -67,7 +67,7 @@ flowchart TD
     V --> W
     W --> X{"Reported elevation exists?"}
     X -- "Yes" --> Y["Preserve reported elevation"]
-    X -- "No, authoritative coords" --> Z["Sample SRTM15+V2 DEM"]
+    X -- "No, valid coords" --> Z["Sample SRTM15+V2 DEM"]
     X -- "No usable coords" --> AA["Leave elevation empty with note"]
     Y --> AB["Confidence scoring"]
     Z --> AB
@@ -87,7 +87,7 @@ At a record level, the spatial decision order is:
 3. If a manual geocode file exists but cannot provide coordinates for the record, leave coordinates empty and record the suppression note.
 4. Only when no manual geocode CSV exists, infer approximate coordinates from contextual place-name geocoding.
 
-Elevation normalization follows the same conservative pattern: reported elevations are preserved; DEM values are derived only for reported/manual authoritative coordinates; approximate contextual geocodes are not used for DEM-derived elevations.
+Elevation normalization follows a provenance-preserving pattern: reported elevations are preserved; DEM values are derived for records with valid coordinates and no source elevation; samples from reported/manual coordinates are marked authoritative, while samples from inferred contextual coordinates are marked approximate.
 
 The extraction architecture is additive: deterministic parsers, targeted LLM contexts, narrative fallback clusters, and manual geocode rows contribute evidence independently. Earlier success no longer suppresses later evidence scans. Per-source summaries include a candidate/evidence ledger showing how many records each stage promoted and how many fallback clusters were seen.
 
@@ -99,6 +99,13 @@ The extraction architecture is additive: deterministic parsers, targeted LLM con
 - `outputs/merged/master_dataset.geojson`: merged geospatial dataset.
 - `logs/UnresolvedRecords.log`: unsupported files, rejected records, and unresolved extraction cases.
 - `logs/processing_report.md`: run-level processing report.
+
+CSV elevation helper fields (`outputs/per_source/*.csv` and `outputs/merged/master_dataset.csv`):
+
+- `elevation_min`: minimum numeric elevation parsed from `elevation_m` (scalar or list).
+- `elevation_max`: maximum numeric elevation parsed from `elevation_m`.
+- `elevation_avg`: arithmetic mean of numeric values parsed from `elevation_m`.
+- `elevation_mean`: same value as `elevation_avg` (alias for GIS tooling conventions).
 
 ## Configuration
 
@@ -385,7 +392,7 @@ Manual geocode rows may also provide observation metadata:
 | Source figure/map | `figure`, `fig`, `map`, `source_figure` |
 | Notes | `description`, `notes`, `note`, `comment` |
 
-When `depth_m` is provided and no explicit elevation is present, applicable extraction paths may convert depth to elevation as a negative value relative to MSL. When no elevation is reported in the source but authoritative coordinates are available, LITTORAL can sample `SRTM15+V2.tiff` and records the derived value in `derived_observations`.
+When `depth_m` is provided and no explicit elevation is present, applicable extraction paths may convert depth to elevation as a negative value relative to MSL. When no elevation is reported in the source but coordinates are available, LITTORAL can sample `SRTM15+V2.tiff` and records the derived value in `derived_observations`.
 
 ### Precedence and Failure Modes
 

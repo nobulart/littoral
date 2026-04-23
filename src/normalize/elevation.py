@@ -18,7 +18,8 @@ def apply_elevation_normalization(sample_point: SamplePoint, raster_path: Path) 
         return sample_point
 
     if sample_point.elevation_m is not None:
-        sample_point.derived_observations.derivation_notes = "Existing elevation preserved; no raster overwrite applied."
+        if not sample_point.derived_observations.derivation_notes:
+            sample_point.derived_observations.derivation_notes = "Existing elevation preserved; no raster overwrite applied."
         return sample_point
 
     if not raster_path.exists():
@@ -27,10 +28,6 @@ def apply_elevation_normalization(sample_point: SamplePoint, raster_path: Path) 
 
     if sample_point.latitude is None or sample_point.longitude is None:
         sample_point.derived_observations.derivation_notes = "No coordinates available for DEM elevation sampling."
-        return sample_point
-
-    if not _has_authoritative_coordinates(sample_point):
-        sample_point.derived_observations.derivation_notes = "DEM elevation sampling skipped because coordinates are not authoritative."
         return sample_point
 
     try:
@@ -49,10 +46,17 @@ def apply_elevation_normalization(sample_point: SamplePoint, raster_path: Path) 
     sample_point.derived_observations.raw_raster_value_m = elevation_m
     sample_point.derived_observations.derived_elevation_m = round(elevation_m, 2)
     sample_point.derived_observations.derived_depth_m = round(-elevation_m, 2) if elevation_m < 0 else None
-    sample_point.derived_observations.derivation_notes = (
-        "Elevation sampled from SRTM15+V2 at authoritative coordinates because source elevation was not reported."
-    )
+    sample_point.derived_observations.derivation_notes = _sampling_note(sample_point)
     return sample_point
+
+
+def _sampling_note(sample_point: SamplePoint) -> str:
+    if _has_authoritative_coordinates(sample_point):
+        return "Elevation sampled from SRTM15+V2 at authoritative coordinates because source elevation was not reported."
+    return (
+        "Elevation sampled from SRTM15+V2 at inferred coordinates because source elevation was not reported. "
+        "Treat this as approximate spatial context, not a surveyed sample elevation."
+    )
 
 
 def _has_authoritative_coordinates(sample_point: SamplePoint) -> bool:

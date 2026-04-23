@@ -36,6 +36,10 @@ CSV_COLUMNS = [
     "reported_observations",
     "derived_observations",
     "age_models",
+    "elevation_min",
+    "elevation_max",
+    "elevation_avg",
+    "elevation_mean",
 ]
 
 
@@ -77,7 +81,63 @@ def sample_point_csv_row(point: SamplePoint) -> dict:
     row["reported_observations"] = json.dumps(row["reported_observations"])
     row["derived_observations"] = json.dumps(row["derived_observations"])
     row["age_models"] = json.dumps(row["age_models"])
+    row.update(elevation_derivative_values(point.elevation_m))
     return row
+
+
+def elevation_derivative_values(value: float | list[float | None] | str | None) -> dict[str, str]:
+    numbers = _numeric_elevation_values(value)
+    if not numbers:
+        return {
+            "elevation_min": "",
+            "elevation_max": "",
+            "elevation_avg": "",
+            "elevation_mean": "",
+        }
+    minimum = min(numbers)
+    maximum = max(numbers)
+    average = sum(numbers) / len(numbers)
+    formatted_average = _format_float(average)
+    return {
+        "elevation_min": _format_float(minimum),
+        "elevation_max": _format_float(maximum),
+        "elevation_avg": formatted_average,
+        "elevation_mean": formatted_average,
+    }
+
+
+def _numeric_elevation_values(value: float | list[float | None] | str | None) -> list[float]:
+    values: list[float] = []
+    if isinstance(value, (int, float)):
+        return [float(value)]
+    if isinstance(value, list):
+        for item in value:
+            if isinstance(item, (int, float)):
+                values.append(float(item))
+            elif isinstance(item, str):
+                parsed = _parse_numeric_string(item)
+                if parsed is not None:
+                    values.append(parsed)
+        return values
+    if isinstance(value, str):
+        parsed = _parse_numeric_string(value)
+        return [parsed] if parsed is not None else []
+    return values
+
+
+def _parse_numeric_string(value: str) -> float | None:
+    cleaned = value.strip()
+    if not cleaned:
+        return None
+    try:
+        return float(cleaned)
+    except ValueError:
+        return None
+
+
+def _format_float(value: float) -> str:
+    rounded = round(value, 6)
+    return f"{rounded:.6f}".rstrip("0").rstrip(".")
 
 
 def write_geojson(path: Path, sample_points: Iterable[SamplePoint]) -> None:

@@ -1,4 +1,5 @@
-# LITTORAL (Literature-Inferred Terrestrial and Oceanic Relative Altimetry Levels)
+# LITTORAL
+## Literature-Inferred Terrestrial and Oceanic Relative Altimetry Levels
 
 LITTORAL is a reproducible extraction pipeline for converting coastal, shelf, and relative sea-level literature into structured geospatial evidence records. The system is designed for scientific synthesis work where useful observations are distributed across narrative text, tables, maps, figures, captions, and OCR-derived page content.
 
@@ -58,7 +59,7 @@ flowchart TD
     O --> P["Targeted local LLM extraction when enabled"]
     P --> Q["Narrative fallback evidence scan"]
     Q --> R["Candidate/evidence ledger and promoted SamplePoints"]
-    R --> S{"Manual geocode CSV exists?"}
+    R --> S{"Manual geocode file exists?"}
     S -- "Coordinate match" --> T["Use manual coordinates and provenance"]
     S -- "Exists but no usable match/columns" --> U["Suppress fuzzy geocoding"]
     S -- "No" --> V["Contextual geocode from source text"]
@@ -85,7 +86,7 @@ At a record level, the spatial decision order is:
 1. Use coordinates explicitly reported in the source record.
 2. Use matching coordinates from `data/manual_geocodes/<source>.csv`, `.geojson`, or `.json`.
 3. If a manual geocode file exists but cannot provide coordinates for the record, leave coordinates empty and record the suppression note.
-4. Only when no manual geocode CSV exists, infer approximate coordinates from contextual place-name geocoding.
+4. Only when no manual geocode file exists, infer approximate coordinates from contextual place-name geocoding.
 
 Elevation normalization follows a provenance-preserving pattern: reported elevations are preserved; DEM values are derived for records with valid coordinates and no source elevation; samples from reported/manual coordinates are marked authoritative, while samples from inferred contextual coordinates are marked approximate.
 
@@ -100,7 +101,7 @@ The extraction architecture is additive: deterministic parsers, targeted LLM con
 - `logs/UnresolvedRecords.log`: unsupported files, rejected records, and unresolved extraction cases.
 - `logs/processing_report.md`: run-level processing report.
 
-CSV elevation helper fields (`outputs/per_source/*.csv` and `outputs/merged/master_dataset.csv`):
+CSV elevation helper fields in `outputs/per_source/*.csv` and `outputs/merged/master_dataset.csv`:
 
 - `elevation_min`: minimum numeric elevation parsed from `elevation_m` (scalar or list).
 - `elevation_max`: maximum numeric elevation parsed from `elevation_m`.
@@ -401,7 +402,7 @@ Manual geocode files are authoritative for their source. This has two important 
 - If the manual geocode file contains matching coordinates, those coordinates override inferred place-name geocoding.
 - If the manual geocode file exists but lacks coordinate geometry/columns, has blank coordinates, or does not contain a matching row, LITTORAL suppresses fuzzy geocoding for affected records and records that decision in `notes`.
 
-This prevents an authoritative manually geocoded dataset from being distorted by locality-level gazetteer results. A source can therefore be intentionally held in a "manual geocode pending" state by adding a key-only CSV, but the final analytical dataset should include coordinate-bearing manual rows or GeoJSON point features.
+This prevents an authoritative manually geocoded dataset from being distorted by locality-level gazetteer results. A source can therefore be intentionally held in a "manual geocode pending" state by adding a key-only manual geocode file, but the final analytical dataset should include coordinate-bearing manual rows or GeoJSON point features.
 
 ### QGIS Export Checklist
 
@@ -419,6 +420,12 @@ This prevents an authoritative manually geocoded dataset from being distorted by
 - Local model behavior depends on the installed Ollama model and version.
 - Public gazetteer results may change over time; coordinate provenance and query strings are retained in record notes. Manual geocode CSVs should be versioned with the extraction rules that consumed them.
 - Generated outputs should be regenerated after configuration or extraction-rule changes.
+
+## Repository Hygiene
+
+- `outputs/`, `logs/`, `data/incoming/`, and `data/staged/` are local runtime artifacts and are ignored by git.
+- `*.zip` files are ignored so ad hoc output archives do not get committed accidentally.
+- Large raster assets such as `data/elevation/SRTM15+V2.tiff` are local runtime inputs and are not tracked by git.
 
 ## Development Status
 

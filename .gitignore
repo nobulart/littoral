@@ -22,6 +22,7 @@ data/incoming/
 data/staged/
 outputs/
 logs/
+*.zip
 
 # Large local geospatial rasters and model/data assets
 *.tif
@@ -36,4 +37,3 @@ logs/
 !.env.example
 venv/
 .venv/
-

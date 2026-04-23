@@ -1,9 +1,11 @@
 {
-  "detail": "awaiting dispatch",
+  "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/toucanne2007.csv",
+  "detail": "existing per-source outputs found",
   "source_id": "toucanne2007",
   "source_name": "toucanne2007.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/toucanne2007.pdf",
-  "stage": "queued",
-  "status": "queued",
-  "updated_at": 1776977648.687327
+  "stage": "existing_outputs",
+  "status": "completed",
+  "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/toucanne2007.summary.md",
+  "updated_at": 1776977801.66137
 }

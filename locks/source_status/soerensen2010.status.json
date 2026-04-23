@@ -1,9 +1,11 @@
 {
-  "detail": "awaiting dispatch",
+  "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/soerensen2010.csv",
+  "detail": "existing per-source outputs found",
   "source_id": "soerensen2010",
   "source_name": "soerensen2010.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/soerensen2010.pdf",
-  "stage": "queued",
-  "status": "queued",
-  "updated_at": 1776977648.68524
+  "stage": "existing_outputs",
+  "status": "completed",
+  "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/soerensen2010.summary.md",
+  "updated_at": 1776977795.630878
 }

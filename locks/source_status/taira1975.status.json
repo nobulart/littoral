@@ -1,9 +1,11 @@
 {
-  "detail": "awaiting dispatch",
+  "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/taira1975.csv",
+  "detail": "existing per-source outputs found",
   "source_id": "taira1975",
   "source_name": "taira1975.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/taira1975.pdf",
-  "stage": "queued",
-  "status": "queued",
-  "updated_at": 1776977648.686517
+  "stage": "existing_outputs",
+  "status": "completed",
+  "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/taira1975.summary.md",
+  "updated_at": 1776977798.6471071
 }

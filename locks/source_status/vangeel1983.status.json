@@ -1,9 +1,11 @@
 {
-  "detail": "awaiting dispatch",
+  "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/vangeel1983.csv",
+  "detail": "existing per-source outputs found",
   "source_id": "vangeel1983",
   "source_name": "vangeel1983.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/vangeel1983.pdf",
-  "stage": "queued",
-  "status": "queued",
-  "updated_at": 1776977648.687665
+  "stage": "existing_outputs",
+  "status": "completed",
+  "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/vangeel1983.summary.md",
+  "updated_at": 1776977803.168469
 }

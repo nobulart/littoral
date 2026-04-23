@@ -1,0 +1,19 @@
+{
+  "detail": "merge completed in 0.0s",
+  "finished_at": 1776977879.1577868,
+  "heartbeat_at": 1776977879.1577868,
+  "lease_key": "master_dataset",
+  "master_csv_path": "/Users/craig/ECDO/LITTORAL/outputs/merged/master_dataset.csv",
+  "master_geojson_path": "/Users/craig/ECDO/LITTORAL/outputs/merged/master_dataset.geojson",
+  "merge_key": "master_dataset",
+  "merged_count": 366,
+  "owner": {
+    "host": "MacBook-Pro.local",
+    "pid": 65327,
+    "run_id": "895cbd46ea874bfcb67cd77806d0ec76"
+  },
+  "stage": "completed",
+  "started_at": 1776977879.126724,
+  "status": "completed",
+  "updated_at": 1776977879.1577868
+}

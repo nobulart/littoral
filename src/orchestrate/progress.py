@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import socket
 import sys
 import threading
 import time
@@ -12,6 +13,8 @@ class FileProgressState:
     index: int
     name: str
     status: str = "queued"
+    lease_status: str = "queued"
+    lease_owner: str = ""
     stage: str = "queued"
     detail: str = ""
     candidates: int = 0
@@ -62,6 +65,7 @@ class PipelineProgressReporter:
         self._show_inspector = False
         self._last_render_at = 0.0
         self._last_tick_at = 0.0
+        self._local_owner = socket.gethostname()
         if self.enabled and self._mode == "ncurses":
             self._init_curses()
 
@@ -90,6 +94,8 @@ class PipelineProgressReporter:
         name: str,
         *,
         status: str,
+        lease_status: str | None = None,
+        lease_owner: str = "",
         stage: str,
         detail: str = "",
         started_at: float | None = None,
@@ -105,6 +111,8 @@ class PipelineProgressReporter:
         with self._lock:
             state = self._states.setdefault(index, FileProgressState(index=index, name=name))
             state.status = normalized_status
+            state.lease_status = lease_status or status
+            state.lease_owner = lease_owner
             state.stage = stage or normalized_status
             state.detail = detail
             if started_at is not None:
@@ -125,6 +133,7 @@ class PipelineProgressReporter:
         with self._lock:
             state = self._states.setdefault(index, FileProgressState(index=index, name=name))
             state.status = "skipped"
+            state.lease_status = "skipped"
             state.stage = "skipped"
             state.detail = reason
             state.finished_at = time.perf_counter()
@@ -138,6 +147,7 @@ class PipelineProgressReporter:
                 return False
             if state.status == "queued":
                 state.status = "cancelled"
+                state.lease_status = "cancelled"
                 state.stage = "cancelled"
                 state.detail = reason
                 state.finished_at = time.perf_counter()
@@ -169,6 +179,7 @@ class PipelineProgressReporter:
         with self._lock:
             state = self._states.setdefault(index, FileProgressState(index=index, name=name))
             state.status = "unsupported"
+            state.lease_status = "unsupported"
             state.stage = "unsupported"
             state.detail = reason
             state.finished_at = time.perf_counter()
@@ -181,6 +192,8 @@ class PipelineProgressReporter:
         with self._lock:
             state = self._states.setdefault(index, FileProgressState(index=index, name=name))
             state.status = "running"
+            state.lease_status = "running"
+            state.lease_owner = self._local_owner
             state.stage = "starting"
             state.detail = ""
             state.started_at = time.perf_counter()
@@ -191,6 +204,8 @@ class PipelineProgressReporter:
         with self._lock:
             state = self._states.setdefault(index, FileProgressState(index=index, name=name))
             state.status = "running"
+            state.lease_status = "running"
+            state.lease_owner = self._local_owner
             state.stage = stage
             state.detail = detail
             self._log_line(f"{self._prefix()} {name} :: {stage}{' - ' + detail if detail else ''}")
@@ -215,6 +230,8 @@ class PipelineProgressReporter:
         with self._lock:
             state = self._states.setdefault(index, FileProgressState(index=index, name=name))
             state.status = "done"
+            state.lease_status = "completed"
+            state.lease_owner = self._local_owner
             state.stage = "done"
             state.accepted = accepted
             state.finished_at = time.perf_counter()
@@ -286,6 +303,11 @@ class PipelineProgressReporter:
         with self._lock:
             state = self._states.get(index)
             return state is not None and state.status == "cancelled"
+
+    def status_for(self, index: int) -> str | None:
+        with self._lock:
+            state = self._states.get(index)
+            return state.status if state is not None else None
 
     def snapshot(self) -> PipelineProgressSnapshot:
         queued = sum(1 for state in self._states.values() if state.status == "queued")
@@ -404,7 +426,7 @@ class PipelineProgressReporter:
             f"f filter={self._filter_mode}  o sort={self._sort_mode}"
         )
         self._add_line(3, 0, browser, width - 1, self._style("accent"))
-        self._add_line(4, 0, "Idx Name                         Status      Stage           Time  Cnd Acc Unr Detail", width - 1, self._style("header"))
+        self._add_line(4, 0, "Idx Name                    Status   Lease    Owner          Stage        Time  Cnd Acc Unr Detail", width - 1, self._style("header"))
         self._add_line(5, 0, "-" * max(1, width - 1), width - 1, self._style("dim"))
 
         visible_states = self._visible_states()
@@ -416,8 +438,10 @@ class PipelineProgressReporter:
             runtime_text = self._state_elapsed(state)
             line = (
                 f"{state.index:>3}. "
-                f"{state.name[:28]:28} "
-                f"{state.status[:10]:10} "
+                f"{state.name[:23]:23} "
+                f"{state.status[:8]:8} "
+                f"{state.lease_status[:8]:8} "
+                f"{state.lease_owner[:14]:14} "
                 f"{state.stage[:12]:12} "
                 f"{runtime_text:>10} "
                 f"{state.candidates:>3} "
@@ -674,6 +698,8 @@ class PipelineProgressReporter:
             f"Index: {state.index}",
             f"Name: {state.name}",
             f"Status: {state.status}",
+            f"Lease status: {state.lease_status}",
+            f"Lease owner: {state.lease_owner or '(unknown)'}",
             f"Stage: {state.stage}",
             f"Elapsed: {self._state_elapsed(state)}",
             f"Candidates: {state.candidates}  Accepted: {state.accepted}  Unresolved: {state.unresolved}",

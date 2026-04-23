@@ -156,21 +156,26 @@ def run_pipeline(config: PipelineConfig) -> None:
                     if reporter.abort_requested():
                         pending.clear()
                     pending = deque(
-                        item for item in pending if not reporter.is_cancelled_before_dispatch(item[0])
+                        item
+                        for item in pending
+                        if not reporter.is_cancelled_before_dispatch(item[0])
+                        and reporter.status_for(item[0]) not in {"done", "skipped", "unsupported", "failed"}
                     )
+                    dispatch_attempts = 0
                     while (
                         pending
+                        and dispatch_attempts < len(pending)
                         and len(active_futures) < max(1, min(document_workers, len(work_items)))
                         and not reporter.pause_requested()
                         and not reporter.stop_requested()
                     ):
                         next_index = reporter.pick_pending_index([item[0] for item in pending])
                         if next_index is None:
-                            pending.clear()
                             break
                         selected_position = next(i for i, item in enumerate(pending) if item[0] == next_index)
                         index, source_path, source_id, extractor = pending[selected_position]
                         del pending[selected_position]
+                        dispatch_attempts += 1
                         summary_path, csv_path = _per_source_output_paths(config.per_source_dir, source_id)
                         lease = lock_manager.claim_source(
                             source_id,
@@ -181,8 +186,20 @@ def run_pipeline(config: PipelineConfig) -> None:
                             per_source_mode=config.per_source_mode,
                         )
                         if isinstance(lease, LeaseDenied):
-                            reporter.skip_file(index, source_path.name, lease.reason)
-                            skipped_files.append(source_path.name)
+                            if lease.status == "running":
+                                reporter.sync_shared_state(
+                                    index,
+                                    source_path.name,
+                                    status="running",
+                                    lease_status="running",
+                                    lease_owner=lease.reason.removeprefix("active lease held by ").removeprefix("active status held by "),
+                                    stage="leased_elsewhere",
+                                    detail=lease.reason,
+                                )
+                                pending.append((index, source_path, source_id, extractor))
+                            else:
+                                reporter.skip_file(index, source_path.name, lease.reason)
+                                skipped_files.append(source_path.name)
                             continue
                         reporter.note_dispatch_started(index)
                         future = executor.submit(
@@ -205,6 +222,9 @@ def run_pipeline(config: PipelineConfig) -> None:
                             continue
                         if pending and reporter.stop_requested():
                             pending.clear()
+                            continue
+                        if pending:
+                            time.sleep(1.0)
                             continue
                         break
                     done, remaining = wait(set(active_futures.keys()), timeout=0.2, return_when=FIRST_COMPLETED)
@@ -425,6 +445,8 @@ def _refresh_reporter_from_shared_statuses(
             index,
             name,
             status=str(payload.get("status") or "queued"),
+            lease_status=str(payload.get("status") or "queued"),
+            lease_owner=str((payload.get("owner") or {}).get("host") or ""),
             stage=str(payload.get("stage") or payload.get("status") or "queued"),
             detail=str(payload.get("detail") or ""),
             started_at=float(payload["started_at"]) if isinstance(payload.get("started_at"), (int, float)) else None,

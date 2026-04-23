@@ -2,7 +2,7 @@
   "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/emson1995.csv",
   "detail": "cache miss; attempting extraction",
   "finished_at": null,
-  "heartbeat_at": 1776977454.014375,
+  "heartbeat_at": 1776977456.0179021,
   "lease_key": "emson1995",
   "owner": {
     "host": "Mac-Studio.local",
@@ -16,5 +16,5 @@
   "started_at": 1776977189.2682052,
   "status": "running",
   "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/emson1995.summary.md",
-  "updated_at": 1776977454.014375
+  "updated_at": 1776977456.0179021
 }

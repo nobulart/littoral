@@ -2,7 +2,7 @@
   "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/delanghe2002.csv",
   "detail": "cache miss; attempting extraction",
   "finished_at": null,
-  "heartbeat_at": 1776977453.959197,
+  "heartbeat_at": 1776977455.965007,
   "lease_key": "delanghe2002",
   "owner": {
     "host": "Mac-Studio.local",
@@ -16,5 +16,5 @@
   "started_at": 1776977189.264431,
   "status": "running",
   "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/delanghe2002.summary.md",
-  "updated_at": 1776977453.959197
+  "updated_at": 1776977455.965007
 }

@@ -1,9 +1,11 @@
 {
-  "detail": "awaiting dispatch",
+  "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/hovland1981.csv",
+  "detail": "existing per-source outputs found",
   "source_id": "hovland1981",
   "source_name": "hovland1981.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/hovland1981.pdf",
-  "stage": "queued",
-  "status": "queued",
-  "updated_at": 1776977223.299686
+  "stage": "existing_outputs",
+  "status": "completed",
+  "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/hovland1981.summary.md",
+  "updated_at": 1776977473.836328
 }

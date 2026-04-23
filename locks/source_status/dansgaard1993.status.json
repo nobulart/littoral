@@ -2,7 +2,7 @@
   "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/dansgaard1993.csv",
   "detail": "running deterministic and inference stages",
   "finished_at": null,
-  "heartbeat_at": 1776977454.014345,
+  "heartbeat_at": 1776977456.0179799,
   "lease_key": "dansgaard1993",
   "owner": {
     "host": "Mac-Studio.local",
@@ -16,5 +16,5 @@
   "started_at": 1776977189.258293,
   "status": "running",
   "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/dansgaard1993.summary.md",
-  "updated_at": 1776977454.014345
+  "updated_at": 1776977456.0179799
 }

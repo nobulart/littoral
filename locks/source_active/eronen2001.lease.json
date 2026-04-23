@@ -2,7 +2,7 @@
   "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/eronen2001.csv",
   "detail": "cache miss; attempting extraction",
   "finished_at": null,
-  "heartbeat_at": 1776977454.0074198,
+  "heartbeat_at": 1776977456.013441,
   "lease_key": "eronen2001",
   "owner": {
     "host": "Mac-Studio.local",
@@ -16,5 +16,5 @@
   "started_at": 1776977189.269192,
   "status": "running",
   "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/eronen2001.summary.md",
-  "updated_at": 1776977454.0074198
+  "updated_at": 1776977456.013441
 }

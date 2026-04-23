@@ -166,6 +166,7 @@ class PipelineLockManager:
         heartbeat_seconds: float = 8.0,
         stale_after_seconds: float = 45.0,
         min_update_interval_seconds: float = 4.0,
+        sync_settle_seconds: float = 1.5,
     ) -> None:
         self.root_dir = root_dir
         self.source_status_dir = root_dir / "source_status"
@@ -175,6 +176,7 @@ class PipelineLockManager:
         self.heartbeat_seconds = heartbeat_seconds
         self.stale_after_seconds = stale_after_seconds
         self.min_update_interval_seconds = min_update_interval_seconds
+        self.sync_settle_seconds = max(0.0, sync_settle_seconds)
         self.owner = {
             "host": socket.gethostname(),
             "pid": os.getpid(),
@@ -269,12 +271,25 @@ class PipelineLockManager:
                 extra={"summary_path": str(summary_path), "csv_path": str(csv_path)},
             )
             return LeaseDenied("existing per-source outputs found")
+        active_status = self._active_status_reason(existing_status)
+        if active_status is not None:
+            return LeaseDenied(active_status, status="running")
+        if self.sync_settle_seconds > 0:
+            time.sleep(self.sync_settle_seconds)
+            existing_status = self._read_json(status_path)
+            existing_lease = self._read_json(lease_path)
+            active_lease = self._active_lease_reason(existing_lease)
+            if active_lease is not None:
+                return LeaseDenied(active_lease, status="running")
+            active_status = self._active_status_reason(existing_status)
+            if active_status is not None:
+                return LeaseDenied(active_status, status="running")
         for _ in range(3):
             existing_lease = self._read_json(lease_path)
             if existing_lease:
-                if not self._lease_is_stale(existing_lease):
-                    owner = existing_lease.get("owner", {})
-                    return LeaseDenied(f"active lease held by {owner.get('host', 'unknown-host')}:{owner.get('pid', 'unknown-pid')}", status="running")
+                active_lease = self._active_lease_reason(existing_lease)
+                if active_lease is not None:
+                    return LeaseDenied(active_lease, status="running")
                 self._remove_stale_lease(lease_path)
                 self.mark_source_state(
                     source_id,
@@ -364,6 +379,34 @@ class PipelineLockManager:
         if not isinstance(heartbeat_at, (int, float)):
             return True
         return (time.time() - float(heartbeat_at)) > self.stale_after_seconds
+
+    def _active_lease_reason(self, payload: dict[str, object] | None) -> str | None:
+        if not payload or self._lease_is_stale(payload):
+            return None
+        owner = payload.get("owner", {})
+        if isinstance(owner, dict) and owner.get("run_id") == self.owner["run_id"]:
+            return None
+        host = owner.get("host", "unknown-host") if isinstance(owner, dict) else "unknown-host"
+        pid = owner.get("pid", "unknown-pid") if isinstance(owner, dict) else "unknown-pid"
+        return f"active lease held by {host}:{pid}"
+
+    def _active_status_reason(self, payload: dict[str, object] | None) -> str | None:
+        if not payload:
+            return None
+        status = str(payload.get("status") or "")
+        if status != "running":
+            return None
+        updated_at = payload.get("updated_at")
+        if not isinstance(updated_at, (int, float)):
+            return "active running status recorded elsewhere"
+        if (time.time() - float(updated_at)) > self.stale_after_seconds:
+            return None
+        owner = payload.get("owner", {})
+        if isinstance(owner, dict) and owner.get("run_id") == self.owner["run_id"]:
+            return None
+        host = owner.get("host", "unknown-host") if isinstance(owner, dict) else "unknown-host"
+        pid = owner.get("pid", "unknown-pid") if isinstance(owner, dict) else "unknown-pid"
+        return f"active status held by {host}:{pid}"
 
     def _remove_stale_lease(self, lease_path: Path) -> None:
         try:

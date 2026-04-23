@@ -1,9 +1,11 @@
 {
-  "detail": "awaiting dispatch",
+  "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/pretorius2016.csv",
+  "detail": "existing per-source outputs found",
   "source_id": "pretorius2016",
   "source_name": "pretorius2016.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/pretorius2016.pdf",
-  "stage": "queued",
-  "status": "queued",
-  "updated_at": 1776977223.3064919
+  "stage": "existing_outputs",
+  "status": "completed",
+  "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/pretorius2016.summary.md",
+  "updated_at": 1776977648.692815
 }

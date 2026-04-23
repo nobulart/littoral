@@ -1,9 +1,11 @@
 {
-  "detail": "awaiting dispatch",
+  "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/matthews1967.csv",
+  "detail": "existing per-source outputs found",
   "source_id": "matthews1967",
   "source_name": "matthews1967.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/matthews1967.pdf",
-  "stage": "queued",
-  "status": "queued",
-  "updated_at": 1776977223.304364
+  "stage": "existing_outputs",
+  "status": "completed",
+  "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/matthews1967.summary.md",
+  "updated_at": 1776977545.646312
 }

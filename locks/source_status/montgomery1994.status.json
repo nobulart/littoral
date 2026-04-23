@@ -1,9 +1,11 @@
 {
-  "detail": "awaiting dispatch",
+  "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/montgomery1994.csv",
+  "detail": "existing per-source outputs found",
   "source_id": "montgomery1994",
   "source_name": "montgomery1994.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/montgomery1994.pdf",
-  "stage": "queued",
-  "status": "queued",
-  "updated_at": 1776977223.305244
+  "stage": "existing_outputs",
+  "status": "completed",
+  "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/montgomery1994.summary.md",
+  "updated_at": 1776977545.6480331
 }

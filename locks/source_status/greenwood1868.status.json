@@ -1,9 +1,11 @@
 {
-  "detail": "awaiting dispatch",
+  "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/greenwood1868.csv",
+  "detail": "existing per-source outputs found",
   "source_id": "greenwood1868",
   "source_name": "greenwood1868.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/greenwood1868.pdf",
-  "stage": "queued",
-  "status": "queued",
-  "updated_at": 1776977223.298801
+  "stage": "existing_outputs",
+  "status": "completed",
+  "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/greenwood1868.summary.md",
+  "updated_at": 1776977473.831688
 }

@@ -1,9 +1,11 @@
 {
-  "detail": "awaiting dispatch",
+  "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/ivanovic2016.csv",
+  "detail": "existing per-source outputs found",
   "source_id": "ivanovic2016",
   "source_name": "ivanovic2016.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/ivanovic2016.pdf",
-  "stage": "queued",
-  "status": "queued",
-  "updated_at": 1776977223.299969
+  "stage": "existing_outputs",
+  "status": "completed",
+  "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/ivanovic2016.summary.md",
+  "updated_at": 1776977473.836704
 }

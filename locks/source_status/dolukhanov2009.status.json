@@ -2,7 +2,7 @@
   "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/dolukhanov2009.csv",
   "detail": "cache miss; attempting extraction",
   "finished_at": null,
-  "heartbeat_at": 1776977454.014656,
+  "heartbeat_at": 1776977456.0180101,
   "lease_key": "dolukhanov2009",
   "owner": {
     "host": "Mac-Studio.local",
@@ -16,5 +16,5 @@
   "started_at": 1776977189.266469,
   "status": "running",
   "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/dolukhanov2009.summary.md",
-  "updated_at": 1776977454.014656
+  "updated_at": 1776977456.0180101
 }

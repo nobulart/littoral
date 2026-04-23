@@ -1,9 +1,11 @@
 {
-  "detail": "awaiting dispatch",
+  "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/pereyra2020.csv",
+  "detail": "existing per-source outputs found",
   "source_id": "pereyra2020",
   "source_name": "pereyra2020.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/pereyra2020.pdf",
-  "stage": "queued",
-  "status": "queued",
-  "updated_at": 1776977223.306277
+  "stage": "existing_outputs",
+  "status": "completed",
+  "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/pereyra2020.summary.md",
+  "updated_at": 1776977648.69244
 }

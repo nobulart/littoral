@@ -2,7 +2,7 @@
   "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/dennison1974.csv",
   "detail": "cache miss; attempting extraction",
   "finished_at": null,
-  "heartbeat_at": 1776977454.007473,
+  "heartbeat_at": 1776977456.013355,
   "lease_key": "dennison1974",
   "owner": {
     "host": "Mac-Studio.local",
@@ -16,5 +16,5 @@
   "started_at": 1776977189.2653272,
   "status": "running",
   "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/dennison1974.summary.md",
-  "updated_at": 1776977454.007473
+  "updated_at": 1776977456.013355
 }

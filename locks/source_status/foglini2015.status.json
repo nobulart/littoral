@@ -1,9 +1,11 @@
 {
-  "detail": "awaiting dispatch",
+  "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/foglini2015.csv",
+  "detail": "existing per-source outputs found",
   "source_id": "foglini2015",
   "source_name": "foglini2015.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/foglini2015.pdf",
-  "stage": "queued",
-  "status": "queued",
-  "updated_at": 1776976800.942063
+  "stage": "existing_outputs",
+  "status": "completed",
+  "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/foglini2015.summary.md",
+  "updated_at": 1776977223.3220322
 }

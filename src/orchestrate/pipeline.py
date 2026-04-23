@@ -80,6 +80,7 @@ def default_config(workspace_root: Path) -> PipelineConfig:
 def run_pipeline(config: PipelineConfig) -> None:
     pipeline_started = time.perf_counter()
     reporter = PipelineProgressReporter(total_files=len(_selected_input_files(config)), mode=config.progress_ui, enabled=config.verbosity > 0)
+    last_shared_status_refresh = 0.0
     def emit(message: str, level: int = 1) -> None:
         if config.verbosity >= level and config.progress_callback is None:
             reporter.emit_global(message)
@@ -148,7 +149,9 @@ def run_pipeline(config: PipelineConfig) -> None:
                 pending = deque(work_items)
                 active_futures: dict = {}
                 while pending or active_futures:
-                    _refresh_reporter_from_shared_statuses(reporter, lock_manager, source_index_map)
+                    if (time.time() - last_shared_status_refresh) >= 1.5:
+                        _refresh_reporter_from_shared_statuses(reporter, lock_manager, source_index_map)
+                        last_shared_status_refresh = time.time()
                     reporter.tick()
                     if reporter.abort_requested():
                         pending.clear()

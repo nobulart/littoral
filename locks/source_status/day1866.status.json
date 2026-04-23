@@ -1,9 +1,11 @@
 {
-  "detail": "awaiting dispatch",
+  "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/day1866.csv",
+  "detail": "existing per-source outputs found",
   "source_id": "day1866",
   "source_name": "day1866.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/day1866.pdf",
-  "stage": "queued",
-  "status": "queued",
-  "updated_at": 1776976800.939548
+  "stage": "existing_outputs",
+  "status": "completed",
+  "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/day1866.summary.md",
+  "updated_at": 1776977189.2637131
 }

@@ -28,13 +28,15 @@ class ManagedLease:
         lease_key: str,
         owner: dict[str, object],
         heartbeat_seconds: float,
+        min_update_interval_seconds: float,
         metadata: dict[str, object],
     ) -> None:
         self.status_path = status_path
         self.lease_path = lease_path
         self.lease_key = lease_key
         self.owner = dict(owner)
-        self.heartbeat_seconds = max(0.5, heartbeat_seconds)
+        self.heartbeat_seconds = max(1.0, heartbeat_seconds)
+        self.min_update_interval_seconds = max(1.0, min_update_interval_seconds)
         self.metadata = dict(metadata)
         self._status = "running"
         self._stage = "claimed"
@@ -45,26 +47,40 @@ class ManagedLease:
         self._lock = threading.Lock()
         self._stop_event = threading.Event()
         self._heartbeat_thread: threading.Thread | None = None
+        self._last_persisted_at = 0.0
 
     def snapshot(self) -> dict[str, object]:
         with self._lock:
             return self._snapshot_locked()
 
     def start(self) -> None:
-        self._persist()
+        self._persist(force=True)
         self._heartbeat_thread = threading.Thread(target=self._heartbeat_loop, name=f"lease-heartbeat-{self.lease_key}", daemon=True)
         self._heartbeat_thread.start()
 
-    def update(self, stage: str, detail: str = "", *, status: str | None = None, extra: dict[str, object] | None = None) -> None:
+    def update(
+        self,
+        stage: str,
+        detail: str = "",
+        *,
+        status: str | None = None,
+        extra: dict[str, object] | None = None,
+        force: bool = False,
+    ) -> None:
         with self._lock:
+            changed = False
             if status is not None:
+                changed = changed or self._status != status
                 self._status = status
+            changed = changed or self._stage != stage or self._detail != detail
             self._stage = stage
             self._detail = detail
             self._updated_at = time.time()
             if extra:
                 self.metadata.update(extra)
-            self._persist_locked()
+                changed = True
+            if force or self._should_persist_locked(changed):
+                self._persist_locked(force=True)
 
     def complete(self, detail: str = "", *, extra: dict[str, object] | None = None) -> None:
         with self._lock:
@@ -75,7 +91,7 @@ class ManagedLease:
             self._finished_at = self._updated_at
             if extra:
                 self.metadata.update(extra)
-            self._persist_locked()
+            self._persist_locked(force=True)
         self._shutdown(remove_lease=True)
 
     def fail(self, detail: str, *, extra: dict[str, object] | None = None) -> None:
@@ -87,7 +103,7 @@ class ManagedLease:
             self._finished_at = self._updated_at
             if extra:
                 self.metadata.update(extra)
-            self._persist_locked()
+            self._persist_locked(force=True)
         self._shutdown(remove_lease=True)
 
     def _heartbeat_loop(self) -> None:
@@ -96,7 +112,7 @@ class ManagedLease:
                 if self._finished_at is not None:
                     return
                 self._updated_at = time.time()
-                self._persist_locked()
+                self._persist_locked(force=True)
 
     def _shutdown(self, *, remove_lease: bool) -> None:
         self._stop_event.set()
@@ -108,15 +124,23 @@ class ManagedLease:
             except FileNotFoundError:
                 pass
 
-    def _persist(self) -> None:
+    def _persist(self, *, force: bool = False) -> None:
         with self._lock:
-            self._persist_locked()
+            self._persist_locked(force=force)
 
-    def _persist_locked(self) -> None:
+    def _persist_locked(self, *, force: bool = False) -> None:
+        if not force and not self._should_persist_locked(True):
+            return
         snapshot = self._snapshot_locked()
         write_json_atomic(self.status_path, snapshot)
         if self._finished_at is None:
             write_json_atomic(self.lease_path, snapshot)
+        self._last_persisted_at = self._updated_at
+
+    def _should_persist_locked(self, changed: bool) -> bool:
+        if not changed:
+            return False
+        return (self._updated_at - self._last_persisted_at) >= self.min_update_interval_seconds
 
     def _snapshot_locked(self) -> dict[str, object]:
         payload = {
@@ -139,8 +163,9 @@ class PipelineLockManager:
         self,
         root_dir: Path,
         *,
-        heartbeat_seconds: float = 2.0,
-        stale_after_seconds: float = 30.0,
+        heartbeat_seconds: float = 8.0,
+        stale_after_seconds: float = 45.0,
+        min_update_interval_seconds: float = 4.0,
     ) -> None:
         self.root_dir = root_dir
         self.source_status_dir = root_dir / "source_status"
@@ -149,6 +174,7 @@ class PipelineLockManager:
         self.merge_active_dir = root_dir / "merge_active"
         self.heartbeat_seconds = heartbeat_seconds
         self.stale_after_seconds = stale_after_seconds
+        self.min_update_interval_seconds = min_update_interval_seconds
         self.owner = {
             "host": socket.gethostname(),
             "pid": os.getpid(),
@@ -265,6 +291,7 @@ class PipelineLockManager:
                 lease_key=source_id,
                 owner=self.owner,
                 heartbeat_seconds=self.heartbeat_seconds,
+                min_update_interval_seconds=self.min_update_interval_seconds,
                 metadata={
                     "source_id": source_id,
                     "source_name": source_name,
@@ -311,6 +338,7 @@ class PipelineLockManager:
                 lease_key=merge_key,
                 owner=self.owner,
                 heartbeat_seconds=self.heartbeat_seconds,
+                min_update_interval_seconds=self.min_update_interval_seconds,
                 metadata={"merge_key": merge_key},
             )
             try:

@@ -41,44 +41,49 @@ The pipeline emphasizes provenance and uncertainty. It distinguishes reported ob
 flowchart TD
     A["Run command"] --> B["Load ontology and SamplePoint schema"]
     B --> C["Select input files from data/incoming or --source/document"]
-    C --> D{"Per-source outputs exist?"}
-    D -- "skip mode" --> E["Skip source"]
-    D -- "overwrite/new" --> F{"Supported file type?"}
-    F -- "No" --> G["Log unsupported source"]
-    F -- "CSV/TXT/PDF" --> H{"PDF?"}
-    H -- "Yes" --> I{"MinerU cache mode"}
-    I -- "reuse and complete" --> J["Read staged MinerU artifacts"]
-    I -- "refresh/missing" --> K["Generate or refresh MinerU artifacts"]
-    I -- "skip" --> L["Bypass MinerU artifacts"]
-    H -- "No" --> M["Load source directly"]
-    J --> N["Build document payload"]
-    K --> N
-    L --> N
-    M --> N
-    N --> O["Deterministic extractors: known tables, features, manual map rows"]
-    O --> P["Targeted local LLM extraction when enabled"]
-    P --> Q["Narrative fallback evidence scan"]
-    Q --> R["Candidate/evidence ledger and promoted SamplePoints"]
-    R --> S{"Manual geocode file exists?"}
-    S -- "Coordinate match" --> T["Use manual coordinates and provenance"]
-    S -- "Exists but no usable match/columns" --> U["Suppress fuzzy geocoding"]
-    S -- "No" --> V["Contextual geocode from source text"]
-    T --> W["Elevation normalization"]
-    U --> W
-    V --> W
-    W --> X{"Reported elevation exists?"}
-    X -- "Yes" --> Y["Preserve reported elevation"]
-    X -- "No, valid coords" --> Z["Sample SRTM15+V2 DEM"]
-    X -- "No usable coords" --> AA["Leave elevation empty with note"]
-    Y --> AB["Confidence scoring"]
-    Z --> AB
-    AA --> AB
-    AB --> AC["Ontology and JSON schema validation"]
-    AC -- "Rejected" --> AD["Write logs/UnresolvedRecords.log"]
-    AC -- "Accepted" --> AE["Write outputs/per_source/<source>.csv and summary"]
-    AE --> AF["Merge per-source outputs"]
-    AF --> AG["Write outputs/merged/master_dataset.csv and .geojson"]
-    AG --> AH["Write logs/processing_report.md"]
+    C --> D["Write or refresh shared source status under locks/source_status"]
+    D --> E{"Supported file type?"}
+    E -- "No" --> F["Mark unsupported in shared status and unresolved log"]
+    E -- "CSV/TXT/PDF" --> G{"Can this workstation claim a per-source lease?"}
+    G -- "Another workstation holds a fresh lease/status" --> H["Keep source queued locally and poll shared status until it becomes claimable or completes elsewhere"]
+    G -- "Completed elsewhere / skip mode with finished outputs" --> I["Mark skipped locally and do not dispatch"]
+    G -- "Yes" --> J["Create non-hidden lease file in locks/source_active and start heartbeat"]
+    J --> K{"PDF?"}
+    K -- "Yes" --> L{"MinerU cache mode"}
+    L -- "reuse and complete" --> M["Read staged MinerU artifacts"]
+    L -- "refresh/missing" --> N["Generate or refresh MinerU artifacts"]
+    L -- "skip" --> O["Bypass MinerU artifacts"]
+    K -- "No" --> P["Load source directly"]
+    M --> Q["Build document payload"]
+    N --> Q
+    O --> Q
+    P --> Q
+    Q --> R["Deterministic extractors: known tables, features, manual map rows"]
+    R --> S["Targeted local LLM extraction when enabled"]
+    S --> T["Narrative fallback evidence scan"]
+    T --> U["Candidate/evidence ledger and promoted SamplePoints"]
+    U --> V{"Manual geocode file exists?"}
+    V -- "Coordinate match" --> W["Use manual coordinates and provenance"]
+    V -- "Exists but no usable match/columns" --> X["Suppress fuzzy geocoding"]
+    V -- "No" --> Y["Contextual geocode from source text"]
+    W --> Z["Elevation normalization"]
+    X --> Z
+    Y --> Z
+    Z --> AA{"Reported elevation exists?"}
+    AA -- "Yes" --> AB["Preserve reported elevation"]
+    AA -- "No, valid coords" --> AC["Sample SRTM15+V2 DEM"]
+    AA -- "No usable coords" --> AD["Leave elevation empty with note"]
+    AB --> AE["Confidence scoring"]
+    AC --> AE
+    AD --> AE
+    AE --> AF["Ontology and JSON schema validation"]
+    AF -- "Rejected" --> AG["Write logs/UnresolvedRecords.log"]
+    AF -- "Accepted" --> AH["Atomically publish outputs/per_source/<source>.csv and summary"]
+    AH --> AI["Mark shared source status completed and remove active lease"]
+    AI --> AJ["Acquire merge lease under locks/merge_active"]
+    AJ --> AK["Rebuild merged outputs from per-source outputs"]
+    AK --> AL["Atomically publish outputs/merged/master_dataset.csv and .geojson"]
+    AL --> AM["Mark merge status completed and write logs/processing_report.md"]
 ```
 
 At a record level, the spatial decision order is:
@@ -91,6 +96,8 @@ At a record level, the spatial decision order is:
 Elevation normalization follows a provenance-preserving pattern: reported elevations are preserved; DEM values are derived for records with valid coordinates and no source elevation; samples from reported/manual coordinates are marked authoritative, while samples from inferred contextual coordinates are marked approximate.
 
 The extraction architecture is additive: deterministic parsers, targeted LLM contexts, narrative fallback clusters, and manual geocode rows contribute evidence independently. Earlier success no longer suppresses later evidence scans. Per-source summaries include a candidate/evidence ledger showing how many records each stage promoted and how many fallback clusters were seen.
+
+At a run level, multi-workstation coordination is now lease-driven rather than output-driven. Each workstation advertises discovered sources in `locks/source_status`, waits briefly for mirrored updates to settle, claims only sources that do not have a fresh foreign `running` status or lease, and keeps contended sources queued locally until they either become claimable or complete elsewhere. Accepted per-source outputs and merged dataset files are then published atomically so mirrored readers do not observe partial writes.
 
 ## Data Products
 

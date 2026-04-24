@@ -1,20 +1,11 @@
 {
   "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/thomas2009.csv",
-  "detail": "running deterministic and inference stages",
-  "finished_at": null,
-  "heartbeat_at": 1777010673.452699,
-  "lease_key": "thomas2009",
-  "owner": {
-    "host": "Mac-Studio.local",
-    "pid": 29087,
-    "run_id": "29c65358d9c840d9bb152bb9816aa625"
-  },
+  "detail": "existing per-source outputs found",
   "source_id": "thomas2009",
   "source_name": "thomas2009.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/thomas2009.pdf",
-  "stage": "extract",
-  "started_at": 1777008023.1386182,
-  "status": "running",
+  "stage": "existing_outputs",
+  "status": "completed",
   "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/thomas2009.summary.md",
-  "updated_at": 1777010673.452699
+  "updated_at": 1777013756.8465989
 }

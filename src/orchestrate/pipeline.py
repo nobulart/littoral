@@ -3,12 +3,15 @@ from __future__ import annotations
 from collections import deque
 from concurrent.futures import ThreadPoolExecutor, wait, FIRST_COMPLETED
 from dataclasses import dataclass, field
+import json
 from pathlib import Path
 import shutil
 import subprocess
 import threading
 import time
 from collections.abc import Callable
+from urllib import error as urlerror
+from urllib import request as urlrequest
 
 from src.common.io import append_log, write_csv, write_summary, write_text_atomic
 from src.extract.base import BaseExtractor
@@ -204,6 +207,18 @@ def run_pipeline(config: PipelineConfig) -> None:
                 return False
             return reporter.cancel_file(mapping[0], "cancelled by remote API request")
 
+        def _cancel_source_control(source_id: str) -> dict[str, object]:
+            mapping = source_index_map.get(source_id)
+            if mapping is None:
+                return {"ok": False, "source_id": source_id, "detail": "source is not known to this node"}
+            handled_immediately = reporter.cancel_file(mapping[0], "cancelled by ncurses operator request")
+            return {
+                "ok": True,
+                "source_id": source_id,
+                "handled_immediately": handled_immediately,
+                "detail": "cancel request applied locally",
+            }
+
         def _force_source_by_id(source_id: str, reason: str = "force killed by operator request") -> dict[str, object]:
             mapping = source_index_map.get(source_id)
             result = lock_manager.force_release_source(source_id, workspace_root=config.workspace_root, reason=reason)
@@ -229,9 +244,25 @@ def run_pipeline(config: PipelineConfig) -> None:
                 "detail": result.detail,
             }
 
+        def _trigger_source_by_id(source_id: str) -> dict[str, object]:
+            mapping = source_index_map.get(source_id)
+            if mapping is None:
+                return {"ok": False, "source_id": source_id, "detail": "source is not known to this node"}
+            index, _ = mapping
+            work_item = work_item_by_index.get(index)
+            if work_item is None:
+                return {"ok": False, "source_id": source_id, "detail": "source cannot be retried by this node"}
+            with active_jobs_lock:
+                is_active = source_id in active_jobs_by_source
+            if is_active:
+                return {"ok": False, "source_id": source_id, "detail": "source is already active on this node"}
+            reporter.prioritize_file(index)
+            return {"ok": True, "source_id": source_id, "detail": "source queued for priority dispatch"}
+
         if control_plane is not None:
             control_plane.set_cancel_callback(_cancel_source_by_id)
             control_plane.set_force_callback(lambda source_id: _force_source_by_id(source_id, "force killed by remote API request"))
+            control_plane.set_trigger_callback(_trigger_source_by_id)
             control_plane.update_run_state(
                 "running",
                 "processing sources",
@@ -264,15 +295,46 @@ def run_pipeline(config: PipelineConfig) -> None:
                             unresolved=snapshot.unresolved,
                         )
                     reporter.tick()
+                    for cancel_index in reporter.consume_cancel_requests():
+                        source_id = source_id_by_index.get(cancel_index)
+                        if source_id is not None:
+                            _route_control_request(
+                                "cancel",
+                                source_id,
+                                reporter=reporter,
+                                lock_manager=lock_manager,
+                                control_plane=control_plane,
+                                local_handler=_cancel_source_control,
+                            )
                     for force_index in reporter.consume_force_requests():
                         source_id = source_id_by_index.get(force_index)
                         if source_id is not None:
-                            _force_source_by_id(source_id, "force killed by ncurses operator request")
+                            _route_control_request(
+                                "force",
+                                source_id,
+                                reporter=reporter,
+                                lock_manager=lock_manager,
+                                control_plane=control_plane,
+                                local_handler=lambda target_source_id: _force_source_by_id(
+                                    target_source_id,
+                                    "force killed by ncurses operator request",
+                                ),
+                            )
                     for retry_index in reporter.consume_retry_requests():
                         work_item = work_item_by_index.get(retry_index)
                         if work_item is None:
                             continue
                         _, _, source_id, _ = work_item
+                        routed = _route_control_request(
+                            "trigger",
+                            source_id,
+                            reporter=reporter,
+                            lock_manager=lock_manager,
+                            control_plane=control_plane,
+                            local_handler=_trigger_source_by_id,
+                        )
+                        if routed.get("routed") == "remote":
+                            continue
                         with active_jobs_lock:
                             is_active = source_id in active_jobs_by_source
                         if is_active or any(item[0] == retry_index for item in pending):
@@ -492,6 +554,87 @@ def _expire_timed_out_jobs(
         active_job.lease.abandon(remove_lease=False)
         reporter.fail_file(active_job.index, active_job.source_path.name, reason)
         future.cancel()
+
+
+def _route_control_request(
+    action: str,
+    source_id: str,
+    *,
+    reporter: PipelineProgressReporter,
+    lock_manager: PipelineLockManager,
+    control_plane: PipelineControlPlane | None,
+    local_handler: Callable[[str], dict[str, object]],
+) -> dict[str, object]:
+    owner_host = _source_owner_host(lock_manager, source_id)
+    local_host = str(lock_manager.owner["host"])
+    if owner_host and owner_host != local_host:
+        endpoint = _endpoint_for_host(control_plane, owner_host)
+        if endpoint:
+            result = _post_remote_control(endpoint, action, source_id)
+            result["routed"] = "remote"
+            result["endpoint"] = endpoint
+            _log_control_result(reporter, action, source_id, result)
+            return result
+        result = {
+            "ok": False,
+            "source_id": source_id,
+            "routed": "remote-unavailable",
+            "detail": f"no healthy control endpoint found for {owner_host}",
+        }
+        _log_control_result(reporter, action, source_id, result)
+        return result
+    result = local_handler(source_id)
+    result["routed"] = "local"
+    _log_control_result(reporter, action, source_id, result)
+    return result
+
+
+def _source_owner_host(lock_manager: PipelineLockManager, source_id: str) -> str:
+    status = lock_manager.list_source_statuses().get(source_id)
+    if not status:
+        return ""
+    owner = status.get("owner")
+    if not isinstance(owner, dict):
+        return ""
+    host = owner.get("host")
+    return str(host) if host else ""
+
+
+def _endpoint_for_host(control_plane: PipelineControlPlane | None, host: str) -> str:
+    if control_plane is None:
+        return ""
+    for node in control_plane.list_registered_nodes():
+        if not node.get("healthy"):
+            continue
+        if node.get("hostname") != host:
+            continue
+        endpoint = node.get("endpoint")
+        return str(endpoint) if endpoint else ""
+    return ""
+
+
+def _post_remote_control(endpoint: str, action: str, source_id: str) -> dict[str, object]:
+    url = f"{endpoint.rstrip('/')}/v1/control/{action}/{source_id}"
+    request = urlrequest.Request(url, data=b"", method="POST")
+    try:
+        with urlrequest.urlopen(request, timeout=5) as response:
+            payload = response.read().decode("utf-8")
+    except (OSError, urlerror.URLError) as error:
+        return {"ok": False, "source_id": source_id, "detail": f"remote {action} failed: {error}"}
+    try:
+        parsed = json.loads(payload)
+    except json.JSONDecodeError:
+        return {"ok": False, "source_id": source_id, "detail": f"remote {action} returned non-JSON response"}
+    return parsed if isinstance(parsed, dict) else {"ok": False, "source_id": source_id, "detail": f"remote {action} returned unexpected response"}
+
+
+def _log_control_result(reporter: PipelineProgressReporter, action: str, source_id: str, result: dict[str, object]) -> None:
+    routed = str(result.get("routed") or "")
+    detail = str(result.get("detail") or "")
+    ok = bool(result.get("ok"))
+    route_text = f" via {routed}" if routed else ""
+    status_text = "ok" if ok else "failed"
+    reporter.emit_global(f"control :: {action} {source_id}{route_text} {status_text}{' - ' + detail if detail else ''}")
 
 
 def _ensure_mineru_artifacts(source_path: Path, source_id: str, config: PipelineConfig) -> str:

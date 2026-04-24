@@ -291,9 +291,9 @@ Dashboard controls:
 - `p`: pause or resume dispatching new files while leaving active work running.
 - `s`: request a graceful stop; queued work stops dispatching and active work drains.
 - `q`: abort queued dispatch and drain currently running tasks.
-- `t`: trigger the selected queued item for next dispatch, or re-queue a failed/force-killed item for retry.
-- `x`: cancel the selected queued item, or mark a running item as cancel-requested for operator visibility.
-- `!`: force-kill the selected running item, remove its active lease, and mark the shared status failed.
+- `t`: trigger the selected queued item for next dispatch, or re-queue a failed/force-killed item for retry. If the selected row is owned by another workstation, the request is routed to that workstation's control API.
+- `x`: cancel the selected queued item, or send a cancel request for a running item. Remote running rows are routed to the owning workstation's control API.
+- `!`: force-kill the selected running item, remove its active lease, and mark the shared status failed. Remote rows are force-killed by asking the owning workstation's control API to perform the kill locally.
 - `i`: toggle an inspector pane for the selected row.
 - `r`: force a visual refresh.
 - `j` / `k` or arrow keys: move through the file list.
@@ -303,7 +303,7 @@ Dashboard controls:
 - `/`: alternate shortcut for cycling the current status filter.
 - `o`: cycle sort order through `index`, `status`, `name`, `elapsed`, and `unresolved`.
 
-Note: queued items can be cancelled immediately. Running items can be force-released with `!`, by source id over the API, or with `--force-kill-source`; this removes the active lease and terminates any local owned worker PID recorded in the lease/status payload.
+Note: queued items can be cancelled immediately. Running items can be force-released with `!`, by source id over the API, or with `--force-kill-source`; this removes the active lease and terminates any local owned worker PID recorded in the lease/status payload. Cross-workstation force-kill and trigger actions require the owning workstation to have a healthy endpoint advertised in `locks/nodes/`.
 
 Shared filesystem coordination:
 
@@ -328,6 +328,7 @@ Hybrid control-plane API:
 - `POST /v1/control/drain`: request a graceful stop for that controller.
 - `POST /v1/control/cancel/<source_id>`: request cancellation for a queued or running source on that controller.
 - `POST /v1/control/force/<source_id>`: force-release a source, terminate any local owned worker PID, remove its lease, and mark it failed.
+- `POST /v1/control/trigger/<source_id>`: prioritize a queued source or re-queue a failed source for retry on that controller.
 - Use `--no-control-api` to disable the API layer and fall back to filesystem-only coordination.
 - Use `--control-api-bind-host`, `--control-api-advertise-host`, and `--control-api-port` to tune how nodes are exposed on the LAN.
 

@@ -1,17 +1,17 @@
 {
   "capacity": {
-    "completed": 91,
+    "completed": 100,
     "document_workers": 2,
-    "extracted": 356,
+    "extracted": 364,
     "gpu_slots": 1,
     "job_timeout_minutes": 240.0,
-    "leased_total": 12,
-    "local_active": 0,
+    "leased_total": 4,
+    "local_active": 1,
     "queued": 0,
-    "remote_active": 12,
+    "remote_active": 3,
     "total_files": 106,
-    "unresolved": 67,
-    "updated_at": 1777011036.536837
+    "unresolved": 72,
+    "updated_at": 1777013785.2346728
   },
   "control": {
     "queued_cancels": [],
@@ -22,15 +22,15 @@
   "node_id": "MacBook-Pro.local-92885-61981",
   "pid": 92885,
   "run_state": {
-    "detail": "processing sources",
+    "detail": "pipeline stopped",
     "endpoint": "http://MacBook-Pro.local:61981",
     "run_id": "c18dec6360224b3ab9239b7bfce5389e",
     "started_at": 1777010969.580996,
-    "status": "running",
-    "updated_at": 1777010969.596073
+    "status": "idle",
+    "updated_at": 1777014293.3811069
   },
   "started_at": 1777010969.580996,
   "ttl_seconds": 20.0,
-  "updated_at": 1777011036.536837,
+  "updated_at": 1777014293.3811069,
   "workspace_root": "/Users/craig/ECDO/LITTORAL"
 }

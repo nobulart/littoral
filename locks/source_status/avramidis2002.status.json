@@ -1,8 +1,10 @@
 {
+  "accepted_points": 0,
+  "candidate_points": 0,
   "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/avramidis2002.csv",
-  "detail": "cache miss; attempting extraction",
-  "finished_at": null,
-  "heartbeat_at": 1777011100.258879,
+  "detail": "accepted 0 point(s)",
+  "finished_at": 1777013593.037598,
+  "heartbeat_at": 1777013593.037598,
   "lease_key": "avramidis2002",
   "owner": {
     "host": "Mac-Studio.local",
@@ -12,9 +14,10 @@
   "source_id": "avramidis2002",
   "source_name": "avramidis2002.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/avramidis2002.pdf",
-  "stage": "mineru",
+  "stage": "completed",
   "started_at": 1777010940.0569348,
-  "status": "running",
+  "status": "completed",
   "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/avramidis2002.summary.md",
-  "updated_at": 1777011100.258879
+  "unresolved_entries": 1,
+  "updated_at": 1777013593.037598
 }

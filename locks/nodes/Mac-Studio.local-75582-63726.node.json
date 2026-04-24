@@ -1,0 +1,36 @@
+{
+  "capacity": {
+    "completed": 102,
+    "document_workers": 10,
+    "extracted": 364,
+    "gpu_slots": 2,
+    "job_timeout_minutes": 240.0,
+    "leased_total": 4,
+    "local_active": 3,
+    "queued": 0,
+    "remote_active": 1,
+    "total_files": 106,
+    "unresolved": 75,
+    "updated_at": 1777018131.6475708
+  },
+  "control": {
+    "queued_cancels": [],
+    "stop_requested": false
+  },
+  "endpoint": "http://Mac-Studio.local:63726",
+  "hostname": "Mac-Studio.local",
+  "node_id": "Mac-Studio.local-75582-63726",
+  "pid": 75582,
+  "run_state": {
+    "detail": "processing sources",
+    "endpoint": "http://Mac-Studio.local:63726",
+    "run_id": "ac5516dff8bc46f69984bd6623b410d8",
+    "started_at": 1777014326.738451,
+    "status": "running",
+    "updated_at": 1777014326.759733
+  },
+  "started_at": 1777014326.738451,
+  "ttl_seconds": 20.0,
+  "updated_at": 1777018131.6475708,
+  "workspace_root": "/Users/craig/ECDO/LITTORAL"
+}

@@ -60,6 +60,7 @@ class PipelineProgressReporter:
         self._paused = False
         self._stop_requested = False
         self._abort_requested = False
+        self._cancel_requests: set[int] = set()
         self._force_requests: set[int] = set()
         self._retry_requests: set[int] = set()
         self._scroll_offset = 0
@@ -303,6 +304,13 @@ class PipelineProgressReporter:
             self._poll_input()
             requests = set(self._force_requests)
             self._force_requests.clear()
+            return requests
+
+    def consume_cancel_requests(self) -> set[int]:
+        with self._lock:
+            self._poll_input()
+            requests = set(self._cancel_requests)
+            self._cancel_requests.clear()
             return requests
 
     def consume_retry_requests(self) -> set[int]:
@@ -676,6 +684,8 @@ class PipelineProgressReporter:
         if state is None:
             return
         changed = self.cancel_file(selected)
+        if state.status == "running":
+            self._cancel_requests.add(selected)
         if not changed and state.status not in {"queued", "running"}:
             self._log_line(self._timestamped(f"control :: cannot cancel {state.name} from status {state.status}"))
 

@@ -1,8 +1,10 @@
 {
+  "accepted_points": 0,
+  "candidate_points": 0,
   "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/zorina2014.csv",
-  "detail": "cache miss; attempting extraction",
-  "finished_at": null,
-  "heartbeat_at": 1777011098.271266,
+  "detail": "accepted 0 point(s)",
+  "finished_at": 1777011541.521891,
+  "heartbeat_at": 1777011541.521891,
   "lease_key": "zorina2014",
   "owner": {
     "host": "Mac-Studio.local",
@@ -12,9 +14,10 @@
   "source_id": "zorina2014",
   "source_name": "zorina2014.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/zorina2014.pdf",
-  "stage": "mineru",
+  "stage": "completed",
   "started_at": 1777010946.076721,
-  "status": "running",
+  "status": "completed",
   "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/zorina2014.summary.md",
-  "updated_at": 1777011098.271266
+  "unresolved_entries": 1,
+  "updated_at": 1777011541.521891
 }

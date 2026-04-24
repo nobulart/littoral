@@ -1,30 +1,23 @@
 {
+  "accepted_points": 0,
+  "candidate_points": 0,
   "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/montgomery1994.csv",
-  "detail": "force killed by ncurses operator request",
-  "finished_at": 1777011020.815834,
-  "force_release": {
-    "at": 1777011020.815834,
-    "host": "Mac-Studio.local",
-    "killed_pids": [],
-    "pid": 69371,
-    "reason": "force killed by ncurses operator request",
-    "removed_lease": false,
-    "run_id": "0b46c487f8ea44b98004b3511add45bc",
-    "skipped_pids": []
-  },
-  "heartbeat_at": 1777010670.4380438,
+  "detail": "accepted 0 point(s)",
+  "finished_at": 1777018126.21452,
+  "heartbeat_at": 1777018126.21452,
   "lease_key": "montgomery1994",
   "owner": {
-    "host": "Mac-Studio.local",
-    "pid": 29087,
-    "run_id": "29c65358d9c840d9bb152bb9816aa625"
+    "host": "MacBook-Pro.local",
+    "pid": 95366,
+    "run_id": "eeeaa60db22b4413a338345bd4ca0866"
   },
   "source_id": "montgomery1994",
   "source_name": "montgomery1994.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/montgomery1994.pdf",
-  "stage": "force_released",
-  "started_at": 1777002429.9428859,
-  "status": "failed",
+  "stage": "completed",
+  "started_at": 1777014299.640694,
+  "status": "completed",
   "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/montgomery1994.summary.md",
-  "updated_at": 1777011020.815834
+  "unresolved_entries": 2,
+  "updated_at": 1777018126.21452
 }

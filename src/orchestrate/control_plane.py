@@ -70,6 +70,7 @@ class PipelineControlPlane:
         self._cancel_requests: set[str] = set()
         self._cancel_callback: Callable[[str], bool] | None = None
         self._force_callback: Callable[[str], dict[str, Any]] | None = None
+        self._trigger_callback: Callable[[str], dict[str, Any]] | None = None
 
     @property
     def enabled(self) -> bool:
@@ -118,6 +119,10 @@ class PipelineControlPlane:
         with self._lock:
             self._force_callback = callback
 
+    def set_trigger_callback(self, callback: Callable[[str], dict[str, Any]]) -> None:
+        with self._lock:
+            self._trigger_callback = callback
+
     def request_stop(self, reason: str = "remote drain requested") -> None:
         changed = False
         with self._lock:
@@ -147,7 +152,7 @@ class PipelineControlPlane:
         return pending
 
     def queue_cancel(self, source_id: str) -> bool:
-        normalized = source_id.strip().replace(" ", "_").lower()
+        normalized = Path(source_id.strip()).stem.replace(" ", "_").lower()
         if not normalized:
             return False
         handled = False
@@ -175,6 +180,20 @@ class PipelineControlPlane:
             callback = self._force_callback
         if callback is None:
             return {"ok": False, "source_id": normalized, "detail": "force release is not available on this node"}
+        result = callback(normalized)
+        with self._lock:
+            self._node_updated_at = time.time()
+        self._persist_node()
+        return result
+
+    def trigger_source(self, source_id: str) -> dict[str, Any]:
+        normalized = Path(source_id.strip()).stem.replace(" ", "_").lower()
+        if not normalized:
+            return {"ok": False, "source_id": normalized, "detail": "empty source id"}
+        with self._lock:
+            callback = self._trigger_callback
+        if callback is None:
+            return {"ok": False, "source_id": normalized, "detail": "trigger is not available on this node"}
         result = callback(normalized)
         with self._lock:
             self._node_updated_at = time.time()
@@ -312,6 +331,9 @@ class PipelineControlPlane:
                     return
                 if len(segments) == 4 and segments[:3] == ["v1", "control", "force"]:
                     self._send_json(control_plane.force_release(segments[3]))
+                    return
+                if len(segments) == 4 and segments[:3] == ["v1", "control", "trigger"]:
+                    self._send_json(control_plane.trigger_source(segments[3]))
                     return
                 self.send_error(HTTPStatus.NOT_FOUND, "Not found")
 

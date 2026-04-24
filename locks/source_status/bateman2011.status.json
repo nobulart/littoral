@@ -1,8 +1,10 @@
 {
+  "accepted_points": 4,
+  "candidate_points": 4,
   "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/bateman2011.csv",
-  "detail": "running deterministic and inference stages",
-  "finished_at": null,
-  "heartbeat_at": 1777011096.760288,
+  "detail": "accepted 4 point(s)",
+  "finished_at": 1777012643.882029,
+  "heartbeat_at": 1777012643.882029,
   "lease_key": "bateman2011",
   "owner": {
     "host": "Mac-Studio.local",
@@ -12,9 +14,10 @@
   "source_id": "bateman2011",
   "source_name": "bateman2011.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/bateman2011.pdf",
-  "stage": "extract",
+  "stage": "completed",
   "started_at": 1777010944.570053,
-  "status": "running",
+  "status": "completed",
   "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/bateman2011.summary.md",
-  "updated_at": 1777011096.760288
+  "unresolved_entries": 0,
+  "updated_at": 1777012643.882029
 }

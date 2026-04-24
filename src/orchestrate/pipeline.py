@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import deque
-from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
+from concurrent.futures import ThreadPoolExecutor, wait, FIRST_COMPLETED
 from dataclasses import dataclass, field
 from pathlib import Path
 import shutil
@@ -18,6 +18,7 @@ from src.extract.txt_extractor import TextExtractor
 from src.merge.build import build_master_outputs
 from src.normalize.elevation import apply_elevation_normalization
 from src.ontology.catalog import Ontology, load_ontology
+from src.orchestrate.control_plane import ControlPlaneConfig, PipelineControlPlane
 from src.orchestrate.locking import LeaseDenied, ManagedLease, PipelineLockManager
 from src.orchestrate.progress import PipelineProgressReporter
 from src.orchestrate.runtime import PipelineRuntime, auto_document_workers, auto_gpu_slots, hardware_profile_summary
@@ -48,6 +49,12 @@ class PipelineConfig:
     progress_ui: str = "auto"
     progress_callback: Callable[[str], None] | None = None
     verbosity: int = 1
+    control_api_enabled: bool = True
+    control_api_bind_host: str = "0.0.0.0"
+    control_api_advertise_host: str | None = None
+    control_api_port: int = 0
+    control_api_heartbeat_seconds: float = 5.0
+    control_api_node_ttl_seconds: float = 20.0
 
 
 @dataclass(slots=True)
@@ -81,6 +88,7 @@ def run_pipeline(config: PipelineConfig) -> None:
     pipeline_started = time.perf_counter()
     reporter = PipelineProgressReporter(total_files=len(_selected_input_files(config)), mode=config.progress_ui, enabled=config.verbosity > 0)
     last_shared_status_refresh = 0.0
+    control_plane: PipelineControlPlane | None = None
     def emit(message: str, level: int = 1) -> None:
         if config.verbosity >= level and config.progress_callback is None:
             reporter.emit_global(message)
@@ -93,9 +101,28 @@ def run_pipeline(config: PipelineConfig) -> None:
         runtime = PipelineRuntime(
             ontology=ontology,
             gpu_slots=config.gpu_slots or auto_gpu_slots(),
+            gpu_lock_dir=config.lock_dir,
         )
         lock_manager = PipelineLockManager(config.lock_dir)
         lock_manager.ensure_dirs()
+        control_plane = PipelineControlPlane(
+            config.lock_dir,
+            workspace_root=config.workspace_root,
+            config=ControlPlaneConfig(
+                enabled=config.control_api_enabled,
+                bind_host=config.control_api_bind_host,
+                advertise_host=config.control_api_advertise_host,
+                port=config.control_api_port,
+                heartbeat_seconds=config.control_api_heartbeat_seconds,
+                node_ttl_seconds=config.control_api_node_ttl_seconds,
+            ),
+        )
+        control_plane.start()
+        control_plane.update_run_state("starting", "loading ontology and schema")
+        if control_plane.enabled and control_plane.endpoint:
+            emit(f"Control-plane API: {control_plane.endpoint}", level=1)
+        for message in lock_manager.cleanup_local_orphaned_processes(config.workspace_root):
+            emit(f"Startup cleanup: {message}", level=1)
         extractors = _extractor_registry()
         processed_files: list[str] = []
         skipped_files: list[str] = []
@@ -120,6 +147,12 @@ def run_pipeline(config: PipelineConfig) -> None:
         emit(f"Per-source outputs: {config.per_source_dir}", level=2)
         document_workers = config.document_workers or auto_document_workers()
         emit(f"Concurrency profile: {hardware_profile_summary(document_workers, runtime.gpu_slots)}", level=2)
+        if control_plane is not None:
+            control_plane.update_capacity(
+                document_workers=document_workers,
+                gpu_slots=runtime.gpu_slots,
+                total_files=len(source_paths),
+            )
         work_items: list[tuple[int, Path, str, BaseExtractor]] = []
         source_index_map: dict[str, tuple[int, str]] = {}
         for index, source_path in enumerate(source_paths, start=1):
@@ -144,14 +177,45 @@ def run_pipeline(config: PipelineConfig) -> None:
                 continue
             work_items.append((index, source_path, source_id, extractor))
 
+        if control_plane is not None:
+            def _cancel_source_by_id(source_id: str) -> bool:
+                mapping = source_index_map.get(source_id)
+                if mapping is None:
+                    return False
+                return reporter.cancel_file(mapping[0], "cancelled by remote API request")
+
+            control_plane.set_cancel_callback(_cancel_source_by_id)
+            control_plane.update_run_state(
+                "running",
+                "processing sources",
+                run_id=lock_manager.owner["run_id"],
+                endpoint=control_plane.endpoint,
+            )
+
         if work_items:
             with ThreadPoolExecutor(max_workers=max(1, min(document_workers, len(work_items)))) as executor:
                 pending = deque(work_items)
                 active_futures: dict = {}
                 while pending or active_futures:
+                    if control_plane is not None:
+                        for source_id in control_plane.consume_cancel_requests():
+                            mapping = source_index_map.get(source_id)
+                            if mapping is not None:
+                                reporter.cancel_file(mapping[0], "cancelled by remote API request")
                     if (time.time() - last_shared_status_refresh) >= 1.5:
                         _refresh_reporter_from_shared_statuses(reporter, lock_manager, source_index_map)
                         last_shared_status_refresh = time.time()
+                    if control_plane is not None:
+                        snapshot = reporter.snapshot()
+                        control_plane.update_capacity(
+                            queued=snapshot.queued,
+                            local_active=snapshot.local_active,
+                            remote_active=snapshot.remote_active,
+                            leased_total=snapshot.leased_total,
+                            completed=snapshot.completed,
+                            extracted=snapshot.extracted,
+                            unresolved=snapshot.unresolved,
+                        )
                     reporter.tick()
                     if reporter.abort_requested():
                         pending.clear()
@@ -162,12 +226,14 @@ def run_pipeline(config: PipelineConfig) -> None:
                         and reporter.status_for(item[0]) not in {"done", "skipped", "unsupported", "failed"}
                     )
                     dispatch_attempts = 0
+                    max_dispatch_attempts = len(pending) if pending else 0
                     while (
                         pending
-                        and dispatch_attempts < len(pending)
+                        and dispatch_attempts < max_dispatch_attempts
                         and len(active_futures) < max(1, min(document_workers, len(work_items)))
                         and not reporter.pause_requested()
                         and not reporter.stop_requested()
+                        and not (control_plane.stop_requested() if control_plane is not None else False)
                     ):
                         next_index = reporter.pick_pending_index([item[0] for item in pending])
                         if next_index is None:
@@ -176,6 +242,7 @@ def run_pipeline(config: PipelineConfig) -> None:
                         index, source_path, source_id, extractor = pending[selected_position]
                         del pending[selected_position]
                         dispatch_attempts += 1
+                        max_dispatch_attempts = len(pending) if pending else 0
                         summary_path, csv_path = _per_source_output_paths(config.per_source_dir, source_id)
                         lease = lock_manager.claim_source(
                             source_id,
@@ -220,7 +287,7 @@ def run_pipeline(config: PipelineConfig) -> None:
                         if pending and reporter.pause_requested():
                             time.sleep(0.1)
                             continue
-                        if pending and reporter.stop_requested():
+                        if pending and (reporter.stop_requested() or (control_plane.stop_requested() if control_plane is not None else False)):
                             pending.clear()
                             continue
                         if pending:
@@ -258,6 +325,8 @@ def run_pipeline(config: PipelineConfig) -> None:
 
         merge_started = time.perf_counter()
         emit(f"Building merged outputs ({config.merged_mode})")
+        if control_plane is not None:
+            control_plane.update_run_state("merging", f"building merged outputs ({config.merged_mode})")
         merge_lease = lock_manager.acquire_merge_lease("master_dataset")
         try:
             merge_lease.update("merge", f"building merged outputs ({config.merged_mode})")
@@ -290,6 +359,9 @@ def run_pipeline(config: PipelineConfig) -> None:
         emit(f"Done: {extracted_records} extracted, {len(skipped_files)} skipped, {merged_count} merged, {unresolved_count} unresolved")
         emit(f"Pipeline completed in {_format_elapsed(pipeline_started)}", level=2)
     finally:
+        if control_plane is not None:
+            control_plane.update_run_state("idle", "pipeline stopped")
+            control_plane.stop()
         reporter.close()
 
 

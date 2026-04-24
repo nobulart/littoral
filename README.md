@@ -299,6 +299,24 @@ Shared filesystem coordination:
 - `locks/source_active/*.lease.json` holds the active per-source processing lease with host, pid, run id, heartbeat, stage, and detail.
 - `locks/source_status/*.status.json` records the latest known state for each source, including `queued`, `running`, `completed`, `failed`, `skipped`, and `unsupported`.
 - `locks/merge_active/*.lease.json` and `locks/merge_status/*.status.json` coordinate corpus-level merged output publishing so only one host rebuilds shared master outputs at a time.
+- `locks/nodes/*.node.json` now advertises active pipeline controller endpoints, queue depth, local capacity, and run state for hybrid API-assisted coordination.
+
+Hybrid control-plane API:
+
+- Each running pipeline controller starts a small HTTP API and registers its advertised endpoint in `locks/nodes/`.
+- Node files are rewritten only when the advertised run state, capacity, or control flags change; liveness checks should use the API endpoint.
+- The filesystem remains the durable fallback for source/merge leases and mirrored status files.
+- The API provides low-latency workstation discovery and operator control without giving up crash recovery on the shared drive.
+- `GET /healthz`: liveness probe.
+- `GET /v1/node`: local node metadata, advertised endpoint, run state, and control flags.
+- `GET /v1/capacity`: current queue depth, active counts, and configured document/GPU capacity.
+- `GET /v1/status`: local node snapshot plus currently registered peer nodes from the shared filesystem.
+- `GET /v1/leases`: active source lease payloads visible to the local controller.
+- `GET /v1/sources/<source_id>`: latest local status and lease payloads for one source.
+- `POST /v1/control/drain`: request a graceful stop for that controller.
+- `POST /v1/control/cancel/<source_id>`: request cancellation for a queued or running source on that controller.
+- Use `--no-control-api` to disable the API layer and fall back to filesystem-only coordination.
+- Use `--control-api-bind-host`, `--control-api-advertise-host`, and `--control-api-port` to tune how nodes are exposed on the LAN.
 
 Interface screenshot:
 

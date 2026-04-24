@@ -4,8 +4,9 @@ from dataclasses import dataclass
 import json
 import os
 from pathlib import Path
+import signal
 import socket
-import tempfile
+import subprocess
 import threading
 import time
 import uuid
@@ -167,6 +168,7 @@ class PipelineLockManager:
         stale_after_seconds: float = 45.0,
         min_update_interval_seconds: float = 4.0,
         sync_settle_seconds: float = 1.5,
+        status_bridge_seconds: float = 6.0,
     ) -> None:
         self.root_dir = root_dir
         self.source_status_dir = root_dir / "source_status"
@@ -177,6 +179,7 @@ class PipelineLockManager:
         self.stale_after_seconds = stale_after_seconds
         self.min_update_interval_seconds = min_update_interval_seconds
         self.sync_settle_seconds = max(0.0, sync_settle_seconds)
+        self.status_bridge_seconds = max(self.sync_settle_seconds, status_bridge_seconds)
         self.owner = {
             "host": socket.gethostname(),
             "pid": os.getpid(),
@@ -186,6 +189,44 @@ class PipelineLockManager:
     def ensure_dirs(self) -> None:
         for path in (self.source_status_dir, self.source_active_dir, self.merge_status_dir, self.merge_active_dir):
             path.mkdir(parents=True, exist_ok=True)
+
+    def cleanup_local_orphaned_processes(self, workspace_root: Path) -> list[str]:
+        cleaned: list[str] = []
+        lease_paths = []
+        if self.source_active_dir.exists():
+            lease_paths.extend(sorted(self.source_active_dir.glob("*.lease.json")))
+        if self.merge_active_dir.exists():
+            lease_paths.extend(sorted(self.merge_active_dir.glob("*.lease.json")))
+        for lease_path in lease_paths:
+            payload = self._read_json(lease_path)
+            if not payload:
+                continue
+            owner = payload.get("owner")
+            if not isinstance(owner, dict):
+                continue
+            if owner.get("host") != self.owner["host"]:
+                continue
+            pid = owner.get("pid")
+            if not isinstance(pid, int) or pid == self.owner["pid"]:
+                continue
+            if not self._lease_is_stale(payload):
+                continue
+            worker_pid = payload.get("worker_pid")
+            if isinstance(worker_pid, int) and worker_pid != self.owner["pid"] and self._pid_exists(worker_pid):
+                worker_command = self._command_for_pid(worker_pid)
+                if self._looks_like_littoral_process(worker_command, workspace_root) and self._terminate_pid(worker_pid):
+                    cleaned.append(f"terminated orphaned worker pid {worker_pid} from {lease_path.name}")
+            if not self._pid_exists(pid):
+                self._remove_stale_lease(lease_path)
+                cleaned.append(f"removed stale lease {lease_path.name} for dead pid {pid}")
+                continue
+            command = self._command_for_pid(pid)
+            if not self._looks_like_littoral_process(command, workspace_root):
+                continue
+            if self._terminate_pid(pid):
+                self._remove_stale_lease(lease_path)
+                cleaned.append(f"terminated orphaned pid {pid} from {lease_path.name}")
+        return cleaned
 
     def note_discovered(self, source_id: str, source_name: str, source_path: Path) -> None:
         status_path = self._source_status_path(source_id)
@@ -399,7 +440,8 @@ class PipelineLockManager:
         updated_at = payload.get("updated_at")
         if not isinstance(updated_at, (int, float)):
             return "active running status recorded elsewhere"
-        if (time.time() - float(updated_at)) > self.stale_after_seconds:
+        status_age = time.time() - float(updated_at)
+        if status_age > min(self.stale_after_seconds, self.status_bridge_seconds):
             return None
         owner = payload.get("owner", {})
         if isinstance(owner, dict) and owner.get("run_id") == self.owner["run_id"]:
@@ -413,6 +455,42 @@ class PipelineLockManager:
             lease_path.unlink()
         except FileNotFoundError:
             pass
+
+    def _pid_exists(self, pid: int) -> bool:
+        try:
+            os.kill(pid, 0)
+        except ProcessLookupError:
+            return False
+        except PermissionError:
+            return True
+        return True
+
+    def _command_for_pid(self, pid: int) -> str:
+        try:
+            result = subprocess.run(["ps", "-p", str(pid), "-o", "command="], check=True, capture_output=True, text=True, timeout=2)
+        except (OSError, subprocess.SubprocessError):
+            return ""
+        return result.stdout.strip()
+
+    def _looks_like_littoral_process(self, command: str, workspace_root: Path) -> bool:
+        normalized = command.strip()
+        if not normalized:
+            return False
+        return "run_pipeline.py" in normalized or str(workspace_root) in normalized
+
+    def _terminate_pid(self, pid: int) -> bool:
+        for sig in (signal.SIGTERM, signal.SIGKILL):
+            try:
+                os.kill(pid, sig)
+            except ProcessLookupError:
+                return True
+            except PermissionError:
+                return False
+            for _ in range(10):
+                if not self._pid_exists(pid):
+                    return True
+                time.sleep(0.2)
+        return not self._pid_exists(pid)
 
     def _read_json(self, path: Path) -> dict[str, object] | None:
         if not path.exists():

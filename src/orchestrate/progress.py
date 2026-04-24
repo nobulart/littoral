@@ -30,7 +30,9 @@ class FileProgressState:
 class PipelineProgressSnapshot:
     total_files: int
     queued: int
-    active: int
+    local_active: int
+    remote_active: int
+    leased_total: int
     completed: int
     skipped: int
     cancelled: int
@@ -311,7 +313,17 @@ class PipelineProgressReporter:
 
     def snapshot(self) -> PipelineProgressSnapshot:
         queued = sum(1 for state in self._states.values() if state.status == "queued")
-        active = sum(1 for state in self._states.values() if state.status == "running")
+        local_active = sum(
+            1
+            for state in self._states.values()
+            if state.status == "running" and (not state.lease_owner or state.lease_owner == self._local_owner)
+        )
+        remote_active = sum(
+            1
+            for state in self._states.values()
+            if state.status == "running" and state.lease_owner and state.lease_owner != self._local_owner
+        )
+        leased_total = sum(1 for state in self._states.values() if state.lease_status == "running")
         completed = sum(1 for state in self._states.values() if state.status == "done")
         skipped = sum(1 for state in self._states.values() if state.status == "skipped")
         cancelled = sum(1 for state in self._states.values() if state.status == "cancelled")
@@ -322,7 +334,9 @@ class PipelineProgressReporter:
         return PipelineProgressSnapshot(
             total_files=self.total_files,
             queued=queued,
-            active=active,
+            local_active=local_active,
+            remote_active=remote_active,
+            leased_total=leased_total,
             completed=completed,
             skipped=skipped,
             cancelled=cancelled,
@@ -415,7 +429,8 @@ class PipelineProgressReporter:
         header = (
             f"LITTORAL  {mode}  clock {clock}  runtime {runtime}  "
             f"done {snapshot.completed + snapshot.skipped + snapshot.unsupported + snapshot.cancelled}/{snapshot.total_files}  "
-            f"active {snapshot.active}  queued {snapshot.queued}  extracted {snapshot.extracted}  unresolved {snapshot.unresolved}"
+            f"local {snapshot.local_active}  remote {snapshot.remote_active}  leased {snapshot.leased_total}  "
+            f"queued {snapshot.queued}  extracted {snapshot.extracted}  unresolved {snapshot.unresolved}"
         )
         self._add_line(0, 0, header, width - 1, self._style_for_mode(mode) | curses.A_BOLD)
         self._add_line(1, 0, "=" * max(1, width - 1), width - 1, self._style("dim"))
@@ -649,7 +664,7 @@ class PipelineProgressReporter:
         snapshot = self.snapshot()
         finished = snapshot.completed + snapshot.skipped + snapshot.unsupported + snapshot.cancelled
         return (
-            f"[done={finished}/{snapshot.total_files} active={snapshot.active} "
+            f"[done={finished}/{snapshot.total_files} local={snapshot.local_active} remote={snapshot.remote_active} leased={snapshot.leased_total} "
             f"queued={snapshot.queued} extracted={snapshot.extracted} unresolved={snapshot.unresolved}]"
         )
 

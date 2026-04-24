@@ -2,15 +2,23 @@ from __future__ import annotations
 
 from contextlib import contextmanager, nullcontext
 from dataclasses import dataclass, field
+import json
 from pathlib import Path
 import os
 import platform
+import socket
 import subprocess
 import threading
+import time
 from typing import Any, Callable, Iterator
 
 from src.extract.settings import load_extraction_settings
 from src.ontology.catalog import Ontology
+
+try:
+    import fcntl
+except ImportError:  # pragma: no cover - unavailable on some platforms
+    fcntl = None
 
 
 def auto_document_workers() -> int:
@@ -32,14 +40,22 @@ def auto_gpu_slots() -> int:
 class PipelineRuntime:
     ontology: Ontology
     gpu_slots: int
+    gpu_lock_dir: Path | None = None
     settings_cache: dict[Path, dict[str, Any]] = field(default_factory=dict)
     settings_lock: threading.Lock = field(default_factory=threading.Lock)
     ollama_models_cache: dict[str, set[str] | None] = field(default_factory=dict)
     ollama_lock: threading.Lock = field(default_factory=threading.Lock)
     _gpu_semaphore: threading.BoundedSemaphore = field(init=False, repr=False)
+    _gpu_slot_paths: tuple[Path, ...] = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
         self._gpu_semaphore = threading.BoundedSemaphore(max(1, self.gpu_slots))
+        if self.gpu_lock_dir is None:
+            self._gpu_slot_paths = ()
+            return
+        slot_dir = self.gpu_lock_dir / "gpu_slots"
+        slot_dir.mkdir(parents=True, exist_ok=True)
+        self._gpu_slot_paths = tuple(slot_dir / f"slot-{index:02d}.lock" for index in range(max(1, self.gpu_slots)))
 
     @property
     def ontology_categories(self) -> list[str]:
@@ -69,8 +85,51 @@ class PipelineRuntime:
 
     @contextmanager
     def gpu_task(self) -> Iterator[None]:
-        with self._gpu_semaphore:
+        if not self._gpu_slot_paths or fcntl is None:
+            with self._gpu_semaphore:
+                yield
+            return
+
+        handle = None
+        acquired_path = None
+        while handle is None:
+            for slot_path in self._gpu_slot_paths:
+                candidate = slot_path.open("a+", encoding="utf-8")
+                try:
+                    fcntl.flock(candidate.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+                except BlockingIOError:
+                    candidate.close()
+                    continue
+                acquired_path = slot_path
+                payload = {
+                    "host": socket.gethostname(),
+                    "pid": os.getpid(),
+                    "acquired_at": time.time(),
+                }
+                candidate.seek(0)
+                candidate.truncate()
+                json.dump(payload, candidate, indent=2, sort_keys=True)
+                candidate.write("\n")
+                candidate.flush()
+                handle = candidate
+                break
+            if handle is None:
+                time.sleep(0.1)
+
+        try:
             yield
+        finally:
+            if handle is not None:
+                handle.seek(0)
+                handle.truncate()
+                handle.flush()
+                fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+                handle.close()
+            if acquired_path is not None:
+                try:
+                    acquired_path.touch(exist_ok=True)
+                except OSError:
+                    pass
 
 
 def maybe_gpu_task(runtime: PipelineRuntime | None) -> Any:

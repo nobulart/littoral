@@ -67,6 +67,12 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser.add_argument("--limit", type=int, help="Process only the first N selected input files.")
     parser.add_argument("--document-workers", type=int, help="Number of documents to process concurrently.")
     parser.add_argument("--gpu-slots", type=int, help="Maximum concurrent GPU-bound tasks across MinerU/Ollama/OCR.")
+    parser.add_argument("--no-control-api", action="store_true", help="Disable the hybrid control-plane API and filesystem node registry.")
+    parser.add_argument("--control-api-bind-host", default="0.0.0.0", help="Host/interface to bind the local control-plane API server to.")
+    parser.add_argument("--control-api-advertise-host", help="Hostname or IP to advertise to peer workstations in the filesystem node registry.")
+    parser.add_argument("--control-api-port", type=int, default=0, help="Port for the local control-plane API server. Use 0 to auto-select.")
+    parser.add_argument("--control-api-heartbeat-seconds", type=float, default=5.0, help="How often to check whether changed control-plane state should be published.")
+    parser.add_argument("--control-api-node-ttl-seconds", type=float, default=20.0, help="How recently a node registry entry must have changed to be considered fresh by filesystem-only readers.")
     parser.add_argument("--progress-ui", choices=("auto", "plain", "ncurses"), default="auto", help="Progress display mode.")
     parser.add_argument("--no-clear", action="store_true", help="Retained for compatibility; outputs are protected by default.")
     parser.add_argument("--clear-outputs", action="store_true", help="Delete per-source and merged outputs before running.")
@@ -178,6 +184,12 @@ def _build_config(args: argparse.Namespace, workspace_root: Path) -> PipelineCon
         progress_ui=args.progress_ui,
         progress_callback=None if verbosity == 0 or _uses_dashboard_output(args.progress_ui) else _print_progress,
         verbosity=verbosity,
+        control_api_enabled=not args.no_control_api,
+        control_api_bind_host=args.control_api_bind_host,
+        control_api_advertise_host=args.control_api_advertise_host,
+        control_api_port=args.control_api_port,
+        control_api_heartbeat_seconds=args.control_api_heartbeat_seconds,
+        control_api_node_ttl_seconds=args.control_api_node_ttl_seconds,
     )
 
 

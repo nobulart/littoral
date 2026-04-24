@@ -14,7 +14,7 @@ from src.extract.heuristics import clean_title, infer_record_class
 from src.extract.manual_geocodes import load_manual_geocodes, manual_geocode_note
 
 
-DEPTH_PATTERN = re.compile(r"~?\s*(\d+(?:\.\d+)?)\s*(?:[–-]\s*~?\s*(\d+(?:\.\d+)?))?\s*m?", re.IGNORECASE)
+DEPTH_PATTERN = re.compile(r"~?\s*(\d+(?:,\d{3})*(?:\.\d+)?)\s*(?:[–-]\s*~?\s*(\d+(?:,\d{3})*(?:\.\d+)?))?\s*m?", re.IGNORECASE)
 AGE_KA_PATTERN = re.compile(r"(?:MIS\s*\d+|Holocene|Pleistocene|Last Glacial Maximum|LGM|(\d+(?:\.\d+)?)\s*ka)", re.IGNORECASE)
 FATHOM_TO_M = 1.8288
 
@@ -805,13 +805,29 @@ def _looks_like_dated_beach_name_table(header: list[str]) -> bool:
 
 
 def _feature_paragraphs(text: str) -> list[str]:
-    names = ["Terraces", "Sea cliffs", "Shelf banks/shoals", "Low-relief ridges", "Incised valleys", "Seabed depressions", "Shelf sediments"]
+    names = [
+        "Terraces",
+        "Sea cliffs",
+        "Shelf banks/shoals",
+        "Low-relief ridges",
+        "Incised valleys",
+        "Seabed depressions",
+        "Shelf sediments",
+        "Guyots",
+        "Tablemounts",
+        "Flat-topped seamounts",
+        "Drowned carbonate platforms",
+        "Carbonate platforms",
+        "Atolls",
+    ]
     paragraphs = [" ".join(part.split()) for part in text.split("\n\n") if part.strip()]
     return [paragraph for paragraph in paragraphs if any(paragraph.startswith(f"{name}.") for name in names)]
 
 
 def _indicator_from_text(text: str) -> str:
     lowered = text.lower()
+    if _is_guyot_context(lowered):
+        return "guyot_or_drowned_platform"
     if "reef" in lowered or "coral" in lowered:
         return "coral_reef"
     if "bench" in lowered or "cliff" in lowered or "notch" in lowered:
@@ -845,22 +861,24 @@ def _site_from_feature_text(text: str, fallback: str) -> str:
 def _depth_summary(text: str, allow_bare_table_cell: bool = False) -> tuple[float | None, list[float | None] | None]:
     depths: list[float] = []
     normalized = text.replace("−", "-")
+    max_depth = 6000 if _is_guyot_context(normalized) else 150
     patterns = [
         r"(?:water\s+)?depth(?:s| range)?[^.;:]{0,80}?(\d+(?:\.\d+)?)\s*(?:[–-]\s*(\d+(?:\.\d+)?))?\s*m",
         r"(\d+(?:\.\d+)?)\s*(?:[–-]\s*(\d+(?:\.\d+)?))?\s*m\s*bmsl",
         r"(\d+(?:\.\d+)?)\s*(?:[–-]\s*(\d+(?:\.\d+)?))?\s*m\s+below",
+        r"(?:summit|plateau|platform|top|break)\s+depths?(?:\s*\([^)]*\))?[^.;:]{0,80}?(\d+(?:,\d{3})*(?:\.\d+)?)\s*(?:[–-]\s*(\d+(?:,\d{3})*(?:\.\d+)?))?\s*m",
         r"at\s+(\d+(?:\.\d+)?)\s*,\s*(\d+(?:\.\d+)?)\s+and\s+~?\s*(\d+(?:\.\d+)?)",
         r"at\s+(?:a\s+)?depth\s+of\s+(\d+(?:\.\d+)?)\s*m",
         r"(\d+(?:\.\d+)?)\s*m\s+isobath",
     ]
     for pattern in patterns:
         for match in re.finditer(pattern, normalized, re.IGNORECASE):
-            values = [float(value) for value in match.groups() if value is not None]
-            depths.extend(_clean_depth_values(values, normalized[match.start() : match.end()]))
+            values = [float(value.replace(",", "")) for value in match.groups() if value is not None]
+            depths.extend(_clean_depth_values(values, normalized[match.start() : match.end()], max_depth=max_depth))
     if allow_bare_table_cell and not depths:
         for match in DEPTH_PATTERN.finditer(normalized):
-            values = [float(value) for value in match.groups() if value is not None]
-            depths.extend(_clean_depth_values(values, normalized))
+            values = [float(value.replace(",", "")) for value in match.groups() if value is not None]
+            depths.extend(_clean_depth_values(values, normalized, max_depth=max_depth))
     if not depths:
         return None, None
     low = min(depths)
@@ -869,12 +887,12 @@ def _depth_summary(text: str, allow_bare_table_cell: bool = False) -> tuple[floa
     return midpoint, [round(-high, 2), round(-low, 2)]
 
 
-def _clean_depth_values(values: list[float], context: str) -> list[float]:
+def _clean_depth_values(values: list[float], context: str, max_depth: float = 150) -> list[float]:
     cleaned: list[float] = []
     for value in values:
         if "isobath" in context.lower() and value >= 200:
             value -= 200
-        if 0 <= value <= 150:
+        if 0 <= value <= max_depth:
             cleaned.append(value)
     return cleaned
 
@@ -890,12 +908,30 @@ def _age_summary(text: str):
 
 def _has_depth(text: str) -> bool:
     lowered = text.lower()
-    return bool(DEPTH_PATTERN.search(text)) and any(token in lowered for token in ["depth", "bmsl", "below", "shoreline", "shelf", "reef", "barrier", "terrace", "shoal", "ridge"])
+    return bool(DEPTH_PATTERN.search(text)) and any(token in lowered for token in ["depth", "bmsl", "below", "shoreline", "shelf", "reef", "barrier", "terrace", "shoal", "ridge", "guyot", "tablemount", "seamount", "atoll", "platform"])
 
 
 def _is_relevant_context(text: str) -> bool:
     lowered = text.lower()
-    return any(token in lowered for token in ["depth", "bmsl", "shoreline", "palaeoshoreline", "reef", "barrier", "terrace", "shoal", "cliff", "map"])
+    return any(token in lowered for token in ["depth", "bmsl", "shoreline", "palaeoshoreline", "reef", "barrier", "terrace", "shoal", "cliff", "map", "guyot", "tablemount", "seamount", "atoll", "drowned platform"])
+
+
+def _is_guyot_context(text: str) -> bool:
+    lowered = text.lower()
+    return any(
+        token in lowered
+        for token in [
+            "guyot",
+            "guyots",
+            "tablemount",
+            "table mount",
+            "flat-topped seamount",
+            "flat topped seamount",
+            "drowned carbonate platform",
+            "drowned platform",
+            "drowned island",
+        ]
+    )
 
 
 def _normalize_header(text: str) -> str:

@@ -5,9 +5,20 @@ LITTORAL is a reproducible extraction pipeline for converting paleolittoral lite
 
 ## Scientific Scope
 
-LITTORAL targets observations that constrain past coastal position, relative sea level, shelf exposure, inundation, and associated geomorphic or sedimentary indicators. Candidate records may include submerged shoreline deposits, marine terraces, beach ridges, reef features, wave-cut platforms, estuarine or lagoonal facies, depth-constrained geomorphic surfaces, and mapped coastal landforms.
+LITTORAL targets observations that constrain past coastal position, relative sea level, shelf exposure, inundation, and associated geomorphic or sedimentary indicators. Candidate records may include submerged shoreline deposits, marine terraces, beach ridges, reef features, wave-cut platforms, estuarine or lagoonal facies, depth-constrained geomorphic surfaces, mapped coastal landforms, guyots, tablemounts, flat-topped seamounts, drowned islands, atolls, and drowned shallow-water carbonate platforms.
 
 The pipeline emphasizes provenance and uncertainty. It distinguishes reported observations from derived values, preserves source locators and quotations, records coordinate provenance, and treats geocoded coordinates as approximate unless the source provides precise coordinates.
+
+## Feature Coverage
+
+The controlled vocabulary in `config/categories.json` defines the accepted `indicator_type` values. Current deterministic and fallback extraction paths cover common Quaternary coastal indicators and selected older ocean-island/platform features:
+
+- Shoreline and coastal deposits: `raised_beach`, `submerged_beach`, `beachrock`, `marine_shell_bed`, tidal-flat, saltmarsh, mangrove, lagoonal, estuarine, and deltaic facies.
+- Biogenic and erosional indicators: `coral_reef`, `coral_head`, `intertidal_bioconstruction`, `tidal_notch`, `shore_platform`, `wave_cut_notch_or_bench`, and coastal cave sea-level proxies.
+- Stratigraphic contacts and limiting records: marine-over-terrestrial, terrestrial-over-marine, and subtidal facies records.
+- Ocean-island and platform records: `guyot_or_drowned_platform`, used for guyots, tablemounts, flat-topped seamounts, drowned volcanic islands, atolls, and drowned carbonate platforms when summit, plateau, platform, break, or top depth/elevation is reported.
+
+`guyot_or_drowned_platform` records are deliberately broad. Summit or platform depth is promoted as a sea-level-relevant observation because the feature records former near-sea-level planation, shallow-water carbonate growth, emergence, drowning, or subsidence history. These records should be reviewed with particular care before quantitative sea-level synthesis because present depth usually includes tectonic subsidence, lithospheric flexure, sediment loading, erosion, and platform-growth history.
 
 ## Methodological Overview
 
@@ -21,7 +32,7 @@ The pipeline emphasizes provenance and uncertainty. It distinguishes reported ob
    The loader combines MinerU Markdown, structured table and figure metadata, native PDF text, OCR fallback text, and page-level OCR blocks where needed.
 
 4. **Targeted inference**
-   Deterministic extractors mine known table and feature patterns. Optional local Ollama models interpret high-value MinerU table, map, figure, and chart contexts when deterministic parsing is insufficient.
+   Deterministic extractors mine known table and feature patterns, including guyot/tablemount/flat-topped-seamount contexts with reported summit or platform depths. Optional local Ollama models interpret high-value MinerU table, map, figure, and chart contexts when deterministic parsing is insufficient.
 
 5. **Manual geocode precedence**
    When `data/manual_geocodes/<source>.csv`, `.geojson`, or `.json` exists, LITTORAL treats it as the spatial authority for that source. Matching manual coordinates override contextual geocoding. If a manual table exists but lacks usable coordinates or no row matches a candidate record, fuzzy gazetteer geocoding is suppressed rather than substituted.
@@ -100,6 +111,8 @@ Elevation normalization follows a provenance-preserving pattern: reported elevat
 
 The extraction architecture is additive: deterministic parsers, targeted LLM contexts, narrative fallback clusters, and manual geocode rows contribute evidence independently. Earlier success no longer suppresses later evidence scans. Per-source summaries include a candidate/evidence ledger showing how many records each stage promoted and how many fallback clusters were seen.
 
+Narrative fallback is intentionally conservative for older guyot and carbonate-platform papers. It can promote a record when prose ties a named feature or chain to a reported summit/platform/top depth, or when an atoll-drowning threshold is explicitly expressed relative to sea level. Papers that discuss guyots, atolls, or drowned platforms only in general terms remain unresolved until MinerU/LLM interpretation, manual geocoding, or a specialized parser can isolate a point-level observation.
+
 At a run level, multi-workstation coordination is lease-driven and API-assisted rather than output-driven. Each workstation publishes changed node metadata in `locks/nodes`, advertises discovered sources in `locks/source_status`, waits briefly for mirrored updates to settle, claims only sources that do not have a fresh foreign `running` status or lease, and keeps contended sources queued locally until they either become claimable or complete elsewhere. Accepted per-source outputs and merged dataset files are then published atomically so mirrored readers do not observe partial writes.
 
 Long-running jobs are guarded by a per-document wall-clock timeout. The default is 240 minutes; `--job-timeout-minutes 0` disables the watchdog. When a job times out, or an operator force-releases a source through the CLI or control-plane API, LITTORAL removes the active source lease, marks the shared source status as `failed`, stops any local heartbeat for that job, and terminates any recorded local owned worker PID that still looks like a LITTORAL process.
@@ -145,6 +158,31 @@ Important settings:
 - `ollama.model`: local Ollama model used for reasoning.
 - `geocoding.max_contextual_queries`: cap gazetteer attempts for inferred coordinates.
 - `geocoding.min_delay_seconds`: rate-limit public gazetteer requests.
+
+## Installation
+
+For a full local install on macOS or Linux, run the installer from the repository:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/nobulart/littoral/main/scripts/install.sh | bash
+```
+
+The installer checks OS, architecture, Python compatibility, memory, and available disk space before asking for confirmation. It installs Poppler, Tesseract, a Python virtual environment with `requirements.txt`, Ollama, and the default recommended local models:
+
+```text
+mistral-small:24b qwen2.5vl:7b glm-ocr:latest
+```
+
+Useful options:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/nobulart/littoral/main/scripts/install.sh | bash -s -- --yes
+curl -fsSL https://raw.githubusercontent.com/nobulart/littoral/main/scripts/install.sh | bash -s -- --install-dir "$HOME/src/littoral"
+curl -fsSL https://raw.githubusercontent.com/nobulart/littoral/main/scripts/install.sh | bash -s -- --models "qwen3:8b glm-ocr:latest"
+curl -fsSL https://raw.githubusercontent.com/nobulart/littoral/main/scripts/install.sh | bash -s -- --skip-models
+```
+
+When run from an existing checkout, the installer uses the current directory. When run from elsewhere, it clones `https://github.com/nobulart/littoral.git` into `$HOME/.local/share/littoral` unless `--install-dir` or `LITTORAL_INSTALL_DIR` is set.
 
 ## Local Ollama Inference
 

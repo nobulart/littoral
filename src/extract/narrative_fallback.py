@@ -76,6 +76,8 @@ def _extract_evidence_clusters(text: str) -> list[EvidenceCluster]:
             clusters.extend(_submerged_forest_clusters(section, paragraph))
         if any(token in lowered for token in ["marine terrace", "terrace", "palaeoshoreline", "palaeoshore platform", "shoreline"]):
             clusters.extend(_submerged_landform_clusters(section, paragraph))
+        if _has_guyot_signal(lowered):
+            clusters.extend(_guyot_clusters(section, paragraph))
     return _deduplicate_clusters(clusters)
 
 
@@ -232,6 +234,47 @@ def _submerged_landform_clusters(section: str | None, paragraph: str) -> list[Ev
     return clusters
 
 
+def _guyot_clusters(section: str | None, paragraph: str) -> list[EvidenceCluster]:
+    lowered = paragraph.lower()
+    if not _has_guyot_signal(lowered):
+        return []
+    depths = _extract_guyot_depth_values(paragraph)
+    if not depths:
+        return []
+    age = _extract_age_context(paragraph)
+    site_names = _guyot_site_names(section, paragraph)
+    quote = _short_quote(paragraph, "guyot" if "guyot" in lowered else "flat-topped seamount")
+    clusters: list[EvidenceCluster] = []
+    for site_name in site_names[:8]:
+        for depth in depths[:3]:
+            clusters.append(
+                EvidenceCluster(
+                    site_name=site_name,
+                    indicator_type="guyot_or_drowned_platform",
+                    indicator_subtype="narrative fallback: guyot or drowned carbonate platform",
+                    record_class="sea_level_indicator",
+                    elevation_m=round(-depth, 2),
+                    indicative_range_m=[round(-depth - 100.0, 2), round(-depth + 100.0, 2)],
+                    reported_depth_m=round(depth, 2),
+                    reported_elevation_m=None,
+                    elevation_reference="MSL",
+                    depth_source="reported",
+                    age_ka=age,
+                    dating_method="stratigraphic_context" if age is not None else "other",
+                    description=f"Guyot or drowned carbonate platform at {site_name}, reported around {depth:g} m depth",
+                    quote=quote,
+                    section=section,
+                    notes=(
+                        "Narrative fallback cluster from prose description of a flat-topped seamount, guyot, "
+                        "or drowned carbonate platform. Summit/platform depth is treated as a broad sea-level "
+                        "indicator pending review for subsidence, erosion, and platform-growth history."
+                    ),
+                    confidence_hint="moderate",
+                )
+            )
+    return clusters
+
+
 def _extract_depth_values(text: str) -> list[float]:
     normalized = text.replace("−", "-").replace("–", "-")
     values: list[float] = []
@@ -264,6 +307,36 @@ def _extract_depth_values(text: str) -> list[float]:
     return cleaned
 
 
+def _extract_guyot_depth_values(text: str) -> list[float]:
+    normalized = text.replace("−", "-").replace("–", "-")
+    values: list[float] = []
+    patterns = [
+        r"summit\s+depths?\s+of\s+about\s+(\d+(?:,\d{3})*(?:\.\d+)?)\b.{0,180}?\bm\b",
+        r"(?:summit|plateau|platform|top|break)\s+depths?(?:\s*\([^)]*\))?[^.;:]{0,100}?(\d+(?:,\d{3})*(?:\.\d+)?)\s*(?:-|to|and)?\s*(\d+(?:,\d{3})*(?:\.\d+)?)?\s*m",
+        r"(?:summit|plateau|platform|top|break)[^.]{0,80}?water\s+depths?[^.;:]{0,80}?(\d+(?:,\d{3})*(?:\.\d+)?)\s*(?:-|to|and)?\s*(\d+(?:,\d{3})*(?:\.\d+)?)?\s*m",
+        r"tops?\s+(?:lie|fall|are|deepen)[^.]{0,80}?(\d+(?:,\d{3})*(?:\.\d+)?)\s*(?:-|to|and)?\s*(\d+(?:,\d{3})*(?:\.\d+)?)?\s*m",
+        r"depths?\s+of\s+(?:about\s+|approximately\s+|~\s*)?(\d+(?:,\d{3})*(?:\.\d+)?)\s*(?:-|to|and)?\s*(\d+(?:,\d{3})*(?:\.\d+)?)?\s*m[^.]{0,80}?(?:guyot|seamount|tablemount|platform)",
+        r"(?:guyot|seamount|tablemount|platform)[^.]{0,100}?depths?\s+of\s+(?:about\s+|approximately\s+|~\s*)?(\d+(?:,\d{3})*(?:\.\d+)?)\s*(?:-|to|and)?\s*(\d+(?:,\d{3})*(?:\.\d+)?)?\s*m",
+        r"(?:summits?|tops?)\s+(?:now\s+)?(?:being\s+)?(\d+(?:\.\d+)?)\s*(?:-|to)\s*(\d+(?:\.\d+)?)\s*km\s+below\s+sea\s+level",
+        r"(?:summits?|tops?)[^.]{0,80}?(\d+(?:\.\d+)?)\s*km\s+below\s+sea\s+level",
+        r"atoll\s+(?:top|surface)\s+falls\s+below\s+(\d+(?:\.\d+)?)\s*m\s+with\s+respect\s+to\s+sea\s+level",
+    ]
+    for pattern in patterns:
+        for match in re.finditer(pattern, normalized, re.IGNORECASE):
+            numbers = [float(value.replace(",", "")) for value in match.groups() if value]
+            if "km" in match.group(0).lower():
+                numbers = [value * 1000.0 for value in numbers]
+            if len(numbers) >= 2:
+                values.append(round((numbers[0] + numbers[1]) / 2.0, 2))
+            elif numbers:
+                values.append(numbers[0])
+    cleaned: list[float] = []
+    for value in values:
+        if ((300 <= value <= 6000) or (0 < value <= 100 and "atoll" in normalized.lower())) and value not in cleaned:
+            cleaned.append(round(value, 2))
+    return cleaned
+
+
 def _numbers_from_depth_list(text: str) -> list[float]:
     return [float(value) for value in re.findall(r"\d+(?:\.\d+)?", text)]
 
@@ -273,6 +346,10 @@ def _extract_age_context(text: str) -> float | str | None:
     ka_match = re.search(r"(\d+(?:\.\d+)?)\s*ka", text, re.IGNORECASE)
     if ka_match:
         return float(ka_match.group(1))
+    ma_values = [float(value) for value in re.findall(r"(\d+(?:\.\d+)?)\s*(?:ma|myr|m\.y\.)", text, re.IGNORECASE)]
+    if ma_values:
+        plausible = [value for value in ma_values if value >= 10]
+        return round((plausible[0] if plausible else ma_values[0]) * 1000.0, 3)
     if "last glacial maximum" in lowered or "lgm" in lowered:
         return "LGM"
     if "holocene" in lowered:
@@ -284,6 +361,8 @@ def _extract_age_context(text: str) -> float | str | None:
 
 def _indicator_from_narrative(text: str) -> str:
     lowered = text.lower()
+    if _has_guyot_signal(lowered):
+        return "guyot_or_drowned_platform"
     if "terrace" in lowered:
         return "marine_terrace"
     if "shore platform" in lowered or "palaeoshore platform" in lowered:
@@ -291,6 +370,92 @@ def _indicator_from_narrative(text: str) -> str:
     if "shoreline" in lowered or "palaeoshoreline" in lowered:
         return "submerged_beach"
     return "submerged_beach"
+
+
+def _has_guyot_signal(lowered_text: str) -> bool:
+    return any(
+        token in lowered_text
+        for token in [
+            "guyot",
+            "guyots",
+            "tablemount",
+            "table mount",
+            "flat-topped seamount",
+            "flat topped seamount",
+            "drowned carbonate platform",
+            "drowned platform",
+            "drowned island",
+        ]
+    )
+
+
+def _guyot_site_names(section: str | None, text: str) -> list[str]:
+    names: list[str] = []
+    for match in re.finditer(r"(?:['\"‘’“”]?([A-Z][A-Za-z0-9-]+(?:\s+[A-Z][A-Za-z0-9-]+){0,3})['\"‘’“”]?\s+)?Guyots?\b", text):
+        prefix = match.group(1)
+        if prefix:
+            name = _clean_site_name(f"{prefix} Guyot")
+            if not _generic_guyot_name(name):
+                names.append(name)
+    for match in re.finditer(r"named\s+([A-Z][A-Za-z0-9-]+)\s+and\s+([A-Z][A-Za-z0-9-]+)\s+guyots?\b", text, re.IGNORECASE):
+        names.extend([_clean_site_name(f"{match.group(1).title()} Guyot"), _clean_site_name(f"{match.group(2).title()} Guyot")])
+    for pattern in [
+        r"([A-Z][A-Za-z-]+(?:\s+[A-Z][A-Za-z-]+){0,3})\s+(?:flat[- ]topped\s+)?seamount",
+        r"([A-Z][A-Za-z-]+(?:\s+[A-Z][A-Za-z-]+){0,3})\s+tablemount",
+        r"([A-Z][A-Za-z-]+(?:\s+[A-Z][A-Za-z-]+){0,3})\s+chain\s+of\s+(?:eight\s+)?guyots",
+        r"([A-Z][A-Za-z-]+(?:\s+[A-Z][A-Za-z-]+){0,3})\s+Ridge",
+    ]:
+        for match in re.finditer(pattern, text):
+            names.append(_clean_site_name(match.group(1)))
+    if section and _has_guyot_signal(section.lower()):
+        names.append(_clean_site_name(section))
+    lowered = text.lower()
+    if "geisha" in lowered:
+        names.append("Geisha guyot chain")
+    if "tasmantid" in lowered:
+        names.append("Tasmantid Guyots")
+    if "dutton ridge" in lowered:
+        names.append("Dutton Ridge guyots")
+    if "hawaiian-emperor" in lowered or "hawaiian emperor" in lowered:
+        names.append("Hawaiian-Emperor chain")
+    if "marshall islands" in lowered:
+        names.append("Marshall Islands guyots")
+    if not names:
+        names.append(_infer_site_name(section, text))
+    deduped: list[str] = []
+    seen: set[str] = set()
+    for name in names:
+        key = name.lower()
+        if key not in seen and not _generic_guyot_name(name):
+            seen.add(key)
+            deduped.append(name)
+    if not deduped:
+        deduped.append(_infer_site_name(section, text))
+    return deduped
+
+
+def _generic_guyot_name(name: str) -> bool:
+    lowered = name.lower()
+    return lowered in {
+        "guyot",
+        "guyots",
+        "these guyots",
+        "many guyots",
+        "several guyots",
+        "the guyot",
+        "cretaceous guyot",
+        "cretaceous",
+        "early cretaceous guyot",
+        "early cretaceous",
+        "late cretaceous guyot",
+        "late cretaceous",
+        "western pacific guyot",
+        "north pacific guyot",
+        "pacific guyot",
+        "examining guyot",
+        "early cen guyot",
+        "early cen- guyot",
+    }
 
 
 def _infer_site_name(section: str | None, text: str) -> str:

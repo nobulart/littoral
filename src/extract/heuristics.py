@@ -11,12 +11,25 @@ from src.extract.manual_geocodes import load_manual_geocodes, manual_geocode_not
 from src.orchestrate.runtime import PipelineRuntime
 
 
-TITLE_KEYWORDS = re.compile(r"submerged beach|ancient beach|submerged forest|marine terrace|raised beach", re.IGNORECASE)
+GUYOT_KEYWORD_PATTERN = re.compile(
+    r"guyots?|table\s*mounts?|flat[- ]topped\s+seamounts?|drowned\s+(?:carbonate\s+)?platforms?|drowned\s+islands?",
+    re.IGNORECASE,
+)
+TITLE_KEYWORDS = re.compile(
+    r"submerged beach|ancient beach|submerged forest|marine terrace|raised beach|"
+    r"guyots?|table\s*mounts?|flat[- ]topped\s+seamounts?|drowned\s+(?:carbonate\s+)?platforms?",
+    re.IGNORECASE,
+)
 LATITUDE_PATTERN = re.compile(r"(\d{1,2})\D+(\d{1,2})\D+(North|South)\s+Latitude", re.IGNORECASE)
 LONGITUDE_PATTERN = re.compile(r"(\d{1,3})\D+(\d{1,2})\D+(West|East).{0,120}?Longitude", re.IGNORECASE | re.DOTALL)
 DECIMAL_PAIR_PATTERN = re.compile(r"\b(-?\d{1,2}\.\d{2,6})\s*,\s*(-?\d{1,3}\.\d{2,6})\b")
 FATHOM_PATTERN = re.compile(r"(\d{1,3}(?:,\d{3})*(?:\.\d+)?)\s*fathoms", re.IGNORECASE)
 METER_DEPTH_PATTERN = re.compile(r"(?:water depth|depth(?: of| at)?|located at a water depth of|minimum depth of)\s+(?:of\s+)?(\d+(?:\.\d+)?)\s*m", re.IGNORECASE)
+GUYOT_DEPTH_PATTERN = re.compile(
+    r"(?:summit|plateau|platform|top|break)\s+depths?(?:\s*\([^)]*\))?\s*(?:of|averaging|about|around|at)?\s*"
+    r"(?:~|approximately|approx\.)?\s*(\d+(?:,\d{3})*(?:\.\d+)?)\s*m",
+    re.IGNORECASE,
+)
 AGE_BP_PATTERN = re.compile(r"(\d{1,2},\d{3}|\d{3,5})\s*(?:yrs\s*B\.P\.|years\s*B\.P\.|B\.P\.)", re.IGNORECASE)
 TITLE_FALLBACK_PATTERN = re.compile(r'(?m)^[A-Z][A-Za-z0-9.,;:\'"()\-–— ]{20,}$')
 
@@ -132,6 +145,10 @@ def extract_depth_m(text: str) -> float | None:
     meter_match = METER_DEPTH_PATTERN.search(text)
     if meter_match:
         return float(meter_match.group(1))
+    if GUYOT_KEYWORD_PATTERN.search(text):
+        guyot_match = GUYOT_DEPTH_PATTERN.search(text)
+        if guyot_match:
+            return float(guyot_match.group(1).replace(",", ""))
     fathom_match = FATHOM_PATTERN.search(text)
     if fathom_match:
         fathoms = float(fathom_match.group(1).replace(",", ""))
@@ -158,6 +175,8 @@ def extract_age_models(text: str) -> list[AgeModel]:
 
 def infer_indicator_type(title: str, text: str) -> str:
     lowered = f"{title} {text[:4000]}".lower()
+    if GUYOT_KEYWORD_PATTERN.search(lowered):
+        return "guyot_or_drowned_platform"
     if "ancient beach" in lowered or "raised beach" in lowered:
         return "raised_beach"
     if "submerged beach" in lowered:
@@ -181,6 +200,8 @@ def infer_indicator_types(title: str, text: str) -> list[str]:
         ordered.append("terrestrial_over_marine_contact")
     if "marine terrace" in lowered_title:
         ordered.append("marine_terrace")
+    if GUYOT_KEYWORD_PATTERN.search(lowered_title):
+        ordered.append("guyot_or_drowned_platform")
     if ordered:
         deduped: list[str] = []
         for item in ordered:
@@ -196,6 +217,8 @@ def infer_indicator_types(title: str, text: str) -> list[str]:
         ordered.append("terrestrial_over_marine_contact")
     if "marine terrace" in lowered:
         ordered.append("marine_terrace")
+    if GUYOT_KEYWORD_PATTERN.search(lowered):
+        ordered.append("guyot_or_drowned_platform")
     if not ordered:
         ordered.append("submerged_beach")
     deduped: list[str] = []
@@ -218,6 +241,7 @@ def build_indicator_specific_quote(text: str, indicator_type: str) -> str:
         "submerged_beach": ["submerged beach"],
         "terrestrial_over_marine_contact": ["submerged forest"],
         "marine_terrace": ["marine terrace"],
+        "guyot_or_drowned_platform": ["guyot", "flat-topped seamount", "flat topped seamount", "drowned carbonate platform"],
     }
     for phrase in phrase_map.get(indicator_type, []):
         index = lowered.find(phrase)

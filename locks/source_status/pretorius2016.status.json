@@ -2,19 +2,19 @@
   "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/pretorius2016.csv",
   "detail": "running deterministic and inference stages",
   "finished_at": null,
-  "heartbeat_at": 1777014317.024724,
+  "heartbeat_at": 1777024464.0638468,
   "lease_key": "pretorius2016",
   "owner": {
-    "host": "Mac-Studio.local",
-    "pid": 69371,
-    "run_id": "0b46c487f8ea44b98004b3511add45bc"
+    "host": "MacBook-Pro.local",
+    "pid": 4673,
+    "run_id": "ace8fb5faf2141d08b5f9a461e5f0513"
   },
   "source_id": "pretorius2016",
   "source_name": "pretorius2016.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/pretorius2016.pdf",
   "stage": "extract",
-  "started_at": 1777013732.692439,
+  "started_at": 1777023791.7291598,
   "status": "running",
   "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/pretorius2016.summary.md",
-  "updated_at": 1777014317.024724
+  "updated_at": 1777024464.0638468
 }

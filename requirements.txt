@@ -2,8 +2,9 @@
 #
 # The pipeline code itself uses the Python standard library. MinerU is pinned
 # here because LITTORAL shells out to the `mineru` CLI and consumes its staged
-# Markdown/JSON outputs.
-mineru==3.1.1
+# Markdown/JSON outputs. The `all` extra follows MinerU's recommended local
+# install path for PDF/document parsing backends.
+mineru[all]==3.1.0
 
 # Non-Python runtime tools expected on PATH for full PDF/OCR/LLM operation:
 # - poppler utilities: pdfinfo, pdftotext, pdftoppm

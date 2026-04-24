@@ -1,0 +1,23 @@
+{
+  "accepted_points": 1,
+  "candidate_points": 1,
+  "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/firth1993.csv",
+  "detail": "accepted 1 point(s)",
+  "finished_at": 1777024228.6268768,
+  "heartbeat_at": 1777024228.6268768,
+  "lease_key": "firth1993",
+  "owner": {
+    "host": "Mac-Studio.local",
+    "pid": 90974,
+    "run_id": "e4a546571a7740349f98147b665674a4"
+  },
+  "source_id": "firth1993",
+  "source_name": "firth1993.pdf",
+  "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/firth1993.pdf",
+  "stage": "completed",
+  "started_at": 1777023342.140055,
+  "status": "completed",
+  "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/firth1993.summary.md",
+  "unresolved_entries": 0,
+  "updated_at": 1777024228.6268768
+}

@@ -180,6 +180,17 @@
       "default_record_class": "sea_level_indicator",
       "allowed_qualifiers": ["dated", "undated", "uncertain_interpretation"]
     },
+    "guyot_or_drowned_platform": {
+      "definition": "Flat-topped seamount, tablemount, drowned volcanic island, atoll, or drowned shallow-water carbonate platform whose summit or platform depth records former near-sea-level planation, carbonate growth, emergence, drowning, or subsidence history.",
+      "diagnostic_criteria": [
+        "Feature is explicitly described as a guyot, tablemount, flat-topped seamount, drowned island, atoll, or drowned carbonate platform.",
+        "Summit, plateau, platform, break, or top depth/elevation is reported or can be tied to a named feature.",
+        "Text links the feature to shallow-water carbonate growth, wave/base-level erosion, emergence, drowning, subsidence, or sea-level history."
+      ],
+      "typical_uncertainty_bounds_m": [50.0, 250.0],
+      "default_record_class": "sea_level_indicator",
+      "allowed_qualifiers": ["dated", "undated", "reworked", "uncertain_interpretation"]
+    },
     "tidal_notch": {
       "definition": "Erosional notch or bioerosional notch formed in a narrow vertical range around sea level.",
       "diagnostic_criteria": [

@@ -1,0 +1,20 @@
+{
+  "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/vogt1971.csv",
+  "detail": "running deterministic and inference stages",
+  "finished_at": null,
+  "heartbeat_at": 1777024457.624077,
+  "lease_key": "vogt1971",
+  "owner": {
+    "host": "Mac-Studio.local",
+    "pid": 90974,
+    "run_id": "e4a546571a7740349f98147b665674a4"
+  },
+  "source_id": "vogt1971",
+  "source_name": "vogt1971.pdf",
+  "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/vogt1971.pdf",
+  "stage": "extract",
+  "started_at": 1777023352.689695,
+  "status": "running",
+  "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/vogt1971.summary.md",
+  "updated_at": 1777024457.624077
+}

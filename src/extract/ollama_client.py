@@ -58,7 +58,8 @@ class OllamaClient:
             "You are extracting structured paleo-relative sea-level evidence from one MinerU table, map, figure, or chart context. "
             "Return JSON only. Preserve records even when coordinates are not explicit; use null latitude/longitude and include a place_query/location_name from the context. "
             "Do not invent values unsupported by the context. Return at most 12 of the strongest candidate records. "
-            "If the context is ancient stratigraphy, palaeontology, or process sedimentology without Quaternary/coastal relative sea-level measurements, return no candidate_records.\n\n"
+            "If the context is ancient stratigraphy, palaeontology, or process sedimentology without Quaternary/coastal relative sea-level measurements, return no candidate_records. "
+            "Exception: preserve guyots, tablemounts, flat-topped seamounts, drowned islands, atolls, and drowned carbonate platforms when the context reports summit/platform depth, drowning, emergence, subsidence, or sea-level history.\n\n"
             "Required JSON schema:\n"
             "{\n"
             '  "summary": "string",\n'
@@ -212,7 +213,7 @@ class OllamaClient:
             [f"[page {block.page_number} | cue={block.cue} | source={block.source}]\n{block.text[:2000]}" for block in payload.page_blocks[:12]]
         )
         return (
-            "You are extracting paleo-relative sea-level evidence from literature. Return JSON only. Do not invent coordinates, ages, indicators, or localities not explicitly supported by the text, figures, maps, or tables. If a field is not explicit, use null. Return at most 12 of the strongest candidate records when a paper clearly discusses multiple indicators or localities. If the document is ancient stratigraphy, palaeontology, or process sedimentology without Quaternary/coastal relative sea-level measurements, return no candidate_records.\n\n"
+            "You are extracting paleo-relative sea-level evidence from literature. Return JSON only. Do not invent coordinates, ages, indicators, or localities not explicitly supported by the text, figures, maps, or tables. If a field is not explicit, use null. Return at most 12 of the strongest candidate records when a paper clearly discusses multiple indicators or localities. If the document is ancient stratigraphy, palaeontology, or process sedimentology without Quaternary/coastal relative sea-level measurements, return no candidate_records. Exception: preserve guyots, tablemounts, flat-topped seamounts, drowned islands, atolls, and drowned carbonate platforms when the document reports summit/platform depth, drowning, emergence, subsidence, or sea-level history.\n\n"
             "Required JSON schema:\n"
             "{\n"
             '  "summary": "string",\n'

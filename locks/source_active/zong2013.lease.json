@@ -2,19 +2,19 @@
   "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/zong2013.csv",
   "detail": "running deterministic and inference stages",
   "finished_at": null,
-  "heartbeat_at": 1777014319.074076,
+  "heartbeat_at": 1777024460.656599,
   "lease_key": "zong2013",
   "owner": {
-    "host": "Mac-Studio.local",
-    "pid": 69371,
-    "run_id": "0b46c487f8ea44b98004b3511add45bc"
+    "host": "MacBook-Pro.local",
+    "pid": 4673,
+    "run_id": "ace8fb5faf2141d08b5f9a461e5f0513"
   },
   "source_id": "zong2013",
   "source_name": "zong2013.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/zong2013.pdf",
   "stage": "extract",
-  "started_at": 1777013486.5536609,
+  "started_at": 1777023796.2575512,
   "status": "running",
   "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/zong2013.summary.md",
-  "updated_at": 1777014319.074076
+  "updated_at": 1777024460.656599
 }

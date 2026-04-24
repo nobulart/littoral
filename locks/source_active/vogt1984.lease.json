@@ -1,0 +1,20 @@
+{
+  "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/vogt1984.csv",
+  "detail": "cache miss; attempting extraction",
+  "finished_at": null,
+  "heartbeat_at": 1777024459.337499,
+  "lease_key": "vogt1984",
+  "owner": {
+    "host": "Mac-Studio.local",
+    "pid": 90974,
+    "run_id": "e4a546571a7740349f98147b665674a4"
+  },
+  "source_id": "vogt1984",
+  "source_name": "vogt1984.pdf",
+  "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/vogt1984.pdf",
+  "stage": "mineru",
+  "started_at": 1777023354.407161,
+  "status": "running",
+  "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/vogt1984.summary.md",
+  "updated_at": 1777024459.337499
+}

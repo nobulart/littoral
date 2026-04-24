@@ -1,0 +1,20 @@
+{
+  "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/huppert2020.csv",
+  "detail": "running deterministic and inference stages",
+  "finished_at": null,
+  "heartbeat_at": 1777024458.076952,
+  "lease_key": "huppert2020",
+  "owner": {
+    "host": "Mac-Studio.local",
+    "pid": 90974,
+    "run_id": "e4a546571a7740349f98147b665674a4"
+  },
+  "source_id": "huppert2020",
+  "source_name": "huppert2020.pdf",
+  "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/huppert2020.pdf",
+  "stage": "extract",
+  "started_at": 1777023345.155123,
+  "status": "running",
+  "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/huppert2020.summary.md",
+  "updated_at": 1777024458.076952
+}

@@ -1,11 +1,23 @@
 {
+  "accepted_points": 32,
+  "candidate_points": 32,
   "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/brooke2017.csv",
-  "detail": "existing per-source outputs found",
+  "detail": "accepted 32 point(s)",
+  "finished_at": 1776988467.22661,
+  "heartbeat_at": 1776988467.22661,
+  "lease_key": "brooke2017",
+  "owner": {
+    "host": "Mac-Studio.local",
+    "pid": 29087,
+    "run_id": "29c65358d9c840d9bb152bb9816aa625"
+  },
   "source_id": "brooke2017",
   "source_name": "brooke2017.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/brooke2017.pdf",
-  "stage": "existing_outputs",
+  "stage": "completed",
+  "started_at": 1776986290.655248,
   "status": "completed",
   "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/brooke2017.summary.md",
-  "updated_at": 1776976761.526263
+  "unresolved_entries": 0,
+  "updated_at": 1776988467.22661
 }

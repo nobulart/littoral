@@ -1,0 +1,20 @@
+{
+  "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/mitchell2005.csv",
+  "detail": "running deterministic and inference stages",
+  "finished_at": null,
+  "heartbeat_at": 1777005096.695171,
+  "lease_key": "mitchell2005",
+  "owner": {
+    "host": "Mac-Studio.local",
+    "pid": 29087,
+    "run_id": "29c65358d9c840d9bb152bb9816aa625"
+  },
+  "source_id": "mitchell2005",
+  "source_name": "mitchell2005.pdf",
+  "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/mitchell2005.pdf",
+  "stage": "extract",
+  "started_at": 1777001364.5716429,
+  "status": "running",
+  "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/mitchell2005.summary.md",
+  "updated_at": 1777005096.695171
+}

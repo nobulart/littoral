@@ -2,19 +2,19 @@
   "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/bard2010.csv",
   "detail": "running deterministic and inference stages",
   "finished_at": null,
-  "heartbeat_at": 1776977020.178185,
+  "heartbeat_at": 1777011095.2557309,
   "lease_key": "bard2010",
   "owner": {
     "host": "Mac-Studio.local",
-    "pid": 13381,
-    "run_id": "f6e33ac3aec34980abe6c42769c39dea"
+    "pid": 69371,
+    "run_id": "0b46c487f8ea44b98004b3511add45bc"
   },
   "source_id": "bard2010",
   "source_name": "bard2010.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/bard2010.pdf",
   "stage": "extract",
-  "started_at": 1776976761.439998,
+  "started_at": 1777010943.0667799,
   "status": "running",
   "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/bard2010.summary.md",
-  "updated_at": 1776977020.178185
+  "updated_at": 1777011095.2557309
 }

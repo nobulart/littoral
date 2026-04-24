@@ -20,6 +20,17 @@ class LeaseDenied:
     status: str = "skipped"
 
 
+@dataclass(slots=True)
+class ForceReleaseResult:
+    source_id: str
+    lease_found: bool
+    status_found: bool
+    removed_lease: bool
+    killed_pids: list[int]
+    skipped_pids: list[str]
+    detail: str
+
+
 class ManagedLease:
     def __init__(
         self,
@@ -106,6 +117,9 @@ class ManagedLease:
                 self.metadata.update(extra)
             self._persist_locked(force=True)
         self._shutdown(remove_lease=True)
+
+    def abandon(self, *, remove_lease: bool = False) -> None:
+        self._shutdown(remove_lease=remove_lease)
 
     def _heartbeat_loop(self) -> None:
         while not self._stop_event.wait(self.heartbeat_seconds):
@@ -286,6 +300,70 @@ class PipelineLockManager:
                 statuses[source_id] = payload
         return statuses
 
+    def force_release_source(self, source_id: str, *, workspace_root: Path, reason: str = "force released by operator") -> ForceReleaseResult:
+        normalized_source_id = Path(source_id.strip()).stem.replace(" ", "_").lower()
+        status_path = self._source_status_path(normalized_source_id)
+        lease_path = self._source_lease_path(normalized_source_id)
+        lease_payload = self._read_json(lease_path)
+        status_payload = self._read_json(status_path)
+        killed_pids: list[int] = []
+        skipped_pids: list[str] = []
+
+        for pid_label, pid in self._candidate_pids_for_force_release(lease_payload, status_payload):
+            if pid == self.owner["pid"]:
+                skipped_pids.append(f"{pid_label}:{pid}:current-controller")
+                continue
+            if not self._pid_exists(pid):
+                continue
+            command = self._command_for_pid(pid)
+            if command and not self._looks_like_littoral_process(command, workspace_root):
+                skipped_pids.append(f"{pid_label}:{pid}:command-not-recognized")
+                continue
+            if self._terminate_pid(pid):
+                killed_pids.append(pid)
+            else:
+                skipped_pids.append(f"{pid_label}:{pid}:terminate-failed")
+
+        removed_lease = False
+        try:
+            lease_path.unlink()
+            removed_lease = True
+        except FileNotFoundError:
+            pass
+
+        now = time.time()
+        base_payload = status_payload if isinstance(status_payload, dict) else {}
+        base_payload.update(
+            {
+                "source_id": normalized_source_id,
+                "status": "failed",
+                "stage": "force_released",
+                "detail": reason,
+                "updated_at": now,
+                "finished_at": now,
+                "force_release": {
+                    "host": self.owner["host"],
+                    "pid": self.owner["pid"],
+                    "run_id": self.owner["run_id"],
+                    "reason": reason,
+                    "killed_pids": killed_pids,
+                    "skipped_pids": skipped_pids,
+                    "removed_lease": removed_lease,
+                    "at": now,
+                },
+            }
+        )
+        write_json_atomic(status_path, base_payload)
+        return ForceReleaseResult(
+            source_id=normalized_source_id,
+            lease_found=lease_payload is not None,
+            status_found=status_payload is not None,
+            removed_lease=removed_lease,
+            killed_pids=killed_pids,
+            skipped_pids=skipped_pids,
+            detail=reason,
+        )
+
     def claim_source(
         self,
         source_id: str,
@@ -455,6 +533,29 @@ class PipelineLockManager:
             lease_path.unlink()
         except FileNotFoundError:
             pass
+
+    def _candidate_pids_for_force_release(
+        self,
+        lease_payload: dict[str, object] | None,
+        status_payload: dict[str, object] | None,
+    ) -> list[tuple[str, int]]:
+        candidates: list[tuple[str, int]] = []
+        seen: set[int] = set()
+        for payload in (lease_payload, status_payload):
+            if not isinstance(payload, dict):
+                continue
+            worker_pid = payload.get("worker_pid")
+            if isinstance(worker_pid, int) and worker_pid not in seen:
+                candidates.append(("worker_pid", worker_pid))
+                seen.add(worker_pid)
+            owner = payload.get("owner")
+            if isinstance(owner, dict):
+                owner_host = owner.get("host")
+                owner_pid = owner.get("pid")
+                if owner_host == self.owner["host"] and isinstance(owner_pid, int) and owner_pid not in seen:
+                    candidates.append(("owner_pid", owner_pid))
+                    seen.add(owner_pid)
+        return candidates
 
     def _pid_exists(self, pid: int) -> bool:
         try:

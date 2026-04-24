@@ -1,11 +1,30 @@
 {
   "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/snelling2007.csv",
-  "detail": "existing per-source outputs found",
+  "detail": "force killed by ncurses operator request",
+  "finished_at": 1777011033.139132,
+  "force_release": {
+    "at": 1777011033.139132,
+    "host": "Mac-Studio.local",
+    "killed_pids": [],
+    "pid": 69371,
+    "reason": "force killed by ncurses operator request",
+    "removed_lease": false,
+    "run_id": "0b46c487f8ea44b98004b3511add45bc",
+    "skipped_pids": []
+  },
+  "heartbeat_at": 1777010674.201754,
+  "lease_key": "snelling2007",
+  "owner": {
+    "host": "Mac-Studio.local",
+    "pid": 29087,
+    "run_id": "29c65358d9c840d9bb152bb9816aa625"
+  },
   "source_id": "snelling2007",
   "source_name": "snelling2007.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/snelling2007.pdf",
-  "stage": "existing_outputs",
-  "status": "completed",
+  "stage": "force_released",
+  "started_at": 1777006198.163775,
+  "status": "failed",
   "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/snelling2007.summary.md",
-  "updated_at": 1776977795.629353
+  "updated_at": 1777011033.139132
 }

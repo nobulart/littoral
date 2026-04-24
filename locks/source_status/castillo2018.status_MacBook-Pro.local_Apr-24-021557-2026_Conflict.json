@@ -1,0 +1,20 @@
+{
+  "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/castillo2018.csv",
+  "detail": "running deterministic and inference stages",
+  "finished_at": null,
+  "heartbeat_at": 1776989749.9975538,
+  "lease_key": "castillo2018",
+  "owner": {
+    "host": "MacBook-Pro.local",
+    "pid": 80896,
+    "run_id": "02b4e36c1ef64fd9836b4fb904f04ca4"
+  },
+  "source_id": "castillo2018",
+  "source_name": "castillo2018.pdf",
+  "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/castillo2018.pdf",
+  "stage": "extract",
+  "started_at": 1776986787.34387,
+  "status": "running",
+  "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/castillo2018.summary.md",
+  "updated_at": 1776989749.9975538
+}

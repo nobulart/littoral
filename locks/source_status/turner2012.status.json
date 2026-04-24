@@ -1,20 +1,20 @@
 {
   "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/turner2012.csv",
-  "detail": "cache miss; attempting extraction",
+  "detail": "running deterministic and inference stages",
   "finished_at": null,
-  "heartbeat_at": 1776978059.346199,
+  "heartbeat_at": 1777010671.686282,
   "lease_key": "turner2012",
   "owner": {
     "host": "Mac-Studio.local",
-    "pid": 15314,
-    "run_id": "e32a5b2319a845ca921cd00012b6e41a"
+    "pid": 29087,
+    "run_id": "29c65358d9c840d9bb152bb9816aa625"
   },
   "source_id": "turner2012",
   "source_name": "turner2012.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/turner2012.pdf",
-  "stage": "mineru",
-  "started_at": 1776977803.166958,
+  "stage": "extract",
+  "started_at": 1777008245.676246,
   "status": "running",
   "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/turner2012.summary.md",
-  "updated_at": 1776978059.346199
+  "updated_at": 1777010671.686282
 }

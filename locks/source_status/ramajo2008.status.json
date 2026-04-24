@@ -1,20 +1,23 @@
 {
+  "accepted_points": 0,
+  "candidate_points": 0,
   "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/ramajo2008.csv",
-  "detail": "processing claim acquired",
-  "finished_at": null,
-  "heartbeat_at": 1776977648.6932049,
+  "detail": "accepted 0 point(s)",
+  "finished_at": 1777006440.9553258,
+  "heartbeat_at": 1777006440.9553258,
   "lease_key": "ramajo2008",
   "owner": {
-    "host": "MacBook-Pro.local",
-    "pid": 63447,
-    "run_id": "cb21d7c10beb417e84033607f4d8bd27"
+    "host": "Mac-Studio.local",
+    "pid": 29087,
+    "run_id": "29c65358d9c840d9bb152bb9816aa625"
   },
   "source_id": "ramajo2008",
   "source_name": "ramajo2008.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/ramajo2008.pdf",
-  "stage": "claimed",
-  "started_at": 1776977648.6932049,
-  "status": "running",
+  "stage": "completed",
+  "started_at": 1777004373.977351,
+  "status": "completed",
   "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/ramajo2008.summary.md",
-  "updated_at": 1776977648.6932049
+  "unresolved_entries": 1,
+  "updated_at": 1777006440.9553258
 }

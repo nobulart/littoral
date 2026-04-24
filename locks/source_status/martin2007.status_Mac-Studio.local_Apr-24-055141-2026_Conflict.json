@@ -1,0 +1,20 @@
+{
+  "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/martin2007.csv",
+  "detail": "running deterministic and inference stages",
+  "finished_at": null,
+  "heartbeat_at": 1777002695.084723,
+  "lease_key": "martin2007",
+  "owner": {
+    "host": "Mac-Studio.local",
+    "pid": 29087,
+    "run_id": "29c65358d9c840d9bb152bb9816aa625"
+  },
+  "source_id": "martin2007",
+  "source_name": "martin2007.pdf",
+  "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/martin2007.pdf",
+  "stage": "extract",
+  "started_at": 1777000116.509161,
+  "status": "running",
+  "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/martin2007.summary.md",
+  "updated_at": 1777002695.084723
+}

@@ -69,6 +69,7 @@ class PipelineControlPlane:
         self._stop_requested = False
         self._cancel_requests: set[str] = set()
         self._cancel_callback: Callable[[str], bool] | None = None
+        self._force_callback: Callable[[str], dict[str, Any]] | None = None
 
     @property
     def enabled(self) -> bool:
@@ -112,6 +113,10 @@ class PipelineControlPlane:
     def set_cancel_callback(self, callback: Callable[[str], bool]) -> None:
         with self._lock:
             self._cancel_callback = callback
+
+    def set_force_callback(self, callback: Callable[[str], dict[str, Any]]) -> None:
+        with self._lock:
+            self._force_callback = callback
 
     def request_stop(self, reason: str = "remote drain requested") -> None:
         changed = False
@@ -161,6 +166,20 @@ class PipelineControlPlane:
         if changed:
             self._persist_node()
         return handled
+
+    def force_release(self, source_id: str) -> dict[str, Any]:
+        normalized = Path(source_id.strip()).stem.replace(" ", "_").lower()
+        if not normalized:
+            return {"ok": False, "source_id": normalized, "detail": "empty source id"}
+        with self._lock:
+            callback = self._force_callback
+        if callback is None:
+            return {"ok": False, "source_id": normalized, "detail": "force release is not available on this node"}
+        result = callback(normalized)
+        with self._lock:
+            self._node_updated_at = time.time()
+        self._persist_node()
+        return result
 
     def update_run_state(self, status: str, detail: str = "", **extra: Any) -> None:
         changed = False
@@ -290,6 +309,9 @@ class PipelineControlPlane:
                 if len(segments) == 4 and segments[:3] == ["v1", "control", "cancel"]:
                     handled = control_plane.queue_cancel(segments[3])
                     self._send_json({"ok": True, "source_id": segments[3], "handled_immediately": handled})
+                    return
+                if len(segments) == 4 and segments[:3] == ["v1", "control", "force"]:
+                    self._send_json(control_plane.force_release(segments[3]))
                     return
                 self.send_error(HTTPStatus.NOT_FOUND, "Not found")
 

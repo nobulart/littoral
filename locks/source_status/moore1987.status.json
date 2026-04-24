@@ -1,20 +1,23 @@
 {
+  "accepted_points": 0,
+  "candidate_points": 0,
   "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/moore1987.csv",
-  "detail": "cache miss; attempting extraction",
-  "finished_at": null,
-  "heartbeat_at": 1776977697.766006,
+  "detail": "accepted 0 point(s)",
+  "finished_at": 1777004674.021288,
+  "heartbeat_at": 1777004674.021288,
   "lease_key": "moore1987",
   "owner": {
-    "host": "Mac-Studio.local",
-    "pid": 14922,
-    "run_id": "586ccbfd656a4ffdaa393f64f3ee5799"
+    "host": "MacBook-Pro.local",
+    "pid": 80896,
+    "run_id": "02b4e36c1ef64fd9836b4fb904f04ca4"
   },
   "source_id": "moore1987",
   "source_name": "moore1987.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/moore1987.pdf",
-  "stage": "mineru",
-  "started_at": 1776977545.648465,
-  "status": "running",
+  "stage": "completed",
+  "started_at": 1777002990.57248,
+  "status": "completed",
   "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/moore1987.summary.md",
-  "updated_at": 1776977697.766006
+  "unresolved_entries": 1,
+  "updated_at": 1777004674.021288
 }

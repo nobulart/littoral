@@ -1,20 +1,23 @@
 {
+  "accepted_points": 0,
+  "candidate_points": 0,
   "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/lambeck1996.csv",
-  "detail": "cache miss; attempting extraction",
-  "finished_at": null,
-  "heartbeat_at": 1776977697.765483,
+  "detail": "accepted 0 point(s)",
+  "finished_at": 1777000740.3092759,
+  "heartbeat_at": 1777000740.3092759,
   "lease_key": "lambeck1996",
   "owner": {
     "host": "Mac-Studio.local",
-    "pid": 14922,
-    "run_id": "586ccbfd656a4ffdaa393f64f3ee5799"
+    "pid": 29087,
+    "run_id": "29c65358d9c840d9bb152bb9816aa625"
   },
   "source_id": "lambeck1996",
   "source_name": "lambeck1996.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/lambeck1996.pdf",
-  "stage": "mineru",
-  "started_at": 1776977545.6366441,
-  "status": "running",
+  "stage": "completed",
+  "started_at": 1776997715.419664,
+  "status": "completed",
   "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/lambeck1996.summary.md",
-  "updated_at": 1776977697.765483
+  "unresolved_entries": 1,
+  "updated_at": 1777000740.3092759
 }

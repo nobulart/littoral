@@ -1,11 +1,23 @@
 {
+  "accepted_points": 2,
+  "candidate_points": 2,
   "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/beebe1931.csv",
-  "detail": "existing per-source outputs found",
+  "detail": "accepted 2 point(s)",
+  "finished_at": 1776986290.662862,
+  "heartbeat_at": 1776986290.662862,
+  "lease_key": "beebe1931",
+  "owner": {
+    "host": "Mac-Studio.local",
+    "pid": 29087,
+    "run_id": "29c65358d9c840d9bb152bb9816aa625"
+  },
   "source_id": "beebe1931",
   "source_name": "beebe1931.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/beebe1931.pdf",
-  "stage": "existing_outputs",
+  "stage": "completed",
+  "started_at": 1776986277.0723798,
   "status": "completed",
   "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/beebe1931.summary.md",
-  "updated_at": 1776976761.442176
+  "unresolved_entries": 0,
+  "updated_at": 1776986290.662862
 }

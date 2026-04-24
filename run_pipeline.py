@@ -14,6 +14,7 @@ from src.orchestrate.pipeline import (
     default_config,
     run_pipeline,
 )
+from src.orchestrate.locking import PipelineLockManager
 
 
 DEFAULT_INCOMING_DIR = Path("data/incoming")
@@ -36,6 +37,8 @@ def main(argv: list[str] | None = None) -> int:
         os.environ["LITTORAL_FAST_TEST"] = "1"
 
     config = _build_config(args, workspace_root)
+    if args.force_kill_source:
+        return _force_kill_sources(config, args.force_kill_source)
     if args.check_mineru_cache:
         return _check_mineru_cache(config)
 
@@ -67,6 +70,8 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser.add_argument("--limit", type=int, help="Process only the first N selected input files.")
     parser.add_argument("--document-workers", type=int, help="Number of documents to process concurrently.")
     parser.add_argument("--gpu-slots", type=int, help="Maximum concurrent GPU-bound tasks across MinerU/Ollama/OCR.")
+    parser.add_argument("--job-timeout-minutes", type=float, default=240.0, help="Maximum wall-clock minutes for an individual document job. Use 0 to disable.")
+    parser.add_argument("--force-kill-source", action="append", help="Force-release a source by id or filename stem, kill any local owned worker PID, remove its lease, then exit. May be repeated.")
     parser.add_argument("--no-control-api", action="store_true", help="Disable the hybrid control-plane API and filesystem node registry.")
     parser.add_argument("--control-api-bind-host", default="0.0.0.0", help="Host/interface to bind the local control-plane API server to.")
     parser.add_argument("--control-api-advertise-host", help="Hostname or IP to advertise to peer workstations in the filesystem node registry.")
@@ -184,6 +189,7 @@ def _build_config(args: argparse.Namespace, workspace_root: Path) -> PipelineCon
         progress_ui=args.progress_ui,
         progress_callback=None if verbosity == 0 or _uses_dashboard_output(args.progress_ui) else _print_progress,
         verbosity=verbosity,
+        job_timeout_minutes=args.job_timeout_minutes,
         control_api_enabled=not args.no_control_api,
         control_api_bind_host=args.control_api_bind_host,
         control_api_advertise_host=args.control_api_advertise_host,
@@ -191,6 +197,24 @@ def _build_config(args: argparse.Namespace, workspace_root: Path) -> PipelineCon
         control_api_heartbeat_seconds=args.control_api_heartbeat_seconds,
         control_api_node_ttl_seconds=args.control_api_node_ttl_seconds,
     )
+
+
+def _force_kill_sources(config: PipelineConfig, source_ids: list[str]) -> int:
+    lock_manager = PipelineLockManager(config.lock_dir)
+    lock_manager.ensure_dirs()
+    for source_id in source_ids:
+        normalized = _source_id_for_path(Path(source_id))
+        result = lock_manager.force_release_source(
+            normalized,
+            workspace_root=config.workspace_root,
+            reason="force killed by command line",
+        )
+        print(
+            "force-killed "
+            f"{result.source_id}: lease_found={result.lease_found} removed_lease={result.removed_lease} "
+            f"killed_pids={result.killed_pids} skipped_pids={result.skipped_pids}"
+        )
+    return 0
 
 
 def _resolve_verbosity(args: argparse.Namespace) -> int:

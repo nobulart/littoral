@@ -1,20 +1,23 @@
 {
+  "accepted_points": 0,
+  "candidate_points": 0,
   "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/liu2004.csv",
-  "detail": "cache miss; attempting extraction",
-  "finished_at": null,
-  "heartbeat_at": 1776977697.765748,
+  "detail": "accepted 0 point(s)",
+  "finished_at": 1777005068.080894,
+  "heartbeat_at": 1777005068.080894,
   "lease_key": "liu2004",
   "owner": {
     "host": "Mac-Studio.local",
-    "pid": 14922,
-    "run_id": "586ccbfd656a4ffdaa393f64f3ee5799"
+    "pid": 29087,
+    "run_id": "29c65358d9c840d9bb152bb9816aa625"
   },
   "source_id": "liu2004",
   "source_name": "liu2004.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/liu2004.pdf",
-  "stage": "mineru",
-  "started_at": 1776977545.643682,
-  "status": "running",
+  "stage": "completed",
+  "started_at": 1776999160.205798,
+  "status": "completed",
   "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/liu2004.summary.md",
-  "updated_at": 1776977697.765748
+  "unresolved_entries": 1,
+  "updated_at": 1777005068.080894
 }

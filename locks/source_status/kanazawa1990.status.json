@@ -1,20 +1,23 @@
 {
+  "accepted_points": 0,
+  "candidate_points": 0,
   "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/kanazawa1990.csv",
-  "detail": "cache miss; attempting extraction",
-  "finished_at": null,
-  "heartbeat_at": 1776977521.868278,
+  "detail": "accepted 0 point(s)",
+  "finished_at": 1777000388.647984,
+  "heartbeat_at": 1777000388.647984,
   "lease_key": "kanazawa1990",
   "owner": {
-    "host": "Mac-Studio.local",
-    "pid": 14831,
-    "run_id": "6f622528cb2d47c28fb488fe08929692"
+    "host": "MacBook-Pro.local",
+    "pid": 80896,
+    "run_id": "02b4e36c1ef64fd9836b4fb904f04ca4"
   },
   "source_id": "kanazawa1990",
   "source_name": "kanazawa1990.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/kanazawa1990.pdf",
-  "stage": "mineru",
-  "started_at": 1776977473.841983,
-  "status": "running",
+  "stage": "completed",
+  "started_at": 1776996149.337576,
+  "status": "completed",
   "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/kanazawa1990.summary.md",
-  "updated_at": 1776977521.868278
+  "unresolved_entries": 1,
+  "updated_at": 1777000388.647984
 }

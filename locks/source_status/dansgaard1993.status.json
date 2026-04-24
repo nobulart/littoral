@@ -1,20 +1,23 @@
 {
+  "accepted_points": 0,
+  "candidate_points": 0,
   "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/dansgaard1993.csv",
-  "detail": "running deterministic and inference stages",
-  "finished_at": null,
-  "heartbeat_at": 1776977456.0179799,
+  "detail": "accepted 0 point(s)",
+  "finished_at": 1776991604.950347,
+  "heartbeat_at": 1776991604.950347,
   "lease_key": "dansgaard1993",
   "owner": {
-    "host": "Mac-Studio.local",
-    "pid": 14413,
-    "run_id": "4e00929ef3044827ba7d6a99af208977"
+    "host": "MacBook-Pro.local",
+    "pid": 80896,
+    "run_id": "02b4e36c1ef64fd9836b4fb904f04ca4"
   },
   "source_id": "dansgaard1993",
   "source_name": "dansgaard1993.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/dansgaard1993.pdf",
-  "stage": "extract",
-  "started_at": 1776977189.258293,
-  "status": "running",
+  "stage": "completed",
+  "started_at": 1776988945.7131898,
+  "status": "completed",
   "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/dansgaard1993.summary.md",
-  "updated_at": 1776977456.0179799
+  "unresolved_entries": 1,
+  "updated_at": 1776991604.950347
 }

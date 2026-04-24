@@ -1,20 +1,23 @@
 {
+  "accepted_points": 0,
+  "candidate_points": 0,
   "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/hancock1993.csv",
-  "detail": "cache miss; attempting extraction",
-  "finished_at": null,
-  "heartbeat_at": 1776977521.863646,
+  "detail": "accepted 0 point(s)",
+  "finished_at": 1776996491.375364,
+  "heartbeat_at": 1776996491.375364,
   "lease_key": "hancock1993",
   "owner": {
     "host": "Mac-Studio.local",
-    "pid": 14831,
-    "run_id": "6f622528cb2d47c28fb488fe08929692"
+    "pid": 29087,
+    "run_id": "29c65358d9c840d9bb152bb9816aa625"
   },
   "source_id": "hancock1993",
   "source_name": "hancock1993.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/hancock1993.pdf",
-  "stage": "mineru",
-  "started_at": 1776977473.833432,
-  "status": "running",
+  "stage": "completed",
+  "started_at": 1776994308.7390091,
+  "status": "completed",
   "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/hancock1993.summary.md",
-  "updated_at": 1776977521.863646
+  "unresolved_entries": 1,
+  "updated_at": 1776996491.375364
 }

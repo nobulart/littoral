@@ -1,11 +1,23 @@
 {
+  "accepted_points": 51,
+  "candidate_points": 51,
   "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/soerensen2010.csv",
-  "detail": "existing per-source outputs found",
+  "detail": "accepted 51 point(s)",
+  "finished_at": 1777006841.184016,
+  "heartbeat_at": 1777006841.184016,
+  "lease_key": "soerensen2010",
+  "owner": {
+    "host": "Mac-Studio.local",
+    "pid": 29087,
+    "run_id": "29c65358d9c840d9bb152bb9816aa625"
+  },
   "source_id": "soerensen2010",
   "source_name": "soerensen2010.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/soerensen2010.pdf",
-  "stage": "existing_outputs",
+  "stage": "completed",
+  "started_at": 1777006359.9310951,
   "status": "completed",
   "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/soerensen2010.summary.md",
-  "updated_at": 1776977795.630878
+  "unresolved_entries": 0,
+  "updated_at": 1777006841.184016
 }

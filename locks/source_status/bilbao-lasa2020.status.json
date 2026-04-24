@@ -1,11 +1,23 @@
 {
+  "accepted_points": 17,
+  "candidate_points": 17,
   "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/bilbao-lasa2020.csv",
-  "detail": "existing per-source outputs found",
+  "detail": "accepted 17 point(s)",
+  "finished_at": 1776998884.839147,
+  "heartbeat_at": 1776998884.839147,
+  "lease_key": "bilbao-lasa2020",
+  "owner": {
+    "host": "Mac-Studio.local",
+    "pid": 29087,
+    "run_id": "29c65358d9c840d9bb152bb9816aa625"
+  },
   "source_id": "bilbao-lasa2020",
   "source_name": "bilbao-lasa2020.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/bilbao-lasa2020.pdf",
-  "stage": "existing_outputs",
+  "stage": "completed",
+  "started_at": 1776986280.0936801,
   "status": "completed",
   "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/bilbao-lasa2020.summary.md",
-  "updated_at": 1776976761.443369
+  "unresolved_entries": 0,
+  "updated_at": 1776998884.839147
 }

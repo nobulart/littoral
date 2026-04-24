@@ -1,11 +1,23 @@
 {
+  "accepted_points": 12,
+  "candidate_points": 12,
   "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/rokoengen1982.csv",
-  "detail": "existing per-source outputs found",
+  "detail": "accepted 12 point(s)",
+  "finished_at": 1777007431.3068402,
+  "heartbeat_at": 1777007431.3068402,
+  "lease_key": "rokoengen1982",
+  "owner": {
+    "host": "MacBook-Pro.local",
+    "pid": 80896,
+    "run_id": "02b4e36c1ef64fd9836b4fb904f04ca4"
+  },
   "source_id": "rokoengen1982",
   "source_name": "rokoengen1982.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/rokoengen1982.pdf",
-  "stage": "existing_outputs",
+  "stage": "completed",
+  "started_at": 1777004675.527193,
   "status": "completed",
   "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/rokoengen1982.summary.md",
-  "updated_at": 1776977648.6940641
+  "unresolved_entries": 0,
+  "updated_at": 1777007431.3068402
 }

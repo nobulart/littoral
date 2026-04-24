@@ -1,0 +1,23 @@
+{
+  "accepted_points": 0,
+  "candidate_points": 0,
+  "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/chappell1974.csv",
+  "detail": "accepted 0 point(s)",
+  "finished_at": 1776988541.638439,
+  "heartbeat_at": 1776988541.638439,
+  "lease_key": "chappell1974",
+  "owner": {
+    "host": "MacBook-Pro.local",
+    "pid": 80896,
+    "run_id": "02b4e36c1ef64fd9836b4fb904f04ca4"
+  },
+  "source_id": "chappell1974",
+  "source_name": "chappell1974.pdf",
+  "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/chappell1974.pdf",
+  "stage": "completed",
+  "started_at": 1776987084.091635,
+  "status": "completed",
+  "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/chappell1974.summary.md",
+  "unresolved_entries": 1,
+  "updated_at": 1776988541.638439
+}

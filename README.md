@@ -40,50 +40,53 @@ The pipeline emphasizes provenance and uncertainty. It distinguishes reported ob
 ```mermaid
 flowchart TD
     A["Run command"] --> B["Load ontology and SamplePoint schema"]
-    B --> C["Select input files from data/incoming or --source/document"]
-    C --> D["Write or refresh shared source status under locks/source_status"]
-    D --> E{"Supported file type?"}
-    E -- "No" --> F["Mark unsupported in shared status and unresolved log"]
-    E -- "CSV/TXT/PDF" --> G{"Can this workstation claim a per-source lease?"}
-    G -- "Another workstation holds a fresh lease/status" --> H["Keep source queued locally and poll shared status until it becomes claimable or completes elsewhere"]
-    G -- "Completed elsewhere / skip mode with finished outputs" --> I["Mark skipped locally and do not dispatch"]
-    G -- "Yes" --> J["Create non-hidden lease file in locks/source_active and start heartbeat"]
-    J --> K{"PDF?"}
-    K -- "Yes" --> L{"MinerU cache mode"}
-    L -- "reuse and complete" --> M["Read staged MinerU artifacts"]
-    L -- "refresh/missing" --> N["Generate or refresh MinerU artifacts"]
-    L -- "skip" --> O["Bypass MinerU artifacts"]
-    K -- "No" --> P["Load source directly"]
-    M --> Q["Build document payload"]
-    N --> Q
-    O --> Q
-    P --> Q
-    Q --> R["Deterministic extractors: known tables, features, manual map rows"]
-    R --> S["Targeted local LLM extraction when enabled"]
-    S --> T["Narrative fallback evidence scan"]
-    T --> U["Candidate/evidence ledger and promoted SamplePoints"]
-    U --> V{"Manual geocode file exists?"}
-    V -- "Coordinate match" --> W["Use manual coordinates and provenance"]
-    V -- "Exists but no usable match/columns" --> X["Suppress fuzzy geocoding"]
-    V -- "No" --> Y["Contextual geocode from source text"]
-    W --> Z["Elevation normalization"]
-    X --> Z
-    Y --> Z
-    Z --> AA{"Reported elevation exists?"}
-    AA -- "Yes" --> AB["Preserve reported elevation"]
-    AA -- "No, valid coords" --> AC["Sample SRTM15+V2 DEM"]
-    AA -- "No usable coords" --> AD["Leave elevation empty with note"]
-    AB --> AE["Confidence scoring"]
-    AC --> AE
-    AD --> AE
-    AE --> AF["Ontology and JSON schema validation"]
-    AF -- "Rejected" --> AG["Write logs/UnresolvedRecords.log"]
-    AF -- "Accepted" --> AH["Atomically publish outputs/per_source/<source>.csv and summary"]
-    AH --> AI["Mark shared source status completed and remove active lease"]
-    AI --> AJ["Acquire merge lease under locks/merge_active"]
-    AJ --> AK["Rebuild merged outputs from per-source outputs"]
-    AK --> AL["Atomically publish outputs/merged/master_dataset.csv and .geojson"]
-    AL --> AM["Mark merge status completed and write logs/processing_report.md"]
+    B --> C["Start local control-plane API unless --no-control-api"]
+    C --> D["Register changed node state under locks/nodes"]
+    D --> E["Select input files from data/incoming or --source/document"]
+    E --> F["Write or refresh shared source status under locks/source_status"]
+    F --> G{"Supported file type?"}
+    G -- "No" --> H["Mark unsupported in shared status and unresolved log"]
+    G -- "CSV/TXT/PDF" --> I{"Can this workstation claim a per-source lease?"}
+    I -- "Another workstation holds a fresh lease/status" --> J["Keep source queued locally and poll shared status until it becomes claimable or completes elsewhere"]
+    I -- "Completed elsewhere / skip mode with finished outputs" --> K["Mark skipped locally and do not dispatch"]
+    I -- "Yes" --> L["Create non-hidden lease file in locks/source_active and start heartbeat"]
+    L -. "Watchdog/API/CLI/ncurses ! can interrupt running work" .-> N["Terminate any recorded local owned worker PID, remove lease, mark source failed"]
+    L --> O{"PDF?"}
+    O -- "Yes" --> P{"MinerU cache mode"}
+    P -- "reuse and complete" --> Q["Read staged MinerU artifacts"]
+    P -- "refresh/missing" --> R["Generate or refresh MinerU artifacts"]
+    P -- "skip" --> S["Bypass MinerU artifacts"]
+    O -- "No" --> T["Load source directly"]
+    Q --> U["Build document payload"]
+    R --> U
+    S --> U
+    T --> U
+    U --> V["Deterministic extractors: known tables, features, manual map rows"]
+    V --> W["Targeted local LLM extraction when enabled"]
+    W --> X["Narrative fallback evidence scan"]
+    X --> Y["Candidate/evidence ledger and promoted SamplePoints"]
+    Y --> Z{"Manual geocode file exists?"}
+    Z -- "Coordinate match" --> AA["Use manual coordinates and provenance"]
+    Z -- "Exists but no usable match/columns" --> AB["Suppress fuzzy geocoding"]
+    Z -- "No" --> AC["Contextual geocode from source text"]
+    AA --> AD["Elevation normalization"]
+    AB --> AD
+    AC --> AD
+    AD --> AE{"Reported elevation exists?"}
+    AE -- "Yes" --> AF["Preserve reported elevation"]
+    AE -- "No, valid coords" --> AG["Sample SRTM15+V2 DEM"]
+    AE -- "No usable coords" --> AH["Leave elevation empty with note"]
+    AF --> AI["Confidence scoring"]
+    AG --> AI
+    AH --> AI
+    AI --> AJ["Ontology and JSON schema validation"]
+    AJ -- "Rejected" --> AK["Write logs/UnresolvedRecords.log"]
+    AJ -- "Accepted" --> AL["Atomically publish outputs/per_source/<source>.csv and summary"]
+    AL --> AM["Mark shared source status completed and remove active lease"]
+    AM --> AN["Acquire merge lease under locks/merge_active"]
+    AN --> AO["Rebuild merged outputs from per-source outputs"]
+    AO --> AP["Atomically publish outputs/merged/master_dataset.csv and .geojson"]
+    AP --> AQ["Mark merge status completed and write logs/processing_report.md"]
 ```
 
 At a record level, the spatial decision order is:
@@ -97,7 +100,9 @@ Elevation normalization follows a provenance-preserving pattern: reported elevat
 
 The extraction architecture is additive: deterministic parsers, targeted LLM contexts, narrative fallback clusters, and manual geocode rows contribute evidence independently. Earlier success no longer suppresses later evidence scans. Per-source summaries include a candidate/evidence ledger showing how many records each stage promoted and how many fallback clusters were seen.
 
-At a run level, multi-workstation coordination is now lease-driven rather than output-driven. Each workstation advertises discovered sources in `locks/source_status`, waits briefly for mirrored updates to settle, claims only sources that do not have a fresh foreign `running` status or lease, and keeps contended sources queued locally until they either become claimable or complete elsewhere. Accepted per-source outputs and merged dataset files are then published atomically so mirrored readers do not observe partial writes.
+At a run level, multi-workstation coordination is lease-driven and API-assisted rather than output-driven. Each workstation publishes changed node metadata in `locks/nodes`, advertises discovered sources in `locks/source_status`, waits briefly for mirrored updates to settle, claims only sources that do not have a fresh foreign `running` status or lease, and keeps contended sources queued locally until they either become claimable or complete elsewhere. Accepted per-source outputs and merged dataset files are then published atomically so mirrored readers do not observe partial writes.
+
+Long-running jobs are guarded by a per-document wall-clock timeout. The default is 240 minutes; `--job-timeout-minutes 0` disables the watchdog. When a job times out, or an operator force-releases a source through the CLI or control-plane API, LITTORAL removes the active source lease, marks the shared source status as `failed`, stops any local heartbeat for that job, and terminates any recorded local owned worker PID that still looks like a LITTORAL process.
 
 ## Data Products
 
@@ -264,6 +269,12 @@ LITTORAL now supports bounded parallel document processing with separate GPU adm
 python3 run_pipeline.py --document-workers 4 --gpu-slots 1 --progress-ui plain --verbosity 2
 ```
 
+Individual document jobs have a 240 minute wall-clock timeout by default. Set `--job-timeout-minutes 0` to disable the watchdog, or lower it for test runs:
+
+```bash
+python3 run_pipeline.py --job-timeout-minutes 90 --progress-ui plain
+```
+
 Suggested starting points:
 
 - `M3 Max 64GB`: `--document-workers 2` to `4`, `--gpu-slots 1`
@@ -280,8 +291,9 @@ Dashboard controls:
 - `p`: pause or resume dispatching new files while leaving active work running.
 - `s`: request a graceful stop; queued work stops dispatching and active work drains.
 - `q`: abort queued dispatch and drain currently running tasks.
-- `t`: trigger the selected queued item for next dispatch.
+- `t`: trigger the selected queued item for next dispatch, or re-queue a failed/force-killed item for retry.
 - `x`: cancel the selected queued item, or mark a running item as cancel-requested for operator visibility.
+- `!`: force-kill the selected running item, remove its active lease, and mark the shared status failed.
 - `i`: toggle an inspector pane for the selected row.
 - `r`: force a visual refresh.
 - `j` / `k` or arrow keys: move through the file list.
@@ -291,7 +303,7 @@ Dashboard controls:
 - `/`: alternate shortcut for cycling the current status filter.
 - `o`: cycle sort order through `index`, `status`, `name`, `elapsed`, and `unresolved`.
 
-Note: queued items can be cancelled immediately. Running items cannot be force-killed safely from Python worker threads, so `x` on a running row records a cancel request for operator awareness rather than interrupting the task.
+Note: queued items can be cancelled immediately. Running items can be force-released with `!`, by source id over the API, or with `--force-kill-source`; this removes the active lease and terminates any local owned worker PID recorded in the lease/status payload.
 
 Shared filesystem coordination:
 
@@ -315,8 +327,15 @@ Hybrid control-plane API:
 - `GET /v1/sources/<source_id>`: latest local status and lease payloads for one source.
 - `POST /v1/control/drain`: request a graceful stop for that controller.
 - `POST /v1/control/cancel/<source_id>`: request cancellation for a queued or running source on that controller.
+- `POST /v1/control/force/<source_id>`: force-release a source, terminate any local owned worker PID, remove its lease, and mark it failed.
 - Use `--no-control-api` to disable the API layer and fall back to filesystem-only coordination.
 - Use `--control-api-bind-host`, `--control-api-advertise-host`, and `--control-api-port` to tune how nodes are exposed on the LAN.
+
+Force-release a stuck source from the command line:
+
+```bash
+python3 run_pipeline.py --force-kill-source zong2013
+```
 
 Interface screenshot:
 

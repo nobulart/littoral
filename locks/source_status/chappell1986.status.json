@@ -1,20 +1,23 @@
 {
+  "accepted_points": 7,
+  "candidate_points": 7,
   "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/chappell1986.csv",
-  "detail": "running deterministic and inference stages",
-  "finished_at": null,
-  "heartbeat_at": 1776977456.017944,
+  "detail": "accepted 7 point(s)",
+  "finished_at": 1776991271.146198,
+  "heartbeat_at": 1776991271.146198,
   "lease_key": "chappell1986",
   "owner": {
-    "host": "Mac-Studio.local",
-    "pid": 14413,
-    "run_id": "4e00929ef3044827ba7d6a99af208977"
+    "host": "MacBook-Pro.local",
+    "pid": 80896,
+    "run_id": "02b4e36c1ef64fd9836b4fb904f04ca4"
   },
   "source_id": "chappell1986",
   "source_name": "chappell1986.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/chappell1986.pdf",
-  "stage": "extract",
-  "started_at": 1776977189.25614,
-  "status": "running",
+  "stage": "completed",
+  "started_at": 1776988093.352288,
+  "status": "completed",
   "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/chappell1986.summary.md",
-  "updated_at": 1776977456.017944
+  "unresolved_entries": 0,
+  "updated_at": 1776991271.146198
 }

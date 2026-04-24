@@ -1,20 +1,23 @@
 {
+  "accepted_points": 5,
+  "candidate_points": 5,
   "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/camoin2012.csv",
-  "detail": "running deterministic and inference stages",
-  "finished_at": null,
-  "heartbeat_at": 1776977045.519205,
+  "detail": "accepted 5 point(s)",
+  "finished_at": 1776989088.951351,
+  "heartbeat_at": 1776989088.951351,
   "lease_key": "camoin2012",
   "owner": {
-    "host": "MacBook-Pro.local",
-    "pid": 59100,
-    "run_id": "2a8f6f2f5ecf4e0a8b3905d3cd0fb3c8"
+    "host": "Mac-Studio.local",
+    "pid": 29087,
+    "run_id": "29c65358d9c840d9bb152bb9816aa625"
   },
   "source_id": "camoin2012",
   "source_name": "camoin2012.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/camoin2012.pdf",
-  "stage": "extract",
-  "started_at": 1776976800.963021,
-  "status": "running",
+  "stage": "completed",
+  "started_at": 1776986771.0545092,
+  "status": "completed",
   "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/camoin2012.summary.md",
-  "updated_at": 1776977045.519205
+  "unresolved_entries": 0,
+  "updated_at": 1776989088.951351
 }

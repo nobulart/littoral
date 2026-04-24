@@ -1,0 +1,23 @@
+{
+  "accepted_points": 0,
+  "candidate_points": 0,
+  "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/liu2004.csv",
+  "detail": "accepted 0 point(s)",
+  "finished_at": 1777001255.157343,
+  "heartbeat_at": 1777001255.157343,
+  "lease_key": "liu2004",
+  "owner": {
+    "host": "MacBook-Pro.local",
+    "pid": 80896,
+    "run_id": "02b4e36c1ef64fd9836b4fb904f04ca4"
+  },
+  "source_id": "liu2004",
+  "source_name": "liu2004.pdf",
+  "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/liu2004.pdf",
+  "stage": "completed",
+  "started_at": 1776999086.8192692,
+  "status": "completed",
+  "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/liu2004.summary.md",
+  "unresolved_entries": 1,
+  "updated_at": 1777001255.157343
+}

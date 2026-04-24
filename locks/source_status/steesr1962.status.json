@@ -1,20 +1,23 @@
 {
+  "accepted_points": 1,
+  "candidate_points": 1,
   "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/steesr1962.csv",
-  "detail": "running deterministic and inference stages",
-  "finished_at": null,
-  "heartbeat_at": 1776978061.320678,
+  "detail": "accepted 1 point(s)",
+  "finished_at": 1777007132.51155,
+  "heartbeat_at": 1777007132.51155,
   "lease_key": "steesr1962",
   "owner": {
     "host": "Mac-Studio.local",
-    "pid": 15314,
-    "run_id": "e32a5b2319a845ca921cd00012b6e41a"
+    "pid": 29087,
+    "run_id": "29c65358d9c840d9bb152bb9816aa625"
   },
   "source_id": "steesr1962",
   "source_name": "steesr1962.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/steesr1962.pdf",
-  "stage": "extract",
-  "started_at": 1776977797.137701,
-  "status": "running",
+  "stage": "completed",
+  "started_at": 1777006842.6899579,
+  "status": "completed",
   "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/steesr1962.summary.md",
-  "updated_at": 1776978061.320678
+  "unresolved_entries": 0,
+  "updated_at": 1777007132.51155
 }

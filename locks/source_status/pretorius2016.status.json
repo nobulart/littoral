@@ -1,11 +1,30 @@
 {
   "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/pretorius2016.csv",
-  "detail": "existing per-source outputs found",
+  "detail": "force killed by ncurses operator request",
+  "finished_at": 1777011016.0916212,
+  "force_release": {
+    "at": 1777011016.0916212,
+    "host": "Mac-Studio.local",
+    "killed_pids": [],
+    "pid": 69371,
+    "reason": "force killed by ncurses operator request",
+    "removed_lease": false,
+    "run_id": "0b46c487f8ea44b98004b3511add45bc",
+    "skipped_pids": []
+  },
+  "heartbeat_at": 1777010674.900728,
+  "lease_key": "pretorius2016",
+  "owner": {
+    "host": "Mac-Studio.local",
+    "pid": 29087,
+    "run_id": "29c65358d9c840d9bb152bb9816aa625"
+  },
   "source_id": "pretorius2016",
   "source_name": "pretorius2016.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/pretorius2016.pdf",
-  "stage": "existing_outputs",
-  "status": "completed",
+  "stage": "force_released",
+  "started_at": 1777004292.4194381,
+  "status": "failed",
   "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/pretorius2016.summary.md",
-  "updated_at": 1776977648.692815
+  "updated_at": 1777011016.0916212
 }

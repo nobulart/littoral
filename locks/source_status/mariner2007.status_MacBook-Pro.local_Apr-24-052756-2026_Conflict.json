@@ -1,0 +1,23 @@
+{
+  "accepted_points": 0,
+  "candidate_points": 0,
+  "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/mariner2007.csv",
+  "detail": "accepted 0 point(s)",
+  "finished_at": 1777000758.1755378,
+  "heartbeat_at": 1777000758.1755378,
+  "lease_key": "mariner2007",
+  "owner": {
+    "host": "MacBook-Pro.local",
+    "pid": 80896,
+    "run_id": "02b4e36c1ef64fd9836b4fb904f04ca4"
+  },
+  "source_id": "mariner2007",
+  "source_name": "mariner2007.pdf",
+  "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/mariner2007.pdf",
+  "stage": "completed",
+  "started_at": 1776999453.2774951,
+  "status": "completed",
+  "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/mariner2007.summary.md",
+  "unresolved_entries": 1,
+  "updated_at": 1777000758.1755378
+}

@@ -1,20 +1,23 @@
 {
+  "accepted_points": 1,
+  "candidate_points": 1,
   "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/blanchon1995.csv",
-  "detail": "cache miss; attempting extraction",
-  "finished_at": null,
-  "heartbeat_at": 1776977018.234724,
+  "detail": "accepted 1 point(s)",
+  "finished_at": 1776990119.414888,
+  "heartbeat_at": 1776990119.414888,
   "lease_key": "blanchon1995",
   "owner": {
     "host": "Mac-Studio.local",
-    "pid": 13381,
-    "run_id": "f6e33ac3aec34980abe6c42769c39dea"
+    "pid": 29087,
+    "run_id": "29c65358d9c840d9bb152bb9816aa625"
   },
   "source_id": "blanchon1995",
   "source_name": "blanchon1995.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/blanchon1995.pdf",
-  "stage": "mineru",
-  "started_at": 1776976761.4857988,
-  "status": "running",
+  "stage": "completed",
+  "started_at": 1776986287.634988,
+  "status": "completed",
   "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/blanchon1995.summary.md",
-  "updated_at": 1776977018.234724
+  "unresolved_entries": 0,
+  "updated_at": 1776990119.414888
 }

@@ -1,20 +1,23 @@
 {
+  "accepted_points": 2,
+  "candidate_points": 2,
   "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/jongsma1970.csv",
-  "detail": "cache miss; attempting extraction",
-  "finished_at": null,
-  "heartbeat_at": 1776977521.863822,
+  "detail": "accepted 2 point(s)",
+  "finished_at": 1776997601.248839,
+  "heartbeat_at": 1776997601.248839,
   "lease_key": "jongsma1970",
   "owner": {
     "host": "Mac-Studio.local",
-    "pid": 14831,
-    "run_id": "6f622528cb2d47c28fb488fe08929692"
+    "pid": 29087,
+    "run_id": "29c65358d9c840d9bb152bb9816aa625"
   },
   "source_id": "jongsma1970",
   "source_name": "jongsma1970.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/jongsma1970.pdf",
-  "stage": "mineru",
-  "started_at": 1776977473.840981,
-  "status": "running",
+  "stage": "completed",
+  "started_at": 1776995844.776703,
+  "status": "completed",
   "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/jongsma1970.summary.md",
-  "updated_at": 1776977521.863822
+  "unresolved_entries": 0,
+  "updated_at": 1776997601.248839
 }

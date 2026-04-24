@@ -1,11 +1,23 @@
 {
+  "accepted_points": 0,
+  "candidate_points": 0,
   "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/alsharhan1991.csv",
-  "detail": "existing per-source outputs found",
+  "detail": "accepted 0 point(s)",
+  "finished_at": 1776985097.10357,
+  "heartbeat_at": 1776985097.10357,
+  "lease_key": "alsharhan1991",
+  "owner": {
+    "host": "MacBook-Pro.local",
+    "pid": 80106,
+    "run_id": "9bfdccbfc0a64a85a64ae3359816275d"
+  },
   "source_id": "alsharhan1991",
   "source_name": "alsharhan1991.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/alsharhan1991.pdf",
-  "stage": "existing_outputs",
+  "stage": "completed",
+  "started_at": 1776985094.0879061,
   "status": "completed",
   "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/alsharhan1991.summary.md",
-  "updated_at": 1776976761.435497
+  "unresolved_entries": 1,
+  "updated_at": 1776985097.10357
 }

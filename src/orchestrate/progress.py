@@ -60,6 +60,8 @@ class PipelineProgressReporter:
         self._paused = False
         self._stop_requested = False
         self._abort_requested = False
+        self._force_requests: set[int] = set()
+        self._retry_requests: set[int] = set()
         self._scroll_offset = 0
         self._selected_row = 0
         self._filter_mode = "all"
@@ -167,7 +169,22 @@ class PipelineProgressReporter:
     def prioritize_file(self, index: int) -> bool:
         with self._lock:
             state = self._states.get(index)
-            if state is None or state.status != "queued":
+            if state is None:
+                return False
+            if state.status == "failed":
+                self._retry_requests.add(index)
+                state.status = "queued"
+                state.lease_status = "queued"
+                state.stage = "queued"
+                state.detail = "retry dispatch requested"
+                state.priority_boost = True
+                state.cancel_requested = False
+                state.finished_at = None
+                state.started_at = None
+                self._log_line(f"{self._prefix()} {state.name} :: queued for retry dispatch")
+                self._render()
+                return True
+            if state.status != "queued":
                 return False
             for other in self._states.values():
                 other.priority_boost = False
@@ -242,6 +259,17 @@ class PipelineProgressReporter:
             self._log_line(f"{self._prefix()} {name} :: done - accepted {accepted} point(s) in {elapsed}")
             self._render()
 
+    def fail_file(self, index: int, name: str, reason: str) -> None:
+        with self._lock:
+            state = self._states.setdefault(index, FileProgressState(index=index, name=name))
+            state.status = "failed"
+            state.lease_status = "failed"
+            state.stage = "failed"
+            state.detail = reason
+            state.finished_at = time.perf_counter()
+            self._log_line(f"{self._prefix()} {name} :: failed - {reason}")
+            self._render()
+
     def emit_global(self, message: str) -> None:
         with self._lock:
             self._log_line(message)
@@ -269,6 +297,20 @@ class PipelineProgressReporter:
         with self._lock:
             self._poll_input()
             return self._abort_requested
+
+    def consume_force_requests(self) -> set[int]:
+        with self._lock:
+            self._poll_input()
+            requests = set(self._force_requests)
+            self._force_requests.clear()
+            return requests
+
+    def consume_retry_requests(self) -> set[int]:
+        with self._lock:
+            self._poll_input()
+            requests = set(self._retry_requests)
+            self._retry_requests.clear()
+            return requests
 
     def selected_index(self) -> int | None:
         with self._lock:
@@ -434,7 +476,7 @@ class PipelineProgressReporter:
         )
         self._add_line(0, 0, header, width - 1, self._style_for_mode(mode) | curses.A_BOLD)
         self._add_line(1, 0, "=" * max(1, width - 1), width - 1, self._style("dim"))
-        controls = "Controls: p pause  s stop  q abort-queue  t trigger  x cancel  i inspect  r refresh"
+        controls = "Controls: p pause  s stop  q abort-queue  t trigger  x cancel  ! force-kill  i inspect  r refresh"
         self._add_line(2, 0, controls, width - 1, self._style("accent"))
         browser = (
             f"Browse: j/k or arrows move  PgUp/PgDn page  g/G top/bottom  "
@@ -520,6 +562,8 @@ class PipelineProgressReporter:
                 self._trigger_selected()
             elif key == "x":
                 self._cancel_selected()
+            elif raw_key == "!":
+                self._force_selected()
             elif key == "i":
                 self._show_inspector = not self._show_inspector
             elif key in {"j"} or code == getattr(self._curses, "KEY_DOWN", -9999):
@@ -634,6 +678,20 @@ class PipelineProgressReporter:
         changed = self.cancel_file(selected)
         if not changed and state.status not in {"queued", "running"}:
             self._log_line(self._timestamped(f"control :: cannot cancel {state.name} from status {state.status}"))
+
+    def _force_selected(self) -> None:
+        selected = self.selected_index()
+        if selected is None:
+            return
+        state = self._states.get(selected)
+        if state is None:
+            return
+        if state.status != "running":
+            self._log_line(self._timestamped(f"control :: cannot force-kill {state.name} from status {state.status}"))
+            return
+        self._force_requests.add(selected)
+        state.detail = f"{state.detail} | force kill requested".strip(" |")
+        self._log_line(self._timestamped(f"control :: force-kill requested for {state.name}"))
 
     def _clamp_viewport(self, total_visible: int, table_rows: int) -> None:
         if total_visible <= 0:

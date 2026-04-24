@@ -1,20 +1,23 @@
 {
+  "accepted_points": 0,
+  "candidate_points": 0,
   "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/gaffney2008.csv",
-  "detail": "running deterministic and inference stages",
-  "finished_at": null,
-  "heartbeat_at": 1776977521.86378,
+  "detail": "accepted 0 point(s)",
+  "finished_at": 1776993723.122379,
+  "heartbeat_at": 1776993723.122379,
   "lease_key": "gaffney2008",
   "owner": {
-    "host": "Mac-Studio.local",
-    "pid": 14831,
-    "run_id": "6f622528cb2d47c28fb488fe08929692"
+    "host": "MacBook-Pro.local",
+    "pid": 80896,
+    "run_id": "02b4e36c1ef64fd9836b4fb904f04ca4"
   },
   "source_id": "gaffney2008",
   "source_name": "gaffney2008.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/gaffney2008.pdf",
-  "stage": "extract",
-  "started_at": 1776977473.827955,
-  "status": "running",
+  "stage": "completed",
+  "started_at": 1776993437.273181,
+  "status": "completed",
   "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/gaffney2008.summary.md",
-  "updated_at": 1776977521.86378
+  "unresolved_entries": 1,
+  "updated_at": 1776993723.122379
 }

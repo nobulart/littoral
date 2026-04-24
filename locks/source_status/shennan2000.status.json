@@ -1,20 +1,23 @@
 {
+  "accepted_points": 0,
+  "candidate_points": 0,
   "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/shennan2000.csv",
-  "detail": "processing claim acquired",
-  "finished_at": null,
-  "heartbeat_at": 1776977648.697649,
+  "detail": "accepted 0 point(s)",
+  "finished_at": 1777008838.8159392,
+  "heartbeat_at": 1777008838.8159392,
   "lease_key": "shennan2000",
   "owner": {
-    "host": "MacBook-Pro.local",
-    "pid": 63447,
-    "run_id": "cb21d7c10beb417e84033607f4d8bd27"
+    "host": "Mac-Studio.local",
+    "pid": 29087,
+    "run_id": "29c65358d9c840d9bb152bb9816aa625"
   },
   "source_id": "shennan2000",
   "source_name": "shennan2000.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/shennan2000.pdf",
-  "stage": "claimed",
-  "started_at": 1776977648.697649,
-  "status": "running",
+  "stage": "completed",
+  "started_at": 1777005435.287512,
+  "status": "completed",
   "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/shennan2000.summary.md",
-  "updated_at": 1776977648.697649
+  "unresolved_entries": 1,
+  "updated_at": 1777008838.8159392
 }

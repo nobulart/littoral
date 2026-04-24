@@ -1,11 +1,23 @@
 {
+  "accepted_points": 21,
+  "candidate_points": 21,
   "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/castillo2018.csv",
-  "detail": "existing per-source outputs found",
+  "detail": "accepted 21 point(s)",
+  "finished_at": 1776996071.829376,
+  "heartbeat_at": 1776996071.829376,
+  "lease_key": "castillo2018",
+  "owner": {
+    "host": "Mac-Studio.local",
+    "pid": 29087,
+    "run_id": "29c65358d9c840d9bb152bb9816aa625"
+  },
   "source_id": "castillo2018",
   "source_name": "castillo2018.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/castillo2018.pdf",
-  "stage": "existing_outputs",
+  "stage": "completed",
+  "started_at": 1776987694.7787971,
   "status": "completed",
   "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/castillo2018.summary.md",
-  "updated_at": 1776976800.966559
+  "unresolved_entries": 0,
+  "updated_at": 1776996071.829376
 }

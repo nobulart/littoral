@@ -2,19 +2,19 @@
   "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/zong2013.csv",
   "detail": "cache miss; attempting extraction",
   "finished_at": null,
-  "heartbeat_at": 1776978060.856083,
+  "heartbeat_at": 1777010675.193625,
   "lease_key": "zong2013",
   "owner": {
     "host": "Mac-Studio.local",
-    "pid": 15314,
-    "run_id": "e32a5b2319a845ca921cd00012b6e41a"
+    "pid": 29087,
+    "run_id": "29c65358d9c840d9bb152bb9816aa625"
   },
   "source_id": "zong2013",
   "source_name": "zong2013.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/zong2013.pdf",
   "stage": "mineru",
-  "started_at": 1776977804.675061,
+  "started_at": 1777008841.895755,
   "status": "running",
   "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/zong2013.summary.md",
-  "updated_at": 1776978060.856083
+  "updated_at": 1777010675.193625
 }

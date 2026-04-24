@@ -1,0 +1,23 @@
+{
+  "accepted_points": 3,
+  "candidate_points": 3,
+  "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/greenwood1868.csv",
+  "detail": "accepted 3 point(s)",
+  "finished_at": 1776994457.673932,
+  "heartbeat_at": 1776994457.673932,
+  "lease_key": "greenwood1868",
+  "owner": {
+    "host": "MacBook-Pro.local",
+    "pid": 80896,
+    "run_id": "02b4e36c1ef64fd9836b4fb904f04ca4"
+  },
+  "source_id": "greenwood1868",
+  "source_name": "greenwood1868.pdf",
+  "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/greenwood1868.pdf",
+  "stage": "completed",
+  "started_at": 1776994198.166878,
+  "status": "completed",
+  "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/greenwood1868.summary.md",
+  "unresolved_entries": 0,
+  "updated_at": 1776994457.673932
+}

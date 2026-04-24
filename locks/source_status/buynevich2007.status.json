@@ -1,20 +1,23 @@
 {
+  "accepted_points": 0,
+  "candidate_points": 0,
   "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/buynevich2007.csv",
-  "detail": "running deterministic and inference stages",
-  "finished_at": null,
-  "heartbeat_at": 1776977045.519299,
+  "detail": "accepted 0 point(s)",
+  "finished_at": 1776987693.274741,
+  "heartbeat_at": 1776987693.274741,
   "lease_key": "buynevich2007",
   "owner": {
-    "host": "MacBook-Pro.local",
-    "pid": 59100,
-    "run_id": "2a8f6f2f5ecf4e0a8b3905d3cd0fb3c8"
+    "host": "Mac-Studio.local",
+    "pid": 29087,
+    "run_id": "29c65358d9c840d9bb152bb9816aa625"
   },
   "source_id": "buynevich2007",
   "source_name": "buynevich2007.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/buynevich2007.pdf",
-  "stage": "extract",
-  "started_at": 1776976800.961822,
-  "status": "running",
+  "stage": "completed",
+  "started_at": 1776986512.964045,
+  "status": "completed",
   "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/buynevich2007.summary.md",
-  "updated_at": 1776977045.519299
+  "unresolved_entries": 1,
+  "updated_at": 1776987693.274741
 }

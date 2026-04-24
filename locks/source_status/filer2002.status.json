@@ -1,20 +1,23 @@
 {
+  "accepted_points": 0,
+  "candidate_points": 0,
   "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/filer2002.csv",
-  "detail": "cache miss; attempting extraction",
-  "finished_at": null,
-  "heartbeat_at": 1776977239.363696,
+  "detail": "accepted 0 point(s)",
+  "finished_at": 1776992905.372921,
+  "heartbeat_at": 1776992905.372921,
   "lease_key": "filer2002",
   "owner": {
     "host": "MacBook-Pro.local",
-    "pid": 61327,
-    "run_id": "f9000a8b5795472b9d8c936bcfb1529d"
+    "pid": 80896,
+    "run_id": "02b4e36c1ef64fd9836b4fb904f04ca4"
   },
   "source_id": "filer2002",
   "source_name": "filer2002.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/filer2002.pdf",
-  "stage": "mineru",
-  "started_at": 1776977223.3175418,
-  "status": "running",
+  "stage": "completed",
+  "started_at": 1776991933.7878132,
+  "status": "completed",
   "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/filer2002.summary.md",
-  "updated_at": 1776977239.363696
+  "unresolved_entries": 1,
+  "updated_at": 1776992905.372921
 }

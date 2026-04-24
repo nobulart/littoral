@@ -1,11 +1,23 @@
 {
+  "accepted_points": 5,
+  "candidate_points": 5,
   "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/smith2011.csv",
-  "detail": "existing per-source outputs found",
+  "detail": "accepted 5 point(s)",
+  "finished_at": 1777007082.661761,
+  "heartbeat_at": 1777007082.661761,
+  "lease_key": "smith2011",
+  "owner": {
+    "host": "MacBook-Pro.local",
+    "pid": 80896,
+    "run_id": "02b4e36c1ef64fd9836b4fb904f04ca4"
+  },
   "source_id": "smith2011",
   "source_name": "smith2011.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/smith2011.pdf",
-  "stage": "existing_outputs",
+  "stage": "completed",
+  "started_at": 1777005762.934816,
   "status": "completed",
   "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/smith2011.summary.md",
-  "updated_at": 1776977795.624956
+  "unresolved_entries": 0,
+  "updated_at": 1777007082.661761
 }

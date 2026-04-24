@@ -1,20 +1,23 @@
 {
+  "accepted_points": 4,
+  "candidate_points": 4,
   "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/koba1982.csv",
-  "detail": "cache miss; attempting extraction",
-  "finished_at": null,
-  "heartbeat_at": 1776977515.429766,
+  "detail": "accepted 4 point(s)",
+  "finished_at": 1777003420.608439,
+  "heartbeat_at": 1777003420.608439,
   "lease_key": "koba1982",
   "owner": {
-    "host": "MacBook-Pro.local",
-    "pid": 62810,
-    "run_id": "72be37508ac74c8f87785bd946de5a68"
+    "host": "Mac-Studio.local",
+    "pid": 29087,
+    "run_id": "29c65358d9c840d9bb152bb9816aa625"
   },
   "source_id": "koba1982",
   "source_name": "koba1982.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/koba1982.pdf",
-  "stage": "mineru",
-  "started_at": 1776977507.424112,
-  "status": "running",
+  "stage": "completed",
+  "started_at": 1776996893.3549728,
+  "status": "completed",
   "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/koba1982.summary.md",
-  "updated_at": 1776977515.429766
+  "unresolved_entries": 0,
+  "updated_at": 1777003420.608439
 }

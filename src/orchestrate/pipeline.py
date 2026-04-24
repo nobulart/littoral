@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 import shutil
 import subprocess
+import threading
 import time
 from collections.abc import Callable
 
@@ -55,6 +56,7 @@ class PipelineConfig:
     control_api_port: int = 0
     control_api_heartbeat_seconds: float = 5.0
     control_api_node_ttl_seconds: float = 20.0
+    job_timeout_minutes: float = 240.0
 
 
 @dataclass(slots=True)
@@ -66,6 +68,15 @@ class FileProcessingResult:
     normalized_points: list = field(default_factory=list)
     unresolved_lines: list[str] = field(default_factory=list)
     validation_errors: list[str] = field(default_factory=list)
+
+
+@dataclass(slots=True)
+class ActiveJob:
+    index: int
+    source_path: Path
+    source_id: str
+    lease: ManagedLease
+    started_at: float
 
 
 def default_config(workspace_root: Path) -> PipelineConfig:
@@ -152,12 +163,20 @@ def run_pipeline(config: PipelineConfig) -> None:
                 document_workers=document_workers,
                 gpu_slots=runtime.gpu_slots,
                 total_files=len(source_paths),
+                job_timeout_minutes=config.job_timeout_minutes,
             )
         work_items: list[tuple[int, Path, str, BaseExtractor]] = []
+        work_item_by_index: dict[int, tuple[int, Path, str, BaseExtractor]] = {}
         source_index_map: dict[str, tuple[int, str]] = {}
+        source_id_by_index: dict[int, str] = {}
+        active_futures: dict = {}
+        active_jobs_by_source: dict[str, ActiveJob] = {}
+        active_futures_by_source: dict[str, object] = {}
+        active_jobs_lock = threading.Lock()
         for index, source_path in enumerate(source_paths, start=1):
             source_id = _source_id_for_path(source_path)
             source_index_map[source_id] = (index, source_path.name)
+            source_id_by_index[index] = source_id
             reporter.queue_file(index, source_path.name)
             lock_manager.note_discovered(source_id, source_path.name, source_path)
 
@@ -175,16 +194,44 @@ def run_pipeline(config: PipelineConfig) -> None:
                 append_log(config.unresolved_log, f"{source_id}\t{source_path.name}\tUnsupported file type")
                 unresolved_count += 1
                 continue
-            work_items.append((index, source_path, source_id, extractor))
+            work_item = (index, source_path, source_id, extractor)
+            work_items.append(work_item)
+            work_item_by_index[index] = work_item
+
+        def _cancel_source_by_id(source_id: str) -> bool:
+            mapping = source_index_map.get(source_id)
+            if mapping is None:
+                return False
+            return reporter.cancel_file(mapping[0], "cancelled by remote API request")
+
+        def _force_source_by_id(source_id: str, reason: str = "force killed by operator request") -> dict[str, object]:
+            mapping = source_index_map.get(source_id)
+            result = lock_manager.force_release_source(source_id, workspace_root=config.workspace_root, reason=reason)
+            with active_jobs_lock:
+                active_job = active_jobs_by_source.pop(source_id, None)
+                future = active_futures_by_source.pop(source_id, None)
+                if future is not None:
+                    active_futures.pop(future, None)
+            if active_job is not None:
+                active_job.lease.abandon(remove_lease=False)
+            if future is not None:
+                future.cancel()
+            if mapping is not None:
+                reporter.fail_file(mapping[0], mapping[1], reason)
+            return {
+                "ok": True,
+                "source_id": result.source_id,
+                "lease_found": result.lease_found,
+                "status_found": result.status_found,
+                "removed_lease": result.removed_lease,
+                "killed_pids": result.killed_pids,
+                "skipped_pids": result.skipped_pids,
+                "detail": result.detail,
+            }
 
         if control_plane is not None:
-            def _cancel_source_by_id(source_id: str) -> bool:
-                mapping = source_index_map.get(source_id)
-                if mapping is None:
-                    return False
-                return reporter.cancel_file(mapping[0], "cancelled by remote API request")
-
             control_plane.set_cancel_callback(_cancel_source_by_id)
+            control_plane.set_force_callback(lambda source_id: _force_source_by_id(source_id, "force killed by remote API request"))
             control_plane.update_run_state(
                 "running",
                 "processing sources",
@@ -193,9 +240,9 @@ def run_pipeline(config: PipelineConfig) -> None:
             )
 
         if work_items:
+            job_timeout_seconds = 0.0 if config.job_timeout_minutes <= 0 else config.job_timeout_minutes * 60.0
             with ThreadPoolExecutor(max_workers=max(1, min(document_workers, len(work_items)))) as executor:
                 pending = deque(work_items)
-                active_futures: dict = {}
                 while pending or active_futures:
                     if control_plane is not None:
                         for source_id in control_plane.consume_cancel_requests():
@@ -217,6 +264,30 @@ def run_pipeline(config: PipelineConfig) -> None:
                             unresolved=snapshot.unresolved,
                         )
                     reporter.tick()
+                    for force_index in reporter.consume_force_requests():
+                        source_id = source_id_by_index.get(force_index)
+                        if source_id is not None:
+                            _force_source_by_id(source_id, "force killed by ncurses operator request")
+                    for retry_index in reporter.consume_retry_requests():
+                        work_item = work_item_by_index.get(retry_index)
+                        if work_item is None:
+                            continue
+                        _, _, source_id, _ = work_item
+                        with active_jobs_lock:
+                            is_active = source_id in active_jobs_by_source
+                        if is_active or any(item[0] == retry_index for item in pending):
+                            continue
+                        pending.appendleft(work_item)
+                    _expire_timed_out_jobs(
+                        active_futures,
+                        timeout_seconds=job_timeout_seconds,
+                        reporter=reporter,
+                        lock_manager=lock_manager,
+                        workspace_root=config.workspace_root,
+                        active_jobs_by_source=active_jobs_by_source,
+                        active_futures_by_source=active_futures_by_source,
+                        active_jobs_lock=active_jobs_lock,
+                    )
                     if reporter.abort_requested():
                         pending.clear()
                     pending = deque(
@@ -282,7 +353,17 @@ def run_pipeline(config: PipelineConfig) -> None:
                             reporter,
                             lease,
                         )
-                        active_futures[future] = lease
+                        active_job = ActiveJob(
+                            index=index,
+                            source_path=source_path,
+                            source_id=source_id,
+                            lease=lease,
+                            started_at=time.perf_counter(),
+                        )
+                        with active_jobs_lock:
+                            active_futures[future] = active_job
+                            active_jobs_by_source[source_id] = active_job
+                            active_futures_by_source[source_id] = future
                     if not active_futures:
                         if pending and reporter.pause_requested():
                             time.sleep(0.1)
@@ -298,7 +379,13 @@ def run_pipeline(config: PipelineConfig) -> None:
                     future_map = active_futures
                     active_futures = {future: future_map[future] for future in remaining}
                     for future in done:
-                        lease = future_map[future]
+                        active_job = future_map[future]
+                        with active_jobs_lock:
+                            if active_jobs_by_source.get(active_job.source_id) is not active_job:
+                                continue
+                            active_jobs_by_source.pop(active_job.source_id, None)
+                            active_futures_by_source.pop(active_job.source_id, None)
+                        lease = active_job.lease
                         try:
                             result = future.result()
                         except Exception as error:
@@ -372,6 +459,39 @@ def _extractor_registry() -> dict[str, BaseExtractor]:
         for suffix in extractor.supported_suffixes:
             registry[suffix] = extractor
     return registry
+
+
+def _expire_timed_out_jobs(
+    active_futures: dict,
+    *,
+    timeout_seconds: float,
+    reporter: PipelineProgressReporter,
+    lock_manager: PipelineLockManager,
+    workspace_root: Path,
+    active_jobs_by_source: dict[str, ActiveJob],
+    active_futures_by_source: dict[str, object],
+    active_jobs_lock: threading.Lock,
+) -> None:
+    if timeout_seconds <= 0 or not active_futures:
+        return
+    now = time.perf_counter()
+    expired = [
+        (future, active_job)
+        for future, active_job in active_futures.items()
+        if now - active_job.started_at >= timeout_seconds
+    ]
+    for future, active_job in expired:
+        reason = f"job timed out after {_format_duration(timeout_seconds)}"
+        lock_manager.force_release_source(active_job.source_id, workspace_root=workspace_root, reason=reason)
+        with active_jobs_lock:
+            if active_jobs_by_source.get(active_job.source_id) is not active_job:
+                continue
+            active_futures.pop(future, None)
+            active_jobs_by_source.pop(active_job.source_id, None)
+            active_futures_by_source.pop(active_job.source_id, None)
+        active_job.lease.abandon(remove_lease=False)
+        reporter.fail_file(active_job.index, active_job.source_path.name, reason)
+        future.cancel()
 
 
 def _ensure_mineru_artifacts(source_path: Path, source_id: str, config: PipelineConfig) -> str:
@@ -497,6 +617,10 @@ def _emit_progress(config: PipelineConfig, message: str, level: int = 1) -> None
 
 def _format_elapsed(started: float) -> str:
     elapsed = time.perf_counter() - started
+    return _format_duration(elapsed)
+
+
+def _format_duration(elapsed: float) -> str:
     if elapsed < 60:
         return f"{elapsed:.1f}s"
     minutes, seconds = divmod(elapsed, 60)

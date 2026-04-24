@@ -1,11 +1,23 @@
 {
+  "accepted_points": 6,
+  "candidate_points": 6,
   "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/martinez-martos2016.csv",
-  "detail": "existing per-source outputs found",
+  "detail": "accepted 6 point(s)",
+  "finished_at": 1777003348.6838322,
+  "heartbeat_at": 1777003348.6838322,
+  "lease_key": "martinez-martos2016",
+  "owner": {
+    "host": "Mac-Studio.local",
+    "pid": 29087,
+    "run_id": "29c65358d9c840d9bb152bb9816aa625"
+  },
   "source_id": "martinez-martos2016",
   "source_name": "martinez-martos2016.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/martinez-martos2016.pdf",
-  "stage": "existing_outputs",
+  "stage": "completed",
+  "started_at": 1777000129.3470159,
   "status": "completed",
   "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/martinez-martos2016.summary.md",
-  "updated_at": 1776977545.645858
+  "unresolved_entries": 0,
+  "updated_at": 1777003348.6838322
 }

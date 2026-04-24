@@ -1,0 +1,20 @@
+{
+  "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/jelgersma1995.csv",
+  "detail": "running deterministic and inference stages",
+  "finished_at": null,
+  "heartbeat_at": 1776995326.8926861,
+  "lease_key": "jelgersma1995",
+  "owner": {
+    "host": "MacBook-Pro.local",
+    "pid": 80896,
+    "run_id": "02b4e36c1ef64fd9836b4fb904f04ca4"
+  },
+  "source_id": "jelgersma1995",
+  "source_name": "jelgersma1995.pdf",
+  "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/jelgersma1995.pdf",
+  "stage": "extract",
+  "started_at": 1776994814.380379,
+  "status": "running",
+  "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/jelgersma1995.summary.md",
+  "updated_at": 1776995326.8926861
+}

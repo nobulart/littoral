@@ -1,11 +1,23 @@
 {
+  "accepted_points": 1,
+  "candidate_points": 1,
   "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/ivanovic2016.csv",
-  "detail": "existing per-source outputs found",
+  "detail": "accepted 1 point(s)",
+  "finished_at": 1777000127.834683,
+  "heartbeat_at": 1777000127.834683,
+  "lease_key": "ivanovic2016",
+  "owner": {
+    "host": "Mac-Studio.local",
+    "pid": 29087,
+    "run_id": "29c65358d9c840d9bb152bb9816aa625"
+  },
   "source_id": "ivanovic2016",
   "source_name": "ivanovic2016.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/ivanovic2016.pdf",
-  "stage": "existing_outputs",
+  "stage": "completed",
+  "started_at": 1776994683.666751,
   "status": "completed",
   "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/ivanovic2016.summary.md",
-  "updated_at": 1776977473.836704
+  "unresolved_entries": 0,
+  "updated_at": 1777000127.834683
 }

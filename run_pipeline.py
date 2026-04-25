@@ -71,6 +71,7 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser.add_argument("--document-workers", type=int, help="Number of documents to process concurrently.")
     parser.add_argument("--gpu-slots", type=int, help="Maximum concurrent GPU-bound tasks across MinerU/Ollama/OCR.")
     parser.add_argument("--job-timeout-minutes", type=float, default=240.0, help="Maximum wall-clock minutes for an individual document job. Use 0 to disable.")
+    parser.add_argument("--autopilot", action="store_true", help="Start with autopilot enabled. In the ncurses dashboard, press 'a' to toggle it on or off.")
     parser.add_argument("--force-kill-source", action="append", help="Force-release a source by id or filename stem, kill any local owned worker PID, remove its lease, then exit. May be repeated.")
     parser.add_argument("--no-control-api", action="store_true", help="Disable the hybrid control-plane API and filesystem node registry.")
     parser.add_argument("--control-api-bind-host", default="0.0.0.0", help="Host/interface to bind the local control-plane API server to.")
@@ -190,6 +191,7 @@ def _build_config(args: argparse.Namespace, workspace_root: Path) -> PipelineCon
         progress_callback=None if verbosity == 0 or _uses_dashboard_output(args.progress_ui) else _print_progress,
         verbosity=verbosity,
         job_timeout_minutes=args.job_timeout_minutes,
+        autopilot_enabled=args.autopilot,
         control_api_enabled=not args.no_control_api,
         control_api_bind_host=args.control_api_bind_host,
         control_api_advertise_host=args.control_api_advertise_host,

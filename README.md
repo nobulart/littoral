@@ -313,6 +313,12 @@ Individual document jobs have a 240 minute wall-clock timeout by default. Set `-
 python3 run_pipeline.py --job-timeout-minutes 90 --progress-ui plain
 ```
 
+Autopilot can be enabled at startup or toggled from the dashboard. It samples CPU load, memory pressure, and free workspace disk, then conservatively throttles new document dispatch. If a node is already above the current autopilot limit, selected overallocated jobs are deescalated cooperatively: the worker stops at the next safe boundary, releases its lease, and returns the source to the queued pool.
+
+```bash
+python3 run_pipeline.py --autopilot --progress-ui ncurses
+```
+
 Suggested starting points:
 
 - `M3 Max 64GB`: `--document-workers 2` to `4`, `--gpu-slots 1`
@@ -326,6 +332,8 @@ Progress display modes:
 
 Dashboard controls:
 
+- `a`: toggle autopilot on or off. The current state is shown in the dashboard header and published through the control-plane capacity payload.
+- `d`: deescalate the selected running item, returning it to the queued pool at the next safe processing boundary. Remote running rows are routed to the owning workstation's control API.
 - `p`: pause or resume dispatching new files while leaving active work running.
 - `s`: request a graceful stop; queued work stops dispatching and active work drains.
 - `q`: abort queued dispatch and drain currently running tasks.

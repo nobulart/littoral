@@ -22,6 +22,7 @@ from src.extract.txt_extractor import TextExtractor
 from src.merge.build import build_master_outputs
 from src.normalize.elevation import apply_elevation_normalization
 from src.ontology.catalog import Ontology, load_ontology
+from src.orchestrate.autopilot import AutopilotController, AutopilotDecision
 from src.orchestrate.control_plane import ControlPlaneConfig, PipelineControlPlane
 from src.orchestrate.locking import LeaseDenied, ManagedLease, PipelineLockManager
 from src.orchestrate.progress import PipelineProgressReporter
@@ -60,6 +61,7 @@ class PipelineConfig:
     control_api_heartbeat_seconds: float = 10.0
     control_api_node_ttl_seconds: float = 45.0
     job_timeout_minutes: float = 240.0
+    autopilot_enabled: bool = False
 
 
 @dataclass(slots=True)
@@ -74,12 +76,27 @@ class FileProcessingResult:
 
 
 @dataclass(slots=True)
+class JobControl:
+    deescalate_requested: threading.Event = field(default_factory=threading.Event)
+    deescalate_reason: str = ""
+
+    def request_deescalate(self, reason: str) -> None:
+        self.deescalate_reason = reason
+        self.deescalate_requested.set()
+
+
+@dataclass(slots=True)
 class ActiveJob:
     index: int
     source_path: Path
     source_id: str
     lease: ManagedLease
     started_at: float
+    control: JobControl
+
+
+class JobDeescalated(Exception):
+    pass
 
 
 def default_config(workspace_root: Path) -> PipelineConfig:
@@ -100,7 +117,12 @@ def default_config(workspace_root: Path) -> PipelineConfig:
 
 def run_pipeline(config: PipelineConfig) -> None:
     pipeline_started = time.perf_counter()
-    reporter = PipelineProgressReporter(total_files=len(_selected_input_files(config)), mode=config.progress_ui, enabled=config.verbosity > 0)
+    reporter = PipelineProgressReporter(
+        total_files=len(_selected_input_files(config)),
+        mode=config.progress_ui,
+        enabled=config.verbosity > 0,
+        autopilot_enabled=config.autopilot_enabled,
+    )
     last_shared_status_refresh = 0.0
     last_peer_api_refresh = 0.0
     control_plane: PipelineControlPlane | None = None
@@ -162,6 +184,8 @@ def run_pipeline(config: PipelineConfig) -> None:
         emit(f"MinerU staged cache: {config.staged_dir}", level=2)
         emit(f"Per-source outputs: {config.per_source_dir}", level=2)
         document_workers = config.document_workers or auto_document_workers()
+        autopilot = AutopilotController(config.workspace_root, document_workers=document_workers)
+        autopilot_decision: AutopilotDecision | None = None
         emit(f"Concurrency profile: {hardware_profile_summary(document_workers, runtime.gpu_slots)}", level=2)
         if control_plane is not None:
             control_plane.update_capacity(
@@ -169,6 +193,7 @@ def run_pipeline(config: PipelineConfig) -> None:
                 gpu_slots=runtime.gpu_slots,
                 total_files=len(source_paths),
                 job_timeout_minutes=config.job_timeout_minutes,
+                autopilot_enabled=reporter.autopilot_enabled(),
             )
         work_items: list[tuple[int, Path, str, BaseExtractor]] = []
         work_item_by_index: dict[int, tuple[int, Path, str, BaseExtractor]] = {}
@@ -275,6 +300,22 @@ def run_pipeline(config: PipelineConfig) -> None:
             reporter.prioritize_file(index)
             return {"ok": True, "source_id": source_id, "detail": "source queued for priority dispatch"}
 
+        def _deescalate_source_by_id(source_id: str) -> dict[str, object]:
+            mapping = source_index_map.get(source_id)
+            if mapping is None:
+                return {"ok": False, "source_id": source_id, "detail": "source is not known to this node"}
+            requested = _request_job_deescalation(
+                source_id,
+                reason="deescalated by control-plane request",
+                active_jobs_by_source=active_jobs_by_source,
+                active_jobs_lock=active_jobs_lock,
+            )
+            return {
+                "ok": requested,
+                "source_id": source_id,
+                "detail": "deescalation requested" if requested else "source is not active on this node",
+            }
+
         def _discover_new_work_items() -> list[tuple[int, Path, str, BaseExtractor]]:
             discovered: list[tuple[int, Path, str, BaseExtractor]] = []
             for source_path in _iter_input_files(config.incoming_dir):
@@ -291,6 +332,7 @@ def run_pipeline(config: PipelineConfig) -> None:
             control_plane.set_cancel_callback(_cancel_source_by_id)
             control_plane.set_force_callback(lambda source_id: _force_source_by_id(source_id, "force killed by remote API request"))
             control_plane.set_trigger_callback(_trigger_source_by_id)
+            control_plane.set_deescalate_callback(_deescalate_source_by_id)
             control_plane.update_run_state(
                 "running",
                 "processing sources",
@@ -334,6 +376,14 @@ def run_pipeline(config: PipelineConfig) -> None:
                             last_input_scan = now
                         if control_plane is not None:
                             snapshot = reporter.snapshot()
+                            autopilot_decision = autopilot.evaluate(
+                                enabled=reporter.autopilot_enabled(),
+                                active_jobs=len(active_futures),
+                                queued_jobs=snapshot.queued,
+                            )
+                            reporter.set_autopilot_status(
+                                _format_autopilot_status(autopilot_decision, document_workers=document_workers)
+                            )
                             control_plane.update_capacity(
                                 queued=snapshot.queued,
                                 local_active=snapshot.local_active,
@@ -342,7 +392,25 @@ def run_pipeline(config: PipelineConfig) -> None:
                                 completed=snapshot.completed,
                                 extracted=snapshot.extracted,
                                 unresolved=snapshot.unresolved,
+                                **autopilot_decision.capacity_payload(),
                             )
+                        elif reporter.autopilot_enabled():
+                            snapshot = reporter.snapshot()
+                            autopilot_decision = autopilot.evaluate(
+                                enabled=True,
+                                active_jobs=len(active_futures),
+                                queued_jobs=snapshot.queued,
+                            )
+                            reporter.set_autopilot_status(
+                                _format_autopilot_status(autopilot_decision, document_workers=document_workers)
+                            )
+                        else:
+                            autopilot_decision = autopilot.evaluate(
+                                enabled=False,
+                                active_jobs=len(active_futures),
+                                queued_jobs=0,
+                            )
+                            reporter.set_autopilot_status("manual control")
                         reporter.tick()
                         for cancel_index in reporter.consume_cancel_requests():
                             source_id = source_id_by_index.get(cancel_index)
@@ -369,6 +437,19 @@ def run_pipeline(config: PipelineConfig) -> None:
                                         "force killed by ncurses operator request",
                                     ),
                                 )
+                        for deescalate_index in reporter.consume_deescalate_requests():
+                            work_item = work_item_by_index.get(deescalate_index)
+                            if work_item is None:
+                                continue
+                            _, _, source_id, _ = work_item
+                            _route_control_request(
+                                "deescalate",
+                                source_id,
+                                reporter=reporter,
+                                lock_manager=lock_manager,
+                                control_plane=control_plane,
+                                local_handler=lambda target_source_id: _deescalate_source_by_id(target_source_id),
+                            )
                         for retry_index in reporter.consume_retry_requests():
                             work_item = work_item_by_index.get(retry_index)
                             if work_item is None:
@@ -421,10 +502,24 @@ def run_pipeline(config: PipelineConfig) -> None:
                         )
                         dispatch_attempts = 0
                         max_dispatch_attempts = len(pending) if pending else 0
+                        effective_document_workers = (
+                            autopilot_decision.max_active_jobs
+                            if autopilot_decision is not None and autopilot_decision.enabled
+                            else document_workers
+                        )
+                        dispatch_limit = max(0, min(effective_document_workers, len(work_items)))
+                        if autopilot_decision is not None and autopilot_decision.enabled and len(active_futures) > dispatch_limit:
+                            _request_overallocation_deescalation(
+                                active_jobs_by_source,
+                                active_jobs_lock=active_jobs_lock,
+                                target_active=dispatch_limit,
+                                reason=f"autopilot deescalation: {autopilot_decision.reason}",
+                                reporter=reporter,
+                            )
                         while (
                             pending
                             and dispatch_attempts < max_dispatch_attempts
-                            and len(active_futures) < max(1, min(document_workers, len(work_items)))
+                            and len(active_futures) < dispatch_limit
                             and not reporter.pause_requested()
                             and not reporter.stop_requested()
                             and not (control_plane.stop_requested() if control_plane is not None else False)
@@ -463,6 +558,7 @@ def run_pipeline(config: PipelineConfig) -> None:
                                     skipped_files.append(source_path.name)
                                 continue
                             reporter.note_dispatch_started(index)
+                            job_control = JobControl()
                             future = executor.submit(
                                 _process_source_file,
                                 index,
@@ -475,6 +571,7 @@ def run_pipeline(config: PipelineConfig) -> None:
                                 schema,
                                 reporter,
                                 lease,
+                                job_control,
                             )
                             active_job = ActiveJob(
                                 index=index,
@@ -482,6 +579,7 @@ def run_pipeline(config: PipelineConfig) -> None:
                                 source_id=source_id,
                                 lease=lease,
                                 started_at=time.perf_counter(),
+                                control=job_control,
                             )
                             with active_jobs_lock:
                                 active_futures[future] = active_job
@@ -517,6 +615,18 @@ def run_pipeline(config: PipelineConfig) -> None:
                             lease = active_job.lease
                             try:
                                 result = future.result()
+                            except JobDeescalated as deescalation:
+                                reason = str(deescalation) or "deescalated"
+                                _return_active_job_to_queue(
+                                    active_job,
+                                    reason=reason,
+                                    reporter=reporter,
+                                    lock_manager=lock_manager,
+                                )
+                                work_item = work_item_by_index.get(active_job.index)
+                                if work_item is not None and not reporter.stop_requested() and not reporter.abort_requested():
+                                    pending.append(work_item)
+                                continue
                             except Exception as error:
                                 lease.fail(f"processing failed: {error.__class__.__name__}: {error}")
                                 raise
@@ -662,6 +772,62 @@ def _force_release_active_jobs(
         active_job.lease.abandon(remove_lease=False)
         reporter.fail_file(active_job.index, active_job.source_path.name, reason)
         future.cancel()
+
+
+def _request_job_deescalation(
+    source_id: str,
+    *,
+    reason: str,
+    active_jobs_by_source: dict[str, ActiveJob],
+    active_jobs_lock: threading.Lock,
+) -> bool:
+    with active_jobs_lock:
+        active_job = active_jobs_by_source.get(source_id)
+        if active_job is None:
+            return False
+        if active_job.control.deescalate_requested.is_set():
+            return True
+        active_job.control.request_deescalate(reason)
+        active_job.lease.update("deescalate", reason, force=True)
+        return True
+
+
+def _request_overallocation_deescalation(
+    active_jobs_by_source: dict[str, ActiveJob],
+    *,
+    active_jobs_lock: threading.Lock,
+    target_active: int,
+    reason: str,
+    reporter: PipelineProgressReporter,
+) -> None:
+    with active_jobs_lock:
+        active_jobs = sorted(active_jobs_by_source.values(), key=lambda job: job.started_at, reverse=True)
+        excess = max(0, len(active_jobs) - max(0, target_active))
+        selected = [job for job in active_jobs if not job.control.deescalate_requested.is_set()][:excess]
+        for active_job in selected:
+            active_job.control.request_deescalate(reason)
+            active_job.lease.update("deescalate", reason, force=True)
+    for active_job in selected:
+        reporter.emit_global(f"autopilot :: deescalate requested for {active_job.source_id} - {reason}")
+
+
+def _return_active_job_to_queue(
+    active_job: ActiveJob,
+    *,
+    reason: str,
+    reporter: PipelineProgressReporter,
+    lock_manager: PipelineLockManager,
+) -> None:
+    active_job.lease.abandon(remove_lease=True)
+    lock_manager.mark_source_state(
+        active_job.source_id,
+        active_job.source_path.name,
+        active_job.source_path,
+        status="queued",
+        stage="queued",
+        detail=reason,
+    )
+    reporter.requeue_file(active_job.index, active_job.source_path.name, reason)
 
 
 def _review_until_new_work_or_exit(
@@ -911,6 +1077,12 @@ def _format_duration(elapsed: float) -> str:
     return f"{int(minutes)}m {seconds:.1f}s"
 
 
+def _format_autopilot_status(decision: AutopilotDecision, *, document_workers: int) -> str:
+    if not decision.enabled:
+        return "manual control"
+    return f"{decision.severity} {decision.max_active_jobs}/{document_workers}: {decision.reason}"
+
+
 def _refresh_reporter_from_shared_statuses(
     reporter: PipelineProgressReporter,
     lock_manager: PipelineLockManager,
@@ -1083,11 +1255,13 @@ def _process_source_file(
     schema: dict,
     reporter: PipelineProgressReporter,
     lease: ManagedLease,
+    job_control: JobControl,
 ) -> FileProcessingResult:
     file_started = time.perf_counter()
     local_unresolved_lines: list[str] = []
     reporter.start_file(index, source_path.name)
     lease.update("start", "worker started")
+    _raise_if_deescalated(job_control)
 
     if source_path.suffix.lower() == ".pdf":
         mineru_started = time.perf_counter()
@@ -1105,6 +1279,7 @@ def _process_source_file(
             reporter.update_stage(index, source_path.name, "mineru", "cache miss; attempting extraction")
             lease.update("mineru", "cache miss; attempting extraction")
         mineru_result = _ensure_mineru_artifacts_with_runtime(source_path, source_id, config, runtime=runtime)
+        _raise_if_deescalated(job_control)
         if mineru_result:
             reporter.record_unresolved(index, source_path.name, detail=mineru_result.split(chr(9))[-1])
             local_unresolved_lines.append(mineru_result)
@@ -1114,7 +1289,9 @@ def _process_source_file(
     extract_started = time.perf_counter()
     reporter.update_stage(index, source_path.name, "extract", "running deterministic and inference stages")
     lease.update("extract", "running deterministic and inference stages")
+    _raise_if_deescalated(job_control)
     result = extractor.extract(source_path, source_id, runtime=runtime)
+    _raise_if_deescalated(job_control)
     reporter.update_candidates(index, source_path.name, len(result.sample_points))
     reporter.update_stage(index, source_path.name, "extract", f"completed in {_format_elapsed(extract_started)}")
     lease.update("extract", f"completed in {_format_elapsed(extract_started)}", extra={"candidate_points": len(result.sample_points)})
@@ -1125,6 +1302,7 @@ def _process_source_file(
     normalized_points = []
     validation_errors: list[str] = []
     for point in result.sample_points:
+        _raise_if_deescalated(job_control)
         point = apply_elevation_normalization(point, config.raster_path)
         point.confidence_score = score_confidence(point)
         point_errors = validate_sample_point(point, ontology, schema)
@@ -1136,6 +1314,7 @@ def _process_source_file(
             )
             continue
         normalized_points.append(point)
+    _raise_if_deescalated(job_control)
     reporter.update_stage(index, source_path.name, "validate", f"completed in {_format_elapsed(validation_started)}")
     lease.update("validate", f"completed in {_format_elapsed(validation_started)}", extra={"accepted_points": len(normalized_points)})
 
@@ -1149,6 +1328,7 @@ def _process_source_file(
         reporter.record_unresolved(index, source_path.name, count=len(result.unresolved_lines), detail="source unresolved lines logged")
     reporter.update_stage(index, source_path.name, "publish", "ready for atomic publish")
     lease.update("publish", "ready for atomic publish")
+    _raise_if_deescalated(job_control)
 
     return FileProcessingResult(
         index=index,
@@ -1159,6 +1339,11 @@ def _process_source_file(
         unresolved_lines=local_unresolved_lines,
         validation_errors=validation_errors,
     )
+
+
+def _raise_if_deescalated(job_control: JobControl) -> None:
+    if job_control.deescalate_requested.is_set():
+        raise JobDeescalated(job_control.deescalate_reason or "deescalated")
 
 
 def _null_gpu_task():

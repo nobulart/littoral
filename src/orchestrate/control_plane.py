@@ -65,6 +65,16 @@ class PipelineControlPlane:
             "completed": 0,
             "extracted": 0,
             "unresolved": 0,
+            "autopilot_enabled": False,
+            "autopilot_max_active_jobs": 0,
+            "autopilot_severity": "off",
+            "autopilot_reason": "manual control",
+            "resource_load_1m": None,
+            "resource_load_per_cpu": None,
+            "resource_memory_used_percent": None,
+            "resource_memory_available_gb": None,
+            "resource_disk_free_gb": None,
+            "resource_disk_used_percent": None,
             "updated_at": self._started_at,
         }
         self._stop_requested = False
@@ -72,6 +82,7 @@ class PipelineControlPlane:
         self._cancel_callback: Callable[[str], bool] | None = None
         self._force_callback: Callable[[str], dict[str, Any]] | None = None
         self._trigger_callback: Callable[[str], dict[str, Any]] | None = None
+        self._deescalate_callback: Callable[[str], dict[str, Any]] | None = None
 
     @property
     def enabled(self) -> bool:
@@ -123,6 +134,10 @@ class PipelineControlPlane:
     def set_trigger_callback(self, callback: Callable[[str], dict[str, Any]]) -> None:
         with self._lock:
             self._trigger_callback = callback
+
+    def set_deescalate_callback(self, callback: Callable[[str], dict[str, Any]]) -> None:
+        with self._lock:
+            self._deescalate_callback = callback
 
     def request_stop(self, reason: str = "remote drain requested") -> None:
         changed = False
@@ -195,6 +210,20 @@ class PipelineControlPlane:
             callback = self._trigger_callback
         if callback is None:
             return {"ok": False, "source_id": normalized, "detail": "trigger is not available on this node"}
+        result = callback(normalized)
+        with self._lock:
+            self._node_updated_at = time.time()
+        self._persist_node(force=True)
+        return result
+
+    def deescalate_source(self, source_id: str) -> dict[str, Any]:
+        normalized = Path(source_id.strip()).stem.replace(" ", "_").lower()
+        if not normalized:
+            return {"ok": False, "source_id": normalized, "detail": "empty source id"}
+        with self._lock:
+            callback = self._deescalate_callback
+        if callback is None:
+            return {"ok": False, "source_id": normalized, "detail": "deescalation is not available on this node"}
         result = callback(normalized)
         with self._lock:
             self._node_updated_at = time.time()
@@ -335,6 +364,9 @@ class PipelineControlPlane:
                     return
                 if len(segments) == 4 and segments[:3] == ["v1", "control", "trigger"]:
                     self._send_json(control_plane.trigger_source(segments[3]))
+                    return
+                if len(segments) == 4 and segments[:3] == ["v1", "control", "deescalate"]:
+                    self._send_json(control_plane.deescalate_source(segments[3]))
                     return
                 self.send_error(HTTPStatus.NOT_FOUND, "Not found")
 

@@ -43,7 +43,7 @@ class PipelineProgressSnapshot:
 
 
 class PipelineProgressReporter:
-    def __init__(self, total_files: int, mode: str = "auto", enabled: bool = True) -> None:
+    def __init__(self, total_files: int, mode: str = "auto", enabled: bool = True, autopilot_enabled: bool = False) -> None:
         self.total_files = total_files
         self.enabled = enabled and total_files >= 0
         self.started_at = time.perf_counter()
@@ -59,6 +59,8 @@ class PipelineProgressReporter:
         self._curses = None
         self._supports_color = False
         self._paused = False
+        self._autopilot_enabled = autopilot_enabled
+        self._autopilot_status = "manual control" if not autopilot_enabled else "starting"
         self._stop_requested = False
         self._abort_requested = False
         self._soft_exit_requested = False
@@ -66,6 +68,7 @@ class PipelineProgressReporter:
         self._cancel_requests: set[int] = set()
         self._force_requests: set[int] = set()
         self._retry_requests: set[int] = set()
+        self._deescalate_requests: set[int] = set()
         self._scroll_offset = 0
         self._selected_row = 0
         self._filter_mode = "all"
@@ -117,13 +120,21 @@ class PipelineProgressReporter:
             "completed": "done",
             "failed": "failed",
         }.get(status, status)
+        incoming_stage = stage or normalized_status
         with self._lock:
             state = self._states.setdefault(index, FileProgressState(index=index, name=name))
+            preserve_live_stage = (
+                normalized_status == "running"
+                and incoming_stage == "claimed"
+                and state.status == "running"
+                and state.stage not in {"queued", "claimed", "starting", "start"}
+            )
             state.status = normalized_status
             state.lease_status = lease_status or status
             state.lease_owner = lease_owner
-            state.stage = stage or normalized_status
-            state.detail = detail
+            if not preserve_live_stage:
+                state.stage = incoming_stage
+                state.detail = detail
             if started_at is not None:
                 state.started_at = started_at
             if finished_at is not None:
@@ -198,6 +209,19 @@ class PipelineProgressReporter:
             self._log_line(f"{self._prefix()} {state.name} :: prioritized for next dispatch")
             self._render()
             return True
+
+    def requeue_file(self, index: int, name: str, reason: str) -> None:
+        with self._lock:
+            state = self._states.setdefault(index, FileProgressState(index=index, name=name))
+            state.status = "queued"
+            state.lease_status = "queued"
+            state.lease_owner = ""
+            state.stage = "queued"
+            state.detail = reason
+            state.cancel_requested = False
+            state.finished_at = None
+            self._log_line(f"{self._prefix()} {name} :: requeued - {reason}")
+            self._render()
 
     def mark_unsupported(self, index: int, name: str, reason: str) -> None:
         with self._lock:
@@ -298,6 +322,17 @@ class PipelineProgressReporter:
             self._poll_input()
             return self._paused
 
+    def autopilot_enabled(self) -> bool:
+        with self._lock:
+            self._poll_input()
+            return self._autopilot_enabled
+
+    def set_autopilot_status(self, status: str) -> None:
+        with self._lock:
+            if status != self._autopilot_status:
+                self._autopilot_status = status
+                self._render()
+
     def stop_requested(self) -> bool:
         with self._lock:
             self._poll_input()
@@ -340,6 +375,13 @@ class PipelineProgressReporter:
             self._poll_input()
             requests = set(self._retry_requests)
             self._retry_requests.clear()
+            return requests
+
+    def consume_deescalate_requests(self) -> set[int]:
+        with self._lock:
+            self._poll_input()
+            requests = set(self._deescalate_requests)
+            self._deescalate_requests.clear()
             return requests
 
     def selected_index(self) -> int | None:
@@ -504,13 +546,14 @@ class PipelineProgressReporter:
             mode = "ABORTING"
         header = (
             f"LITTORAL  {mode}  clock {clock}  runtime {runtime}  "
+            f"autopilot {'ON' if self._autopilot_enabled else 'OFF'} ({self._autopilot_status[:24]})  "
             f"done {snapshot.completed + snapshot.skipped + snapshot.unsupported + snapshot.cancelled}/{snapshot.total_files}  "
             f"local {snapshot.local_active}  remote {snapshot.remote_active}  leased {snapshot.leased_total}  "
             f"queued {snapshot.queued}  extracted {snapshot.extracted}  unresolved {snapshot.unresolved}"
         )
         self._add_line(0, 0, header, width - 1, self._style_for_mode(mode) | curses.A_BOLD)
         self._add_line(1, 0, "=" * max(1, width - 1), width - 1, self._style("dim"))
-        controls = "Controls: p pause  s stop  Q exit  ESC hard-exit  t trigger  x cancel  ! force-kill  i inspect  r refresh"
+        controls = "Controls: a autopilot  d deescalate  p pause  s stop  Q exit  ESC hard-exit  t trigger  x cancel  ! force-kill  i inspect  r refresh"
         self._add_line(2, 0, controls, width - 1, self._style("accent"))
         browser = (
             f"Browse: j/k or arrows move  PgUp/PgDn page  g/G top/bottom  "
@@ -610,6 +653,10 @@ class PipelineProgressReporter:
             elif key == "p":
                 self._paused = not self._paused
                 self._log_line(self._timestamped(f"control :: {'paused' if self._paused else 'resumed'} dispatch"))
+            elif key == "a":
+                self._autopilot_enabled = not self._autopilot_enabled
+                self._autopilot_status = "starting" if self._autopilot_enabled else "manual control"
+                self._log_line(self._timestamped(f"control :: autopilot {'enabled' if self._autopilot_enabled else 'disabled'}"))
             elif key == "s":
                 self._stop_requested = True
                 self._paused = False
@@ -623,6 +670,8 @@ class PipelineProgressReporter:
                 self._log_line(self._timestamped("control :: manual refresh"))
             elif key == "t":
                 self._trigger_selected()
+            elif key == "d":
+                self._deescalate_selected()
             elif key == "x":
                 self._cancel_selected()
             elif raw_key == "!":
@@ -757,6 +806,20 @@ class PipelineProgressReporter:
         self._force_requests.add(selected)
         state.detail = f"{state.detail} | force kill requested".strip(" |")
         self._log_line(self._timestamped(f"control :: force-kill requested for {state.name}"))
+
+    def _deescalate_selected(self) -> None:
+        selected = self.selected_index()
+        if selected is None:
+            return
+        state = self._states.get(selected)
+        if state is None:
+            return
+        if state.status != "running":
+            self._log_line(self._timestamped(f"control :: cannot deescalate {state.name} from status {state.status}"))
+            return
+        self._deescalate_requests.add(selected)
+        state.detail = f"{state.detail} | deescalate requested".strip(" |")
+        self._log_line(self._timestamped(f"control :: deescalate requested for {state.name}"))
 
     def _clamp_viewport(self, total_visible: int, table_rows: int) -> None:
         if total_visible <= 0:

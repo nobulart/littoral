@@ -337,11 +337,15 @@ Dashboard controls:
 - `j` / `k` or arrow keys: move through the file list.
 - `PgUp` / `PgDn`: page through the file list.
 - `g` / `G`: jump to the top or bottom of the current view.
+- `Q`: soft exit the dashboard. During processing this stops dispatching queued work after active jobs settle; after completion it closes the review screen.
+- `ESC`: hard exit the dashboard, clearing queued work and force-releasing local active leases.
 - `f`: cycle the status filter through `all`, `running`, `queued`, `done`, `cancelled`, `skipped`, and `unsupported`.
 - `/`: alternate shortcut for cycling the current status filter.
 - `o`: cycle sort order through `index`, `status`, `name`, `elapsed`, and `unresolved`.
 
 Note: queued items can be cancelled immediately. Running items can be force-released with `!`, by source id over the API, or with `--force-kill-source`; this removes the active lease and terminates any local owned worker PID recorded in the lease/status payload. Cross-workstation force-kill and trigger actions require the owning workstation to have a healthy endpoint advertised in `locks/nodes/`.
+
+While the ncurses dashboard is processing or sitting in review mode, LITTORAL polls the incoming directory and automatically adds newly discovered files to the current queue. If no work is available at startup, the dashboard opens directly into review/monitoring mode.
 
 Shared filesystem coordination:
 
@@ -349,13 +353,14 @@ Shared filesystem coordination:
 - `locks/source_active/*.lease.json` holds the active per-source processing lease with host, pid, run id, heartbeat, stage, and detail.
 - `locks/source_status/*.status.json` records the latest known state for each source, including `queued`, `running`, `completed`, `failed`, `skipped`, and `unsupported`.
 - `locks/merge_active/*.lease.json` and `locks/merge_status/*.status.json` coordinate corpus-level merged output publishing so only one host rebuilds shared master outputs at a time.
-- `locks/nodes/*.node.json` now advertises active pipeline controller endpoints, queue depth, local capacity, and run state for hybrid API-assisted coordination.
+- `locks/nodes/*.node.json` advertises active pipeline controller endpoints, queue depth, local capacity, and run state for hybrid API-assisted coordination. Registry writes are heartbeat-throttled; live readers should prefer the advertised API endpoint.
 
 Hybrid control-plane API:
 
 - Each running pipeline controller starts a small HTTP API and registers its advertised endpoint in `locks/nodes/`.
-- Node files are rewritten only when the advertised run state, capacity, or control flags change; liveness checks should use the API endpoint.
+- Node files are rewritten on a low-frequency heartbeat or when durable control/run-state changes need to be advertised; liveness and capacity checks should use the API endpoint.
 - The filesystem remains the durable fallback for source/merge leases and mirrored status files.
+- The ncurses dashboard polls healthy peer APIs for live leases and falls back to shared status files at a lower cadence, reducing lock/status churn on mirrored filesystems.
 - The API provides low-latency workstation discovery and operator control without giving up crash recovery on the shared drive.
 - `GET /healthz`: liveness probe.
 - `GET /v1/node`: local node metadata, advertised endpoint, run state, and control flags.

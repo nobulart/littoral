@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import csv
 from dataclasses import dataclass
 import json
 import os
@@ -178,11 +179,11 @@ class PipelineLockManager:
         self,
         root_dir: Path,
         *,
-        heartbeat_seconds: float = 8.0,
+        heartbeat_seconds: float = 15.0,
         stale_after_seconds: float = 45.0,
-        min_update_interval_seconds: float = 4.0,
+        min_update_interval_seconds: float = 10.0,
         sync_settle_seconds: float = 1.5,
-        status_bridge_seconds: float = 6.0,
+        status_bridge_seconds: float = 20.0,
     ) -> None:
         self.root_dir = root_dir
         self.source_status_dir = root_dir / "source_status"
@@ -378,6 +379,25 @@ class PipelineLockManager:
         lease_path = self._source_lease_path(source_id)
         existing_status = self._read_json(status_path)
         if per_source_mode == "skip" and existing_status and str(existing_status.get("status") or "") == "completed":
+            accepted_points = _count_csv_records(csv_path)
+            if (
+                existing_status.get("accepted_points") != accepted_points
+                or existing_status.get("summary_path") != str(summary_path)
+                or existing_status.get("csv_path") != str(csv_path)
+            ):
+                self.mark_source_state(
+                    source_id,
+                    source_name,
+                    source_path,
+                    status="completed",
+                    stage=str(existing_status.get("stage") or "existing_outputs"),
+                    detail=str(existing_status.get("detail") or "completed status already recorded"),
+                    extra={
+                        "summary_path": str(summary_path),
+                        "csv_path": str(csv_path),
+                        "accepted_points": accepted_points,
+                    },
+                )
             return LeaseDenied("completed status already recorded")
         if per_source_mode == "skip" and (summary_path.exists() or csv_path.exists()):
             self.mark_source_state(
@@ -387,7 +407,11 @@ class PipelineLockManager:
                 status="completed",
                 stage="existing_outputs",
                 detail="existing per-source outputs found",
-                extra={"summary_path": str(summary_path), "csv_path": str(csv_path)},
+                extra={
+                    "summary_path": str(summary_path),
+                    "csv_path": str(csv_path),
+                    "accepted_points": _count_csv_records(csv_path),
+                },
             )
             return LeaseDenied("existing per-source outputs found")
         active_status = self._active_status_reason(existing_status)
@@ -607,3 +631,13 @@ def _create_json_exclusive(path: Path, payload: dict[str, object]) -> None:
     with open(path, "x", encoding="utf-8") as handle:
         json.dump(payload, handle, indent=2, sort_keys=True)
         handle.write("\n")
+
+
+def _count_csv_records(path: Path) -> int:
+    if not path.exists():
+        return 0
+    try:
+        with path.open("r", encoding="utf-8", newline="") as handle:
+            return sum(1 for _ in csv.DictReader(handle))
+    except (OSError, csv.Error):
+        return 0

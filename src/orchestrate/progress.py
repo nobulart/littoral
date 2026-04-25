@@ -51,6 +51,7 @@ class PipelineProgressReporter:
         self._states: dict[int, FileProgressState] = {}
         self._extracted = 0
         self._unresolved = 0
+        self._unresolved_total_override: int | None = None
         self._unsupported = 0
         self._recent_logs: list[str] = []
         self._mode = self._resolve_mode(mode) if self.enabled else "plain"
@@ -60,6 +61,8 @@ class PipelineProgressReporter:
         self._paused = False
         self._stop_requested = False
         self._abort_requested = False
+        self._soft_exit_requested = False
+        self._hard_exit_requested = False
         self._cancel_requests: set[int] = set()
         self._force_requests: set[int] = set()
         self._retry_requests: set[int] = set()
@@ -91,6 +94,7 @@ class PipelineProgressReporter:
     def queue_file(self, index: int, name: str) -> None:
         with self._lock:
             self._states[index] = FileProgressState(index=index, name=name)
+            self.total_files = max(self.total_files, index)
             self._render()
 
     def sync_shared_state(
@@ -246,6 +250,11 @@ class PipelineProgressReporter:
             self._log_line(f"{self._prefix()} {name} :: unresolved +{count}{' - ' + detail if detail else ''}")
             self._render()
 
+    def set_unresolved_total(self, count: int) -> None:
+        with self._lock:
+            self._unresolved_total_override = max(0, count)
+            self._render()
+
     def complete_file(self, index: int, name: str, accepted: int) -> None:
         with self._lock:
             state = self._states.setdefault(index, FileProgressState(index=index, name=name))
@@ -298,6 +307,19 @@ class PipelineProgressReporter:
         with self._lock:
             self._poll_input()
             return self._abort_requested
+
+    def soft_exit_requested(self) -> bool:
+        with self._lock:
+            self._poll_input()
+            return self._soft_exit_requested
+
+    def hard_exit_requested(self) -> bool:
+        with self._lock:
+            self._poll_input()
+            return self._hard_exit_requested
+
+    def uses_dashboard(self) -> bool:
+        return self._mode == "ncurses"
 
     def consume_force_requests(self) -> set[int]:
         with self._lock:
@@ -379,7 +401,11 @@ class PipelineProgressReporter:
         cancelled = sum(1 for state in self._states.values() if state.status == "cancelled")
         unsupported = sum(1 for state in self._states.values() if state.status == "unsupported")
         extracted = sum(state.accepted for state in self._states.values())
-        unresolved = sum(state.unresolved for state in self._states.values())
+        unresolved = (
+            self._unresolved_total_override
+            if self._unresolved_total_override is not None
+            else sum(state.unresolved for state in self._states.values())
+        )
         elapsed = time.perf_counter() - self.started_at
         return PipelineProgressSnapshot(
             total_files=self.total_files,
@@ -484,14 +510,14 @@ class PipelineProgressReporter:
         )
         self._add_line(0, 0, header, width - 1, self._style_for_mode(mode) | curses.A_BOLD)
         self._add_line(1, 0, "=" * max(1, width - 1), width - 1, self._style("dim"))
-        controls = "Controls: p pause  s stop  q abort-queue  t trigger  x cancel  ! force-kill  i inspect  r refresh"
+        controls = "Controls: p pause  s stop  Q exit  ESC hard-exit  t trigger  x cancel  ! force-kill  i inspect  r refresh"
         self._add_line(2, 0, controls, width - 1, self._style("accent"))
         browser = (
             f"Browse: j/k or arrows move  PgUp/PgDn page  g/G top/bottom  "
             f"f filter={self._filter_mode}  o sort={self._sort_mode}"
         )
         self._add_line(3, 0, browser, width - 1, self._style("accent"))
-        self._add_line(4, 0, "Idx Name                    Status   Lease    Owner          Stage        Time  Cnd Acc Unr Detail", width - 1, self._style("header"))
+        self._add_line(4, 0, self._format_table_header(), width - 1, self._style("header"))
         self._add_line(5, 0, "-" * max(1, width - 1), width - 1, self._style("dim"))
 
         visible_states = self._visible_states()
@@ -501,19 +527,7 @@ class PipelineProgressReporter:
         window = visible_states[self._scroll_offset : self._scroll_offset + table_rows]
         for absolute_index, state in enumerate(window, start=self._scroll_offset):
             runtime_text = self._state_elapsed(state)
-            line = (
-                f"{state.index:>3}. "
-                f"{state.name[:23]:23} "
-                f"{state.status[:8]:8} "
-                f"{state.lease_status[:8]:8} "
-                f"{state.lease_owner[:14]:14} "
-                f"{state.stage[:12]:12} "
-                f"{runtime_text:>10} "
-                f"{state.candidates:>3} "
-                f"{state.accepted:>3} "
-                f"{state.unresolved:>3} "
-                f"{state.detail}"
-            )
+            line = self._format_table_row(state, runtime_text)
             style = self._style_for_state(state)
             if absolute_index == self._selected_row:
                 style |= curses.A_REVERSE
@@ -540,6 +554,36 @@ class PipelineProgressReporter:
 
         screen.refresh()
 
+    def _format_table_header(self) -> str:
+        return (
+            f"{'Idx':>3}  "
+            f"{'Name':23} "
+            f"{'Status':8} "
+            f"{'Lease':8} "
+            f"{'Owner':14} "
+            f"{'Stage':12} "
+            f"{'Time':>10} "
+            f"{'Cnd':>3} "
+            f"{'Acc':>3} "
+            f"{'Unr':>3} "
+            f"  Detail"
+        )
+
+    def _format_table_row(self, state: FileProgressState, runtime_text: str) -> str:
+        return (
+            f"{state.index:>3}. "
+            f"{state.name[:23]:23} "
+            f"{state.status[:8]:8} "
+            f"{state.lease_status[:8]:8} "
+            f"{state.lease_owner[:14]:14} "
+            f"{state.stage[:12]:12} "
+            f"{runtime_text:>10} "
+            f"{state.candidates:>3} "
+            f"{state.accepted:>3} "
+            f"{state.unresolved:>3} "
+            f"  {state.detail}"
+        )
+
     def _poll_input(self) -> None:
         if self._mode != "ncurses" or self._screen is None:
             return
@@ -552,7 +596,18 @@ class PipelineProgressReporter:
                 return
             raw_key = chr(code) if 0 <= code < 256 else ""
             key = raw_key.lower()
-            if key == "p":
+            if code == 27:
+                self._hard_exit_requested = True
+                self._abort_requested = True
+                self._stop_requested = True
+                self._paused = False
+                self._log_line(self._timestamped("control :: hard exit requested"))
+            elif raw_key == "Q":
+                self._soft_exit_requested = True
+                self._stop_requested = True
+                self._paused = False
+                self._log_line(self._timestamped("control :: soft exit requested"))
+            elif key == "p":
                 self._paused = not self._paused
                 self._log_line(self._timestamped(f"control :: {'paused' if self._paused else 'resumed'} dispatch"))
             elif key == "s":

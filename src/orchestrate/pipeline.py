@@ -57,8 +57,8 @@ class PipelineConfig:
     control_api_bind_host: str = "0.0.0.0"
     control_api_advertise_host: str | None = None
     control_api_port: int = 0
-    control_api_heartbeat_seconds: float = 5.0
-    control_api_node_ttl_seconds: float = 20.0
+    control_api_heartbeat_seconds: float = 10.0
+    control_api_node_ttl_seconds: float = 45.0
     job_timeout_minutes: float = 240.0
 
 
@@ -102,6 +102,7 @@ def run_pipeline(config: PipelineConfig) -> None:
     pipeline_started = time.perf_counter()
     reporter = PipelineProgressReporter(total_files=len(_selected_input_files(config)), mode=config.progress_ui, enabled=config.verbosity > 0)
     last_shared_status_refresh = 0.0
+    last_peer_api_refresh = 0.0
     control_plane: PipelineControlPlane | None = None
     def emit(message: str, level: int = 1) -> None:
         if config.verbosity >= level and config.progress_callback is None:
@@ -153,6 +154,7 @@ def run_pipeline(config: PipelineConfig) -> None:
             config.unresolved_log.write_text("", encoding="utf-8")
         elif not config.unresolved_log.exists():
             config.unresolved_log.write_text("", encoding="utf-8")
+        reporter.set_unresolved_total(_count_log_records(config.unresolved_log))
 
         source_paths = _selected_input_files(config)
         emit(f"Processing {len(source_paths)} input file(s)")
@@ -176,8 +178,17 @@ def run_pipeline(config: PipelineConfig) -> None:
         active_jobs_by_source: dict[str, ActiveJob] = {}
         active_futures_by_source: dict[str, object] = {}
         active_jobs_lock = threading.Lock()
-        for index, source_path in enumerate(source_paths, start=1):
+        seen_source_ids: set[str] = set()
+        next_source_index = 0
+
+        def _enqueue_source_path(source_path: Path) -> tuple[int, Path, str, BaseExtractor] | None:
+            nonlocal next_source_index, unresolved_count
             source_id = _source_id_for_path(source_path)
+            if source_id in seen_source_ids:
+                return None
+            seen_source_ids.add(source_id)
+            next_source_index += 1
+            index = next_source_index
             source_index_map[source_id] = (index, source_path.name)
             source_id_by_index[index] = source_id
             reporter.queue_file(index, source_path.name)
@@ -196,10 +207,15 @@ def run_pipeline(config: PipelineConfig) -> None:
                 )
                 append_log(config.unresolved_log, f"{source_id}\t{source_path.name}\tUnsupported file type")
                 unresolved_count += 1
-                continue
+                reporter.set_unresolved_total(_count_log_records(config.unresolved_log))
+                return None
             work_item = (index, source_path, source_id, extractor)
             work_items.append(work_item)
             work_item_by_index[index] = work_item
+            return work_item
+
+        for source_path in source_paths:
+            _enqueue_source_path(source_path)
 
         def _cancel_source_by_id(source_id: str) -> bool:
             mapping = source_index_map.get(source_id)
@@ -259,6 +275,18 @@ def run_pipeline(config: PipelineConfig) -> None:
             reporter.prioritize_file(index)
             return {"ok": True, "source_id": source_id, "detail": "source queued for priority dispatch"}
 
+        def _discover_new_work_items() -> list[tuple[int, Path, str, BaseExtractor]]:
+            discovered: list[tuple[int, Path, str, BaseExtractor]] = []
+            for source_path in _iter_input_files(config.incoming_dir):
+                work_item = _enqueue_source_path(source_path)
+                if work_item is not None:
+                    discovered.append(work_item)
+            if discovered:
+                reporter.emit_global(f"Discovered {len(discovered)} new input file(s)")
+                if control_plane is not None:
+                    control_plane.update_capacity(total_files=reporter.total_files)
+            return discovered
+
         if control_plane is not None:
             control_plane.set_cancel_callback(_cancel_source_by_id)
             control_plane.set_force_callback(lambda source_id: _force_source_by_id(source_id, "force killed by remote API request"))
@@ -270,243 +298,299 @@ def run_pipeline(config: PipelineConfig) -> None:
                 endpoint=control_plane.endpoint,
             )
 
-        if work_items:
-            job_timeout_seconds = 0.0 if config.job_timeout_minutes <= 0 else config.job_timeout_minutes * 60.0
-            with ThreadPoolExecutor(max_workers=max(1, min(document_workers, len(work_items)))) as executor:
-                pending = deque(work_items)
-                while pending or active_futures:
-                    if control_plane is not None:
-                        for source_id in control_plane.consume_cancel_requests():
-                            mapping = source_index_map.get(source_id)
-                            if mapping is not None:
-                                reporter.cancel_file(mapping[0], "cancelled by remote API request")
-                    if (time.time() - last_shared_status_refresh) >= 1.5:
-                        _refresh_reporter_from_shared_statuses(reporter, lock_manager, source_index_map)
-                        last_shared_status_refresh = time.time()
-                    if control_plane is not None:
-                        snapshot = reporter.snapshot()
-                        control_plane.update_capacity(
-                            queued=snapshot.queued,
-                            local_active=snapshot.local_active,
-                            remote_active=snapshot.remote_active,
-                            leased_total=snapshot.leased_total,
-                            completed=snapshot.completed,
-                            extracted=snapshot.extracted,
-                            unresolved=snapshot.unresolved,
-                        )
-                    reporter.tick()
-                    for cancel_index in reporter.consume_cancel_requests():
-                        source_id = source_id_by_index.get(cancel_index)
-                        if source_id is not None:
-                            _route_control_request(
-                                "cancel",
+        cycle_work_items = list(work_items)
+        while True:
+            if reporter.uses_dashboard() and not cycle_work_items:
+                cycle_work_items = _review_until_new_work_or_exit(reporter, _discover_new_work_items)
+                if reporter.soft_exit_requested() or reporter.hard_exit_requested():
+                    break
+                if not cycle_work_items:
+                    continue
+                emit(f"Resuming processing for {len(cycle_work_items)} new input file(s)")
+                if control_plane is not None:
+                    control_plane.update_run_state("running", "processing newly discovered sources")
+            if cycle_work_items or reporter.uses_dashboard():
+                job_timeout_seconds = 0.0 if config.job_timeout_minutes <= 0 else config.job_timeout_minutes * 60.0
+                last_input_scan = time.time()
+                with ThreadPoolExecutor(max_workers=max(1, document_workers)) as executor:
+                    pending = deque(cycle_work_items)
+                    while pending or active_futures:
+                        if control_plane is not None:
+                            for source_id in control_plane.consume_cancel_requests():
+                                mapping = source_index_map.get(source_id)
+                                if mapping is not None:
+                                    reporter.cancel_file(mapping[0], "cancelled by remote API request")
+                        now = time.time()
+                        if control_plane is not None and control_plane.enabled and (now - last_peer_api_refresh) >= 1.5:
+                            _refresh_reporter_from_peer_apis(reporter, control_plane, source_index_map)
+                            last_peer_api_refresh = now
+                        filesystem_status_interval = 10.0 if control_plane is not None and control_plane.enabled else 1.5
+                        if (now - last_shared_status_refresh) >= filesystem_status_interval:
+                            _refresh_reporter_from_shared_statuses(reporter, lock_manager, source_index_map, config.per_source_dir)
+                            reporter.set_unresolved_total(_count_log_records(config.unresolved_log))
+                            last_shared_status_refresh = now
+                        if reporter.uses_dashboard() and not reporter.stop_requested() and not reporter.soft_exit_requested() and not reporter.hard_exit_requested() and (now - last_input_scan) >= 2.0:
+                            pending.extend(_discover_new_work_items())
+                            last_input_scan = now
+                        if control_plane is not None:
+                            snapshot = reporter.snapshot()
+                            control_plane.update_capacity(
+                                queued=snapshot.queued,
+                                local_active=snapshot.local_active,
+                                remote_active=snapshot.remote_active,
+                                leased_total=snapshot.leased_total,
+                                completed=snapshot.completed,
+                                extracted=snapshot.extracted,
+                                unresolved=snapshot.unresolved,
+                            )
+                        reporter.tick()
+                        for cancel_index in reporter.consume_cancel_requests():
+                            source_id = source_id_by_index.get(cancel_index)
+                            if source_id is not None:
+                                _route_control_request(
+                                    "cancel",
+                                    source_id,
+                                    reporter=reporter,
+                                    lock_manager=lock_manager,
+                                    control_plane=control_plane,
+                                    local_handler=_cancel_source_control,
+                                )
+                        for force_index in reporter.consume_force_requests():
+                            source_id = source_id_by_index.get(force_index)
+                            if source_id is not None:
+                                _route_control_request(
+                                    "force",
+                                    source_id,
+                                    reporter=reporter,
+                                    lock_manager=lock_manager,
+                                    control_plane=control_plane,
+                                    local_handler=lambda target_source_id: _force_source_by_id(
+                                        target_source_id,
+                                        "force killed by ncurses operator request",
+                                    ),
+                                )
+                        for retry_index in reporter.consume_retry_requests():
+                            work_item = work_item_by_index.get(retry_index)
+                            if work_item is None:
+                                continue
+                            _, _, source_id, _ = work_item
+                            routed = _route_control_request(
+                                "trigger",
                                 source_id,
                                 reporter=reporter,
                                 lock_manager=lock_manager,
                                 control_plane=control_plane,
-                                local_handler=_cancel_source_control,
+                                local_handler=_trigger_source_by_id,
                             )
-                    for force_index in reporter.consume_force_requests():
-                        source_id = source_id_by_index.get(force_index)
-                        if source_id is not None:
-                            _route_control_request(
-                                "force",
-                                source_id,
-                                reporter=reporter,
-                                lock_manager=lock_manager,
-                                control_plane=control_plane,
-                                local_handler=lambda target_source_id: _force_source_by_id(
-                                    target_source_id,
-                                    "force killed by ncurses operator request",
-                                ),
-                            )
-                    for retry_index in reporter.consume_retry_requests():
-                        work_item = work_item_by_index.get(retry_index)
-                        if work_item is None:
-                            continue
-                        _, _, source_id, _ = work_item
-                        routed = _route_control_request(
-                            "trigger",
-                            source_id,
+                            if routed.get("routed") == "remote":
+                                continue
+                            with active_jobs_lock:
+                                is_active = source_id in active_jobs_by_source
+                            if is_active or any(item[0] == retry_index for item in pending):
+                                continue
+                            pending.appendleft(work_item)
+                        _expire_timed_out_jobs(
+                            active_futures,
+                            timeout_seconds=job_timeout_seconds,
                             reporter=reporter,
                             lock_manager=lock_manager,
-                            control_plane=control_plane,
-                            local_handler=_trigger_source_by_id,
+                            workspace_root=config.workspace_root,
+                            active_jobs_by_source=active_jobs_by_source,
+                            active_futures_by_source=active_futures_by_source,
+                            active_jobs_lock=active_jobs_lock,
                         )
-                        if routed.get("routed") == "remote":
-                            continue
-                        with active_jobs_lock:
-                            is_active = source_id in active_jobs_by_source
-                        if is_active or any(item[0] == retry_index for item in pending):
-                            continue
-                        pending.appendleft(work_item)
-                    _expire_timed_out_jobs(
-                        active_futures,
-                        timeout_seconds=job_timeout_seconds,
-                        reporter=reporter,
-                        lock_manager=lock_manager,
-                        workspace_root=config.workspace_root,
-                        active_jobs_by_source=active_jobs_by_source,
-                        active_futures_by_source=active_futures_by_source,
-                        active_jobs_lock=active_jobs_lock,
-                    )
-                    if reporter.abort_requested():
-                        pending.clear()
-                    pending = deque(
-                        item
-                        for item in pending
-                        if not reporter.is_cancelled_before_dispatch(item[0])
-                        and reporter.status_for(item[0]) not in {"done", "skipped", "unsupported", "failed"}
-                    )
-                    dispatch_attempts = 0
-                    max_dispatch_attempts = len(pending) if pending else 0
-                    while (
-                        pending
-                        and dispatch_attempts < max_dispatch_attempts
-                        and len(active_futures) < max(1, min(document_workers, len(work_items)))
-                        and not reporter.pause_requested()
-                        and not reporter.stop_requested()
-                        and not (control_plane.stop_requested() if control_plane is not None else False)
-                    ):
-                        next_index = reporter.pick_pending_index([item[0] for item in pending])
-                        if next_index is None:
-                            break
-                        selected_position = next(i for i, item in enumerate(pending) if item[0] == next_index)
-                        index, source_path, source_id, extractor = pending[selected_position]
-                        del pending[selected_position]
-                        dispatch_attempts += 1
-                        max_dispatch_attempts = len(pending) if pending else 0
-                        summary_path, csv_path = _per_source_output_paths(config.per_source_dir, source_id)
-                        lease = lock_manager.claim_source(
-                            source_id,
-                            source_path.name,
-                            source_path,
-                            summary_path=summary_path,
-                            csv_path=csv_path,
-                            per_source_mode=config.per_source_mode,
-                        )
-                        if isinstance(lease, LeaseDenied):
-                            if lease.status == "running":
-                                reporter.sync_shared_state(
-                                    index,
-                                    source_path.name,
-                                    status="running",
-                                    lease_status="running",
-                                    lease_owner=lease.reason.removeprefix("active lease held by ").removeprefix("active status held by "),
-                                    stage="leased_elsewhere",
-                                    detail=lease.reason,
-                                )
-                                pending.append((index, source_path, source_id, extractor))
-                            else:
-                                reporter.skip_file(index, source_path.name, lease.reason)
-                                skipped_files.append(source_path.name)
-                            continue
-                        reporter.note_dispatch_started(index)
-                        future = executor.submit(
-                            _process_source_file,
-                            index,
-                            source_path,
-                            source_id,
-                            extractor,
-                            config,
-                            runtime,
-                            ontology,
-                            schema,
-                            reporter,
-                            lease,
-                        )
-                        active_job = ActiveJob(
-                            index=index,
-                            source_path=source_path,
-                            source_id=source_id,
-                            lease=lease,
-                            started_at=time.perf_counter(),
-                        )
-                        with active_jobs_lock:
-                            active_futures[future] = active_job
-                            active_jobs_by_source[source_id] = active_job
-                            active_futures_by_source[source_id] = future
-                    if not active_futures:
-                        if pending and reporter.pause_requested():
-                            time.sleep(0.1)
-                            continue
-                        if pending and (reporter.stop_requested() or (control_plane.stop_requested() if control_plane is not None else False)):
+                        if reporter.abort_requested() or reporter.hard_exit_requested():
                             pending.clear()
-                            continue
-                        if pending:
-                            time.sleep(1.0)
-                            continue
-                        break
-                    done, remaining = wait(set(active_futures.keys()), timeout=0.2, return_when=FIRST_COMPLETED)
-                    future_map = active_futures
-                    active_futures = {future: future_map[future] for future in remaining}
-                    for future in done:
-                        active_job = future_map[future]
-                        with active_jobs_lock:
-                            if active_jobs_by_source.get(active_job.source_id) is not active_job:
-                                continue
-                            active_jobs_by_source.pop(active_job.source_id, None)
-                            active_futures_by_source.pop(active_job.source_id, None)
-                        lease = active_job.lease
-                        try:
-                            result = future.result()
-                        except Exception as error:
-                            lease.fail(f"processing failed: {error.__class__.__name__}: {error}")
-                            raise
-                        summary_path, csv_path = _per_source_output_paths(config.per_source_dir, result.source_id)
-                        lease.update("publish", "publishing per-source outputs")
-                        write_summary(summary_path, result.summary_lines)
-                        write_csv(csv_path, result.normalized_points)
-                        for line in result.unresolved_lines:
-                            append_log(config.unresolved_log, line)
-                            unresolved_count += 1
-                        lease.complete(
-                            f"accepted {len(result.normalized_points)} point(s)",
-                            extra={
-                                "accepted_points": len(result.normalized_points),
-                                "unresolved_entries": len(result.unresolved_lines),
-                            },
+                        if reporter.hard_exit_requested():
+                            _force_release_active_jobs(
+                                active_futures,
+                                reporter=reporter,
+                                lock_manager=lock_manager,
+                                workspace_root=config.workspace_root,
+                                active_jobs_by_source=active_jobs_by_source,
+                                active_futures_by_source=active_futures_by_source,
+                                active_jobs_lock=active_jobs_lock,
+                                reason="hard exit requested",
+                            )
+                            break
+                        pending = deque(
+                            item
+                            for item in pending
+                            if not reporter.is_cancelled_before_dispatch(item[0])
+                            and reporter.status_for(item[0]) not in {"done", "skipped", "unsupported", "failed"}
                         )
-                        reporter.complete_file(result.index, result.source_path.name, len(result.normalized_points))
-                        processed_files.append(result.source_path.name)
-                        extracted_records += len(result.normalized_points)
-                _refresh_reporter_from_shared_statuses(reporter, lock_manager, source_index_map)
+                        dispatch_attempts = 0
+                        max_dispatch_attempts = len(pending) if pending else 0
+                        while (
+                            pending
+                            and dispatch_attempts < max_dispatch_attempts
+                            and len(active_futures) < max(1, min(document_workers, len(work_items)))
+                            and not reporter.pause_requested()
+                            and not reporter.stop_requested()
+                            and not (control_plane.stop_requested() if control_plane is not None else False)
+                        ):
+                            next_index = reporter.pick_pending_index([item[0] for item in pending])
+                            if next_index is None:
+                                break
+                            selected_position = next(i for i, item in enumerate(pending) if item[0] == next_index)
+                            index, source_path, source_id, extractor = pending[selected_position]
+                            del pending[selected_position]
+                            dispatch_attempts += 1
+                            max_dispatch_attempts = len(pending) if pending else 0
+                            summary_path, csv_path = _per_source_output_paths(config.per_source_dir, source_id)
+                            lease = lock_manager.claim_source(
+                                source_id,
+                                source_path.name,
+                                source_path,
+                                summary_path=summary_path,
+                                csv_path=csv_path,
+                                per_source_mode=config.per_source_mode,
+                            )
+                            if isinstance(lease, LeaseDenied):
+                                if lease.status == "running":
+                                    reporter.sync_shared_state(
+                                        index,
+                                        source_path.name,
+                                        status="running",
+                                        lease_status="running",
+                                        lease_owner=lease.reason.removeprefix("active lease held by ").removeprefix("active status held by "),
+                                        stage="leased_elsewhere",
+                                        detail=lease.reason,
+                                    )
+                                    pending.append((index, source_path, source_id, extractor))
+                                else:
+                                    reporter.skip_file(index, source_path.name, lease.reason)
+                                    skipped_files.append(source_path.name)
+                                continue
+                            reporter.note_dispatch_started(index)
+                            future = executor.submit(
+                                _process_source_file,
+                                index,
+                                source_path,
+                                source_id,
+                                extractor,
+                                config,
+                                runtime,
+                                ontology,
+                                schema,
+                                reporter,
+                                lease,
+                            )
+                            active_job = ActiveJob(
+                                index=index,
+                                source_path=source_path,
+                                source_id=source_id,
+                                lease=lease,
+                                started_at=time.perf_counter(),
+                            )
+                            with active_jobs_lock:
+                                active_futures[future] = active_job
+                                active_jobs_by_source[source_id] = active_job
+                                active_futures_by_source[source_id] = future
+                        if not active_futures:
+                            if reporter.uses_dashboard() and not pending and not reporter.soft_exit_requested() and not reporter.hard_exit_requested() and not reporter.stop_requested():
+                                new_items = _discover_new_work_items()
+                                if new_items:
+                                    pending.extend(new_items)
+                                    continue
+                                break
+                            if pending and reporter.pause_requested():
+                                time.sleep(0.1)
+                                continue
+                            if pending and (reporter.stop_requested() or (control_plane.stop_requested() if control_plane is not None else False)):
+                                pending.clear()
+                                continue
+                            if pending:
+                                time.sleep(1.0)
+                                continue
+                            break
+                        done, remaining = wait(set(active_futures.keys()), timeout=0.2, return_when=FIRST_COMPLETED)
+                        future_map = active_futures
+                        active_futures = {future: future_map[future] for future in remaining}
+                        for future in done:
+                            active_job = future_map[future]
+                            with active_jobs_lock:
+                                if active_jobs_by_source.get(active_job.source_id) is not active_job:
+                                    continue
+                                active_jobs_by_source.pop(active_job.source_id, None)
+                                active_futures_by_source.pop(active_job.source_id, None)
+                            lease = active_job.lease
+                            try:
+                                result = future.result()
+                            except Exception as error:
+                                lease.fail(f"processing failed: {error.__class__.__name__}: {error}")
+                                raise
+                            summary_path, csv_path = _per_source_output_paths(config.per_source_dir, result.source_id)
+                            lease.update("publish", "publishing per-source outputs")
+                            write_summary(summary_path, result.summary_lines)
+                            write_csv(csv_path, result.normalized_points)
+                            for line in result.unresolved_lines:
+                                append_log(config.unresolved_log, line)
+                                unresolved_count += 1
+                            if result.unresolved_lines:
+                                reporter.set_unresolved_total(_count_log_records(config.unresolved_log))
+                            lease.complete(
+                                f"accepted {len(result.normalized_points)} point(s)",
+                                extra={
+                                    "accepted_points": len(result.normalized_points),
+                                    "unresolved_entries": len(result.unresolved_lines),
+                                },
+                            )
+                            reporter.complete_file(result.index, result.source_path.name, len(result.normalized_points))
+                            processed_files.append(result.source_path.name)
+                            extracted_records += len(result.normalized_points)
+                    _refresh_reporter_from_shared_statuses(reporter, lock_manager, source_index_map, config.per_source_dir)
 
-        merge_started = time.perf_counter()
-        emit(f"Building merged outputs ({config.merged_mode})")
-        if control_plane is not None:
-            control_plane.update_run_state("merging", f"building merged outputs ({config.merged_mode})")
-        merge_lease = lock_manager.acquire_merge_lease("master_dataset")
-        try:
-            merge_lease.update("merge", f"building merged outputs ({config.merged_mode})")
-            csv_path, geojson_path, merged_count = build_master_outputs(config.per_source_dir, config.merged_dir, mode=config.merged_mode)
-            merge_lease.complete(
-                f"merge completed in {_format_elapsed(merge_started)}",
-                extra={
-                    "master_csv_path": str(csv_path),
-                    "master_geojson_path": str(geojson_path),
-                    "merged_count": merged_count,
-                },
+            if reporter.hard_exit_requested():
+                emit("Hard exit requested; skipping merge")
+                return
+
+            merge_started = time.perf_counter()
+            emit(f"Building merged outputs ({config.merged_mode})")
+            if control_plane is not None:
+                control_plane.update_run_state("merging", f"building merged outputs ({config.merged_mode})")
+            merge_lease = lock_manager.acquire_merge_lease("master_dataset")
+            try:
+                merge_lease.update("merge", f"building merged outputs ({config.merged_mode})")
+                csv_path, geojson_path, merged_count = build_master_outputs(config.per_source_dir, config.merged_dir, mode=config.merged_mode)
+                merge_lease.complete(
+                    f"merge completed in {_format_elapsed(merge_started)}",
+                    extra={
+                        "master_csv_path": str(csv_path),
+                        "master_geojson_path": str(geojson_path),
+                        "merged_count": merged_count,
+                    },
+                )
+            except Exception as error:
+                merge_lease.fail(f"merge failed: {error.__class__.__name__}: {error}")
+                raise
+            emit(f"Merge completed in {_format_elapsed(merge_started)}", level=2)
+            _write_processing_report(
+                config.report_path,
+                ontology,
+                processed_files,
+                skipped_files,
+                extracted_records,
+                merged_count,
+                unresolved_count,
+                csv_path,
+                geojson_path,
+                config.staged_dir,
+                config.workspace_root,
             )
-        except Exception as error:
-            merge_lease.fail(f"merge failed: {error.__class__.__name__}: {error}")
-            raise
-        emit(f"Merge completed in {_format_elapsed(merge_started)}", level=2)
-        _write_processing_report(
-            config.report_path,
-            ontology,
-            processed_files,
-            skipped_files,
-            extracted_records,
-            merged_count,
-            unresolved_count,
-            csv_path,
-            geojson_path,
-            config.staged_dir,
-            config.workspace_root,
-        )
-        emit(f"Done: {extracted_records} extracted, {len(skipped_files)} skipped, {merged_count} merged, {unresolved_count} unresolved")
-        emit(f"Pipeline completed in {_format_elapsed(pipeline_started)}", level=2)
+            emit(f"Done: {extracted_records} extracted, {len(skipped_files)} skipped, {merged_count} merged, {unresolved_count} unresolved")
+            emit(f"Pipeline completed in {_format_elapsed(pipeline_started)}", level=2)
+            if not reporter.uses_dashboard():
+                break
+            cycle_work_items = _review_until_new_work_or_exit(reporter, _discover_new_work_items)
+            if reporter.soft_exit_requested() or reporter.hard_exit_requested():
+                break
+            if cycle_work_items:
+                emit(f"Resuming processing for {len(cycle_work_items)} new input file(s)")
+                if control_plane is not None:
+                    control_plane.update_run_state("running", "processing newly discovered sources")
+                continue
+            break
     finally:
         if control_plane is not None:
             control_plane.update_run_state("idle", "pipeline stopped")
@@ -554,6 +638,49 @@ def _expire_timed_out_jobs(
         active_job.lease.abandon(remove_lease=False)
         reporter.fail_file(active_job.index, active_job.source_path.name, reason)
         future.cancel()
+
+
+def _force_release_active_jobs(
+    active_futures: dict,
+    *,
+    reporter: PipelineProgressReporter,
+    lock_manager: PipelineLockManager,
+    workspace_root: Path,
+    active_jobs_by_source: dict[str, ActiveJob],
+    active_futures_by_source: dict[str, object],
+    active_jobs_lock: threading.Lock,
+    reason: str,
+) -> None:
+    for future, active_job in list(active_futures.items()):
+        lock_manager.force_release_source(active_job.source_id, workspace_root=workspace_root, reason=reason)
+        with active_jobs_lock:
+            if active_jobs_by_source.get(active_job.source_id) is not active_job:
+                continue
+            active_futures.pop(future, None)
+            active_jobs_by_source.pop(active_job.source_id, None)
+            active_futures_by_source.pop(active_job.source_id, None)
+        active_job.lease.abandon(remove_lease=False)
+        reporter.fail_file(active_job.index, active_job.source_path.name, reason)
+        future.cancel()
+
+
+def _review_until_new_work_or_exit(
+    reporter: PipelineProgressReporter,
+    discover_work: Callable[[], list[tuple[int, Path, str, BaseExtractor]]],
+) -> list[tuple[int, Path, str, BaseExtractor]]:
+    reporter.emit_global("Review mode. Monitoring incoming folder; press Q to exit or ESC for hard exit.")
+    last_input_scan = 0.0
+    while True:
+        reporter.tick()
+        if reporter.soft_exit_requested() or reporter.hard_exit_requested():
+            return []
+        now = time.time()
+        if (now - last_input_scan) >= 2.0:
+            discovered = discover_work()
+            if discovered:
+                return discovered
+            last_input_scan = now
+        time.sleep(0.1)
 
 
 def _route_control_request(
@@ -626,6 +753,20 @@ def _post_remote_control(endpoint: str, action: str, source_id: str) -> dict[str
     except json.JSONDecodeError:
         return {"ok": False, "source_id": source_id, "detail": f"remote {action} returned non-JSON response"}
     return parsed if isinstance(parsed, dict) else {"ok": False, "source_id": source_id, "detail": f"remote {action} returned unexpected response"}
+
+
+def _get_remote_json(endpoint: str, path: str, *, timeout: float = 1.0) -> dict[str, object] | None:
+    url = f"{endpoint.rstrip('/')}/{path.lstrip('/')}"
+    try:
+        with urlrequest.urlopen(url, timeout=timeout) as response:
+            payload = response.read().decode("utf-8")
+    except (OSError, urlerror.URLError):
+        return None
+    try:
+        parsed = json.loads(payload)
+    except json.JSONDecodeError:
+        return None
+    return parsed if isinstance(parsed, dict) else None
 
 
 def _log_control_result(reporter: PipelineProgressReporter, action: str, source_id: str, result: dict[str, object]) -> None:
@@ -774,12 +915,18 @@ def _refresh_reporter_from_shared_statuses(
     reporter: PipelineProgressReporter,
     lock_manager: PipelineLockManager,
     source_index_map: dict[str, tuple[int, str]],
+    per_source_dir: Path,
 ) -> None:
     for source_id, payload in lock_manager.list_source_statuses().items():
         mapping = source_index_map.get(source_id)
         if mapping is None:
             continue
         index, name = mapping
+        accepted = int(payload["accepted_points"]) if isinstance(payload.get("accepted_points"), int) else None
+        if str(payload.get("status") or "") == "completed":
+            csv_count = _count_per_source_csv_records(per_source_dir / f"{source_id}.csv")
+            if csv_count is not None:
+                accepted = csv_count
         reporter.sync_shared_state(
             index,
             name,
@@ -791,9 +938,75 @@ def _refresh_reporter_from_shared_statuses(
             started_at=float(payload["started_at"]) if isinstance(payload.get("started_at"), (int, float)) else None,
             finished_at=float(payload["finished_at"]) if isinstance(payload.get("finished_at"), (int, float)) else None,
             candidates=int(payload["candidate_points"]) if isinstance(payload.get("candidate_points"), int) else None,
-            accepted=int(payload["accepted_points"]) if isinstance(payload.get("accepted_points"), int) else None,
+            accepted=accepted,
             unresolved=int(payload["unresolved_entries"]) if isinstance(payload.get("unresolved_entries"), int) else None,
         )
+
+
+def _refresh_reporter_from_peer_apis(
+    reporter: PipelineProgressReporter,
+    control_plane: PipelineControlPlane,
+    source_index_map: dict[str, tuple[int, str]],
+) -> None:
+    local_endpoint = control_plane.endpoint.rstrip("/")
+    for node in control_plane.list_registered_nodes():
+        if not node.get("healthy"):
+            continue
+        endpoint = str(node.get("endpoint") or "").rstrip("/")
+        if not endpoint or endpoint == local_endpoint:
+            continue
+        payload = _get_remote_json(endpoint, "/v1/leases", timeout=0.75)
+        if not payload:
+            continue
+        leases = payload.get("leases")
+        if not isinstance(leases, list):
+            continue
+        for lease in leases:
+            if not isinstance(lease, dict):
+                continue
+            source_id = lease.get("source_id")
+            if not isinstance(source_id, str):
+                continue
+            mapping = source_index_map.get(source_id)
+            if mapping is None:
+                continue
+            index, name = mapping
+            owner = lease.get("owner")
+            owner_host = str(owner.get("host") or "") if isinstance(owner, dict) else ""
+            reporter.sync_shared_state(
+                index,
+                name,
+                status=str(lease.get("status") or "running"),
+                lease_status=str(lease.get("status") or "running"),
+                lease_owner=owner_host or str(node.get("hostname") or ""),
+                stage=str(lease.get("stage") or lease.get("status") or "running"),
+                detail=str(lease.get("detail") or ""),
+                started_at=float(lease["started_at"]) if isinstance(lease.get("started_at"), (int, float)) else None,
+                finished_at=float(lease["finished_at"]) if isinstance(lease.get("finished_at"), (int, float)) else None,
+                candidates=int(lease["candidate_points"]) if isinstance(lease.get("candidate_points"), int) else None,
+                accepted=int(lease["accepted_points"]) if isinstance(lease.get("accepted_points"), int) else None,
+                unresolved=int(lease["unresolved_entries"]) if isinstance(lease.get("unresolved_entries"), int) else None,
+            )
+
+
+def _count_per_source_csv_records(path: Path) -> int | None:
+    if not path.exists():
+        return None
+    try:
+        with path.open("r", encoding="utf-8", newline="") as handle:
+            return max(0, sum(1 for _ in handle) - 1)
+    except OSError:
+        return None
+
+
+def _count_log_records(path: Path) -> int:
+    if not path.exists():
+        return 0
+    try:
+        with path.open("r", encoding="utf-8") as handle:
+            return sum(1 for line in handle if line.rstrip("\n"))
+    except OSError:
+        return 0
 
 
 def _write_processing_report(

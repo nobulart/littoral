@@ -20,8 +20,8 @@ class ControlPlaneConfig:
     bind_host: str = "0.0.0.0"
     advertise_host: str | None = None
     port: int = 0
-    heartbeat_seconds: float = 5.0
-    node_ttl_seconds: float = 20.0
+    heartbeat_seconds: float = 10.0
+    node_ttl_seconds: float = 45.0
 
 
 class PipelineControlPlane:
@@ -47,6 +47,7 @@ class PipelineControlPlane:
         self._stop_event = threading.Event()
         self._node_path: Path | None = None
         self._node_updated_at = self._started_at
+        self._last_node_persisted_at = 0.0
         self._last_persisted_payload: dict[str, Any] | None = None
         self._run_state: dict[str, Any] = {
             "status": "idle",
@@ -93,7 +94,7 @@ class PipelineControlPlane:
         self._server_thread.start()
         self._heartbeat_thread = threading.Thread(target=self._heartbeat_loop, name=f"control-heartbeat-{self.node_id}", daemon=True)
         self._heartbeat_thread.start()
-        self._persist_node()
+        self._persist_node(force=True)
 
     def stop(self) -> None:
         self._stop_event.set()
@@ -133,7 +134,7 @@ class PipelineControlPlane:
                 self._run_state["updated_at"] = time.time()
                 self._node_updated_at = self._run_state["updated_at"]
         if changed:
-            self._persist_node()
+            self._persist_node(force=True)
 
     def stop_requested(self) -> bool:
         with self._lock:
@@ -148,7 +149,7 @@ class PipelineControlPlane:
                 self._node_updated_at = time.time()
                 changed = True
         if changed:
-            self._persist_node()
+            self._persist_node(force=True)
         return pending
 
     def queue_cancel(self, source_id: str) -> bool:
@@ -169,7 +170,7 @@ class PipelineControlPlane:
             except Exception:
                 handled = False
         if changed:
-            self._persist_node()
+            self._persist_node(force=True)
         return handled
 
     def force_release(self, source_id: str) -> dict[str, Any]:
@@ -183,7 +184,7 @@ class PipelineControlPlane:
         result = callback(normalized)
         with self._lock:
             self._node_updated_at = time.time()
-        self._persist_node()
+        self._persist_node(force=True)
         return result
 
     def trigger_source(self, source_id: str) -> dict[str, Any]:
@@ -197,7 +198,7 @@ class PipelineControlPlane:
         result = callback(normalized)
         with self._lock:
             self._node_updated_at = time.time()
-        self._persist_node()
+        self._persist_node(force=True)
         return result
 
     def update_run_state(self, status: str, detail: str = "", **extra: Any) -> None:
@@ -214,7 +215,7 @@ class PipelineControlPlane:
                 self._run_state = next_state
                 self._node_updated_at = next_state["updated_at"]
         if changed:
-            self._persist_node()
+            self._persist_node(force=True)
 
     def update_capacity(self, **payload: Any) -> None:
         changed = False
@@ -352,17 +353,23 @@ class PipelineControlPlane:
 
     def _heartbeat_loop(self) -> None:
         while not self._stop_event.wait(self.config.heartbeat_seconds):
-            self._persist_node()
+            with self._lock:
+                self._node_updated_at = time.time()
+            self._persist_node(force=True)
 
-    def _persist_node(self) -> None:
+    def _persist_node(self, *, force: bool = False) -> None:
         node_path = self._node_path
         if not self.config.enabled or node_path is None:
             return
         with self._lock:
             payload = self._node_payload_locked()
-            if payload == self._last_persisted_payload:
+            now = time.time()
+            if not force and (now - self._last_node_persisted_at) < self.config.heartbeat_seconds:
+                return
+            if not force and payload == self._last_persisted_payload:
                 return
             self._last_persisted_payload = json.loads(json.dumps(payload, sort_keys=True))
+            self._last_node_persisted_at = now
         write_json_atomic(node_path, payload)
 
     def _node_payload_locked(self) -> dict[str, Any]:

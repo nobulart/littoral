@@ -18,10 +18,11 @@ htmlcov/
 *.bak
 
 # Source documents, MinerU intermediates, and generated datasets
-data/incoming/
-data/staged/
+data/
 outputs/
 logs/
+*.log
+locks/
 *.zip
 
 # Large local geospatial rasters and model/data assets

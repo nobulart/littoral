@@ -67,7 +67,7 @@ class ManagedLease:
             return self._snapshot_locked()
 
     def start(self) -> None:
-        self._persist(force=True)
+        self._persist(force=True, write_status=True)
         self._heartbeat_thread = threading.Thread(target=self._heartbeat_loop, name=f"lease-heartbeat-{self.lease_key}", daemon=True)
         self._heartbeat_thread.start()
 
@@ -104,7 +104,7 @@ class ManagedLease:
             self._finished_at = self._updated_at
             if extra:
                 self.metadata.update(extra)
-            self._persist_locked(force=True)
+            self._persist_locked(force=True, write_status=True)
         self._shutdown(remove_lease=True)
 
     def fail(self, detail: str, *, extra: dict[str, object] | None = None) -> None:
@@ -116,7 +116,7 @@ class ManagedLease:
             self._finished_at = self._updated_at
             if extra:
                 self.metadata.update(extra)
-            self._persist_locked(force=True)
+            self._persist_locked(force=True, write_status=True)
         self._shutdown(remove_lease=True)
 
     def abandon(self, *, remove_lease: bool = False) -> None:
@@ -140,15 +140,16 @@ class ManagedLease:
             except FileNotFoundError:
                 pass
 
-    def _persist(self, *, force: bool = False) -> None:
+    def _persist(self, *, force: bool = False, write_status: bool = False) -> None:
         with self._lock:
-            self._persist_locked(force=force)
+            self._persist_locked(force=force, write_status=write_status)
 
-    def _persist_locked(self, *, force: bool = False) -> None:
+    def _persist_locked(self, *, force: bool = False, write_status: bool = False) -> None:
         if not force and not self._should_persist_locked(True):
             return
         snapshot = self._snapshot_locked()
-        write_json_atomic(self.status_path, snapshot)
+        if write_status:
+            write_json_atomic(self.status_path, snapshot)
         if self._finished_at is None:
             write_json_atomic(self.lease_path, snapshot)
         self._last_persisted_at = self._updated_at

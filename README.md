@@ -351,7 +351,7 @@ Shared filesystem coordination:
 
 - Non-hidden lock and status files are written under `locks/` by default so LAN mirroring services can detect them immediately.
 - `locks/source_active/*.lease.json` holds the active per-source processing lease with host, pid, run id, heartbeat, stage, and detail.
-- `locks/source_status/*.status.json` records the latest known state for each source, including `queued`, `running`, `completed`, `failed`, `skipped`, and `unsupported`.
+- `locks/source_status/*.status.json` records durable per-source transitions such as `queued`, initial `running`, `completed`, `failed`, `skipped`, and `unsupported`; high-frequency heartbeats and stage updates stay in active lease files or the API.
 - `locks/merge_active/*.lease.json` and `locks/merge_status/*.status.json` coordinate corpus-level merged output publishing so only one host rebuilds shared master outputs at a time.
 - `locks/nodes/*.node.json` advertises active pipeline controller endpoints, queue depth, local capacity, and run state for hybrid API-assisted coordination. Registry writes are heartbeat-throttled; live readers should prefer the advertised API endpoint.
 

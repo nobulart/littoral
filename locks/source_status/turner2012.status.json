@@ -1,20 +1,11 @@
 {
   "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/turner2012.csv",
-  "detail": "running deterministic and inference stages",
-  "finished_at": null,
-  "heartbeat_at": 1777024465.5518038,
-  "lease_key": "turner2012",
-  "owner": {
-    "host": "MacBook-Pro.local",
-    "pid": 4673,
-    "run_id": "ace8fb5faf2141d08b5f9a461e5f0513"
-  },
+  "detail": "existing per-source outputs found",
   "source_id": "turner2012",
   "source_name": "turner2012.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/turner2012.pdf",
-  "stage": "extract",
-  "started_at": 1777023793.239847,
-  "status": "running",
+  "stage": "existing_outputs",
+  "status": "completed",
   "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/turner2012.summary.md",
-  "updated_at": 1777024465.5518038
+  "updated_at": 1777118120.748868
 }

@@ -1,23 +1,11 @@
 {
-  "accepted_points": 1,
-  "candidate_points": 1,
   "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/fitch2005.csv",
-  "detail": "accepted 1 point(s)",
-  "finished_at": 1776993140.937964,
-  "heartbeat_at": 1776993140.937964,
-  "lease_key": "fitch2005",
-  "owner": {
-    "host": "Mac-Studio.local",
-    "pid": 29087,
-    "run_id": "29c65358d9c840d9bb152bb9816aa625"
-  },
+  "detail": "existing per-source outputs found",
   "source_id": "fitch2005",
   "source_name": "fitch2005.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/fitch2005.pdf",
-  "stage": "completed",
-  "started_at": 1776992234.8169029,
+  "stage": "existing_outputs",
   "status": "completed",
   "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/fitch2005.summary.md",
-  "unresolved_entries": 0,
-  "updated_at": 1776993140.937964
+  "updated_at": 1777118117.646403
 }

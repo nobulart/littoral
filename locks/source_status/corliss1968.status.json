@@ -1,0 +1,23 @@
+{
+  "accepted_points": 4,
+  "candidate_points": 4,
+  "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/corliss1968.csv",
+  "detail": "accepted 4 point(s)",
+  "finished_at": 1777136437.593597,
+  "heartbeat_at": 1777136437.593597,
+  "lease_key": "corliss1968",
+  "owner": {
+    "host": "Mac-Studio.local",
+    "pid": 3755,
+    "run_id": "f8d1e582509c498e923bab4bef262c11"
+  },
+  "source_id": "corliss1968",
+  "source_name": "corliss1968.pdf",
+  "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/corliss1968.pdf",
+  "stage": "completed",
+  "started_at": 1777134535.934921,
+  "status": "completed",
+  "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/corliss1968.summary.md",
+  "unresolved_entries": 0,
+  "updated_at": 1777136437.593597
+}

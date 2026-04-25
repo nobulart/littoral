@@ -1,23 +1,11 @@
 {
-  "accepted_points": 1,
-  "candidate_points": 1,
   "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/bird2010.csv",
-  "detail": "accepted 1 point(s)",
-  "finished_at": 1776988053.272654,
-  "heartbeat_at": 1776988053.272654,
-  "lease_key": "bird2010",
-  "owner": {
-    "host": "Mac-Studio.local",
-    "pid": 29087,
-    "run_id": "29c65358d9c840d9bb152bb9816aa625"
-  },
+  "detail": "existing per-source outputs found",
   "source_id": "bird2010",
   "source_name": "bird2010.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/bird2010.pdf",
-  "stage": "completed",
-  "started_at": 1776986283.114762,
+  "stage": "existing_outputs",
   "status": "completed",
   "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/bird2010.summary.md",
-  "unresolved_entries": 0,
-  "updated_at": 1776988053.272654
+  "updated_at": 1777118117.6274838
 }

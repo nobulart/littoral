@@ -1,23 +1,11 @@
 {
-  "accepted_points": 4,
-  "candidate_points": 4,
   "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/bateman2011.csv",
-  "detail": "accepted 4 point(s)",
-  "finished_at": 1777012643.882029,
-  "heartbeat_at": 1777012643.882029,
-  "lease_key": "bateman2011",
-  "owner": {
-    "host": "Mac-Studio.local",
-    "pid": 69371,
-    "run_id": "0b46c487f8ea44b98004b3511add45bc"
-  },
+  "detail": "existing per-source outputs found",
   "source_id": "bateman2011",
   "source_name": "bateman2011.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/bateman2011.pdf",
-  "stage": "completed",
-  "started_at": 1777010944.570053,
+  "stage": "existing_outputs",
   "status": "completed",
   "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/bateman2011.summary.md",
-  "unresolved_entries": 0,
-  "updated_at": 1777012643.882029
+  "updated_at": 1777118117.625419
 }

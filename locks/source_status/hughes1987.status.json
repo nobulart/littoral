@@ -1,0 +1,11 @@
+{
+  "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/hughes1987.csv",
+  "detail": "existing per-source outputs found",
+  "source_id": "hughes1987",
+  "source_name": "hughes1987.pdf",
+  "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/hughes1987.pdf",
+  "stage": "existing_outputs",
+  "status": "completed",
+  "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/hughes1987.summary.md",
+  "updated_at": 1777118117.6566558
+}

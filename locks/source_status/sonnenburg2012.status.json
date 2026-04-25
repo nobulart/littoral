@@ -1,0 +1,11 @@
+{
+  "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/sonnenburg2012.csv",
+  "detail": "existing per-source outputs found",
+  "source_id": "sonnenburg2012",
+  "source_name": "sonnenburg2012.pdf",
+  "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/sonnenburg2012.pdf",
+  "stage": "existing_outputs",
+  "status": "completed",
+  "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/sonnenburg2012.summary.md",
+  "updated_at": 1777118119.7300658
+}

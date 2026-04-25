@@ -1,0 +1,11 @@
+{
+  "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/thomas2018.csv",
+  "detail": "existing per-source outputs found",
+  "source_id": "thomas2018",
+  "source_name": "thomas2018.pdf",
+  "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/thomas2018.pdf",
+  "stage": "existing_outputs",
+  "status": "completed",
+  "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/thomas2018.summary.md",
+  "updated_at": 1777118120.745091
+}

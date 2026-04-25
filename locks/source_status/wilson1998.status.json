@@ -1,20 +1,11 @@
 {
   "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/wilson1998.csv",
-  "detail": "running deterministic and inference stages",
-  "finished_at": null,
-  "heartbeat_at": 1777024467.101671,
-  "lease_key": "wilson1998",
-  "owner": {
-    "host": "MacBook-Pro.local",
-    "pid": 4673,
-    "run_id": "ace8fb5faf2141d08b5f9a461e5f0513"
-  },
+  "detail": "existing per-source outputs found",
   "source_id": "wilson1998",
   "source_name": "wilson1998.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/wilson1998.pdf",
-  "stage": "extract",
-  "started_at": 1777023794.747414,
-  "status": "running",
+  "stage": "existing_outputs",
+  "status": "completed",
   "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/wilson1998.summary.md",
-  "updated_at": 1777024467.101671
+  "updated_at": 1777118121.786509
 }

@@ -1,0 +1,11 @@
+{
+  "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/campbell1999.csv",
+  "detail": "existing per-source outputs found",
+  "source_id": "campbell1999",
+  "source_name": "campbell1999.pdf",
+  "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/campbell1999.pdf",
+  "stage": "existing_outputs",
+  "status": "completed",
+  "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/campbell1999.summary.md",
+  "updated_at": 1777118117.631329
+}

@@ -1,0 +1,11 @@
+{
+  "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/wang2015.csv",
+  "detail": "existing per-source outputs found",
+  "source_id": "wang2015",
+  "source_name": "wang2015.pdf",
+  "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/wang2015.pdf",
+  "stage": "existing_outputs",
+  "status": "completed",
+  "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/wang2015.summary.md",
+  "updated_at": 1777118120.754389
+}

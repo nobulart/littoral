@@ -1,0 +1,11 @@
+{
+  "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/jakdine1975.csv",
+  "detail": "existing per-source outputs found",
+  "source_id": "jakdine1975",
+  "source_name": "jakdine1975.pdf",
+  "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/jakdine1975.pdf",
+  "stage": "existing_outputs",
+  "status": "completed",
+  "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/jakdine1975.summary.md",
+  "updated_at": 1777118117.657472
+}

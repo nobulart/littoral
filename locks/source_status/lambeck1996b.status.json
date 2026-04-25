@@ -1,23 +1,11 @@
 {
-  "accepted_points": 12,
-  "candidate_points": 12,
   "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/lambeck1996b.csv",
-  "detail": "accepted 12 point(s)",
-  "finished_at": 1777002834.6838489,
-  "heartbeat_at": 1777002834.6838489,
-  "lease_key": "lambeck1996b",
-  "owner": {
-    "host": "Mac-Studio.local",
-    "pid": 29087,
-    "run_id": "29c65358d9c840d9bb152bb9816aa625"
-  },
+  "detail": "existing per-source outputs found",
   "source_id": "lambeck1996b",
   "source_name": "lambeck1996b.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/lambeck1996b.pdf",
-  "stage": "completed",
-  "started_at": 1776997947.682627,
+  "stage": "existing_outputs",
   "status": "completed",
   "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/lambeck1996b.summary.md",
-  "unresolved_entries": 0,
-  "updated_at": 1777002834.6838489
+  "updated_at": 1777118118.6788218
 }

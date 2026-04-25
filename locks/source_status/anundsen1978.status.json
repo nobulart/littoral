@@ -1,0 +1,11 @@
+{
+  "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/anundsen1978.csv",
+  "detail": "existing per-source outputs found",
+  "source_id": "anundsen1978",
+  "source_name": "anundsen1978.pdf",
+  "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/anundsen1978.pdf",
+  "stage": "existing_outputs",
+  "status": "completed",
+  "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/anundsen1978.summary.md",
+  "updated_at": 1777118117.621095
+}

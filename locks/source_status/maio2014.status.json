@@ -1,0 +1,11 @@
+{
+  "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/maio2014.csv",
+  "detail": "existing per-source outputs found",
+  "source_id": "maio2014",
+  "source_name": "maio2014.pdf",
+  "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/maio2014.pdf",
+  "stage": "existing_outputs",
+  "status": "completed",
+  "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/maio2014.summary.md",
+  "updated_at": 1777118118.684573
+}

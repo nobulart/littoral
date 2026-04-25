@@ -1,23 +1,11 @@
 {
-  "accepted_points": 0,
-  "candidate_points": 0,
   "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/kortekaas2007.csv",
-  "detail": "accepted 0 point(s)",
-  "finished_at": 1777000722.8126059,
-  "heartbeat_at": 1777000722.8126059,
-  "lease_key": "kortekaas2007",
-  "owner": {
-    "host": "Mac-Studio.local",
-    "pid": 29087,
-    "run_id": "29c65358d9c840d9bb152bb9816aa625"
-  },
+  "detail": "existing per-source outputs found",
   "source_id": "kortekaas2007",
   "source_name": "kortekaas2007.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/kortekaas2007.pdf",
-  "stage": "completed",
-  "started_at": 1776997602.7599518,
+  "stage": "existing_outputs",
   "status": "completed",
   "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/kortekaas2007.summary.md",
-  "unresolved_entries": 1,
-  "updated_at": 1777000722.8126059
+  "updated_at": 1777118118.674751
 }

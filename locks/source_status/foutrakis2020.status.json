@@ -1,23 +1,11 @@
 {
-  "accepted_points": 1,
-  "candidate_points": 12,
   "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/foutrakis2020.csv",
-  "detail": "accepted 1 point(s)",
-  "finished_at": 1776994812.869067,
-  "heartbeat_at": 1776994812.869067,
-  "lease_key": "foutrakis2020",
-  "owner": {
-    "host": "MacBook-Pro.local",
-    "pid": 80896,
-    "run_id": "02b4e36c1ef64fd9836b4fb904f04ca4"
-  },
+  "detail": "existing per-source outputs found",
   "source_id": "foutrakis2020",
   "source_name": "foutrakis2020.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/foutrakis2020.pdf",
-  "stage": "completed",
-  "started_at": 1776992906.886293,
+  "stage": "existing_outputs",
   "status": "completed",
   "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/foutrakis2020.summary.md",
-  "unresolved_entries": 11,
-  "updated_at": 1776994812.869067
+  "updated_at": 1777118117.647771
 }

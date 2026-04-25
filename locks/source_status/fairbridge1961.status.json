@@ -1,23 +1,11 @@
 {
-  "accepted_points": 2,
-  "candidate_points": 2,
   "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/fairbridge1961.csv",
-  "detail": "accepted 2 point(s)",
-  "finished_at": 1776996519.733869,
-  "heartbeat_at": 1776996519.733869,
-  "lease_key": "fairbridge1961",
-  "owner": {
-    "host": "MacBook-Pro.local",
-    "pid": 80896,
-    "run_id": "02b4e36c1ef64fd9836b4fb904f04ca4"
-  },
+  "detail": "existing per-source outputs found",
   "source_id": "fairbridge1961",
   "source_name": "fairbridge1961.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/fairbridge1961.pdf",
-  "stage": "completed",
-  "started_at": 1776991872.036944,
+  "stage": "existing_outputs",
   "status": "completed",
   "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/fairbridge1961.summary.md",
-  "unresolved_entries": 1,
-  "updated_at": 1776996519.733869
+  "updated_at": 1777118117.644734
 }

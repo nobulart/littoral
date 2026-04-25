@@ -1,0 +1,11 @@
+{
+  "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/woodroffe1981.csv",
+  "detail": "existing per-source outputs found",
+  "source_id": "woodroffe1981",
+  "source_name": "woodroffe1981.pdf",
+  "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/woodroffe1981.pdf",
+  "stage": "existing_outputs",
+  "status": "completed",
+  "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/woodroffe1981.summary.md",
+  "updated_at": 1777118121.7870662
+}

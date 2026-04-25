@@ -1,23 +1,11 @@
 {
-  "accepted_points": 0,
-  "candidate_points": 0,
   "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/tancrede2024.csv",
-  "detail": "accepted 0 point(s)",
-  "finished_at": 1777008734.709986,
-  "heartbeat_at": 1777008734.709986,
-  "lease_key": "tancrede2024",
-  "owner": {
-    "host": "MacBook-Pro.local",
-    "pid": 87162,
-    "run_id": "39dd9031115c4644a60a1fef8d6bb5ce"
-  },
+  "detail": "existing per-source outputs found",
   "source_id": "tancrede2024",
   "source_name": "tancrede2024.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/tancrede2024.pdf",
-  "stage": "completed",
-  "started_at": 1777007689.753485,
+  "stage": "existing_outputs",
   "status": "completed",
   "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/tancrede2024.summary.md",
-  "unresolved_entries": 1,
-  "updated_at": 1777008734.709986
+  "updated_at": 1777118119.732905
 }

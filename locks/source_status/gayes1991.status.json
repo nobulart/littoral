@@ -1,0 +1,11 @@
+{
+  "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/gayes1991.csv",
+  "detail": "existing per-source outputs found",
+  "source_id": "gayes1991",
+  "source_name": "gayes1991.pdf",
+  "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/gayes1991.pdf",
+  "stage": "existing_outputs",
+  "status": "completed",
+  "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/gayes1991.summary.md",
+  "updated_at": 1777118117.649363
+}

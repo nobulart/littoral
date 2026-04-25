@@ -1,23 +1,11 @@
 {
-  "accepted_points": 0,
-  "candidate_points": 0,
   "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/buynevich2007.csv",
-  "detail": "accepted 0 point(s)",
-  "finished_at": 1776987693.274741,
-  "heartbeat_at": 1776987693.274741,
-  "lease_key": "buynevich2007",
-  "owner": {
-    "host": "Mac-Studio.local",
-    "pid": 29087,
-    "run_id": "29c65358d9c840d9bb152bb9816aa625"
-  },
+  "detail": "existing per-source outputs found",
   "source_id": "buynevich2007",
   "source_name": "buynevich2007.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/buynevich2007.pdf",
-  "stage": "completed",
-  "started_at": 1776986512.964045,
+  "stage": "existing_outputs",
   "status": "completed",
   "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/buynevich2007.summary.md",
-  "unresolved_entries": 1,
-  "updated_at": 1776987693.274741
+  "updated_at": 1777118117.630707
 }

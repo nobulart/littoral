@@ -1,0 +1,11 @@
+{
+  "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/meyer2015.csv",
+  "detail": "existing per-source outputs found",
+  "source_id": "meyer2015",
+  "source_name": "meyer2015.pdf",
+  "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/meyer2015.pdf",
+  "stage": "existing_outputs",
+  "status": "completed",
+  "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/meyer2015.summary.md",
+  "updated_at": 1777118118.690793
+}

@@ -1,23 +1,11 @@
 {
-  "accepted_points": 0,
-  "candidate_points": 0,
   "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/vangeel1983.csv",
-  "detail": "accepted 0 point(s)",
-  "finished_at": 1777014709.20767,
-  "heartbeat_at": 1777014709.20767,
-  "lease_key": "vangeel1983",
-  "owner": {
-    "host": "Mac-Studio.local",
-    "pid": 75582,
-    "run_id": "ac5516dff8bc46f69984bd6623b410d8"
-  },
+  "detail": "existing per-source outputs found",
   "source_id": "vangeel1983",
   "source_name": "vangeel1983.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/vangeel1983.pdf",
-  "stage": "completed",
-  "started_at": 1777014328.2703621,
+  "stage": "existing_outputs",
   "status": "completed",
   "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/vangeel1983.summary.md",
-  "unresolved_entries": 1,
-  "updated_at": 1777014709.20767
+  "updated_at": 1777118120.7497149
 }

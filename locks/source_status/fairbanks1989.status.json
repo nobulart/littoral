@@ -1,23 +1,11 @@
 {
-  "accepted_points": 0,
-  "candidate_points": 0,
   "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/fairbanks1989.csv",
-  "detail": "accepted 0 point(s)",
-  "finished_at": 1776994012.6624901,
-  "heartbeat_at": 1776994012.6624901,
-  "lease_key": "fairbanks1989",
-  "owner": {
-    "host": "Mac-Studio.local",
-    "pid": 29087,
-    "run_id": "29c65358d9c840d9bb152bb9816aa625"
-  },
+  "detail": "existing per-source outputs found",
   "source_id": "fairbanks1989",
   "source_name": "fairbanks1989.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/fairbanks1989.pdf",
-  "stage": "completed",
-  "started_at": 1776991849.016417,
+  "stage": "existing_outputs",
   "status": "completed",
   "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/fairbanks1989.summary.md",
-  "unresolved_entries": 1,
-  "updated_at": 1776994012.6624901
+  "updated_at": 1777118117.6432168
 }

@@ -1,0 +1,11 @@
+{
+  "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/fedje1999.csv",
+  "detail": "existing per-source outputs found",
+  "source_id": "fedje1999",
+  "source_name": "fedje1999.pdf",
+  "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/fedje1999.pdf",
+  "stage": "existing_outputs",
+  "status": "completed",
+  "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/fedje1999.summary.md",
+  "updated_at": 1777118117.64526
+}

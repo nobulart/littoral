@@ -1,0 +1,11 @@
+{
+  "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/hale2021.csv",
+  "detail": "existing per-source outputs found",
+  "source_id": "hale2021",
+  "source_name": "hale2021.pdf",
+  "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/hale2021.pdf",
+  "stage": "existing_outputs",
+  "status": "completed",
+  "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/hale2021.summary.md",
+  "updated_at": 1777118117.653305
+}

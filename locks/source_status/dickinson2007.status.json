@@ -1,0 +1,11 @@
+{
+  "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/dickinson2007.csv",
+  "detail": "existing per-source outputs found",
+  "source_id": "dickinson2007",
+  "source_name": "dickinson2007.pdf",
+  "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/dickinson2007.pdf",
+  "stage": "existing_outputs",
+  "status": "completed",
+  "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/dickinson2007.summary.md",
+  "updated_at": 1777118117.640238
+}

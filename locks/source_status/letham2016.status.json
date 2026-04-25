@@ -1,0 +1,11 @@
+{
+  "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/letham2016.csv",
+  "detail": "existing per-source outputs found",
+  "source_id": "letham2016",
+  "source_name": "letham2016.pdf",
+  "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/letham2016.pdf",
+  "stage": "existing_outputs",
+  "status": "completed",
+  "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/letham2016.summary.md",
+  "updated_at": 1777118118.681205
+}

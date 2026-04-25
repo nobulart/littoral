@@ -1,23 +1,11 @@
 {
-  "accepted_points": 3,
-  "candidate_points": 3,
   "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/ballard2000.csv",
-  "detail": "accepted 3 point(s)",
-  "finished_at": 1776986645.8759098,
-  "heartbeat_at": 1776986645.8759098,
-  "lease_key": "ballard2000",
-  "owner": {
-    "host": "MacBook-Pro.local",
-    "pid": 80552,
-    "run_id": "b1c1ccfef1794233b85e1f5c886ef324"
-  },
+  "detail": "existing per-source outputs found",
   "source_id": "ballard2000",
   "source_name": "ballard2000.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/ballard2000.pdf",
-  "stage": "completed",
-  "started_at": 1776985888.547576,
+  "stage": "existing_outputs",
   "status": "completed",
   "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/ballard2000.summary.md",
-  "unresolved_entries": 0,
-  "updated_at": 1776986645.8759098
+  "updated_at": 1777118117.62247
 }

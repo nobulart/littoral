@@ -1,23 +1,11 @@
 {
-  "accepted_points": 0,
-  "candidate_points": 0,
   "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/morner1993a.csv",
-  "detail": "accepted 0 point(s)",
-  "finished_at": 1777006054.6402051,
-  "heartbeat_at": 1777006054.6402051,
-  "lease_key": "morner1993a",
-  "owner": {
-    "host": "MacBook-Pro.local",
-    "pid": 80896,
-    "run_id": "02b4e36c1ef64fd9836b4fb904f04ca4"
-  },
+  "detail": "existing per-source outputs found",
   "source_id": "morner1993a",
   "source_name": "morner1993a.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/morner1993a.pdf",
-  "stage": "completed",
-  "started_at": 1777003055.215704,
+  "stage": "existing_outputs",
   "status": "completed",
   "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/morner1993a.summary.md",
-  "unresolved_entries": 1,
-  "updated_at": 1777006054.6402051
+  "updated_at": 1777118118.694164
 }

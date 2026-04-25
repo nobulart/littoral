@@ -1,0 +1,11 @@
+{
+  "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/domenech2001.csv",
+  "detail": "existing per-source outputs found",
+  "source_id": "domenech2001",
+  "source_name": "domenech2001.pdf",
+  "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/domenech2001.pdf",
+  "stage": "existing_outputs",
+  "status": "completed",
+  "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/domenech2001.summary.md",
+  "updated_at": 1777118117.6408908
+}

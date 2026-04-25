@@ -1,23 +1,11 @@
 {
-  "accepted_points": 29,
-  "candidate_points": 29,
   "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/taira1975.csv",
-  "detail": "accepted 29 point(s)",
-  "finished_at": 1777008104.670934,
-  "heartbeat_at": 1777008104.670934,
-  "lease_key": "taira1975",
-  "owner": {
-    "host": "Mac-Studio.local",
-    "pid": 29087,
-    "run_id": "29c65358d9c840d9bb152bb9816aa625"
-  },
+  "detail": "existing per-source outputs found",
   "source_id": "taira1975",
   "source_name": "taira1975.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/taira1975.pdf",
-  "stage": "completed",
-  "started_at": 1777007423.794183,
+  "stage": "existing_outputs",
   "status": "completed",
   "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/taira1975.summary.md",
-  "unresolved_entries": 0,
-  "updated_at": 1777008104.670934
+  "updated_at": 1777118119.732594
 }

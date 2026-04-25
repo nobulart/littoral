@@ -1,0 +1,11 @@
+{
+  "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/chambers1848.csv",
+  "detail": "existing per-source outputs found",
+  "source_id": "chambers1848",
+  "source_name": "chambers1848.pdf",
+  "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/chambers1848.pdf",
+  "stage": "existing_outputs",
+  "status": "completed",
+  "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/chambers1848.summary.md",
+  "updated_at": 1777118117.634033
+}

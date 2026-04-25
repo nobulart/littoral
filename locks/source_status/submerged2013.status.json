@@ -1,23 +1,11 @@
 {
-  "accepted_points": 0,
-  "candidate_points": 0,
   "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/submerged2013.csv",
-  "detail": "accepted 0 point(s)",
-  "finished_at": 1777008424.203149,
-  "heartbeat_at": 1777008424.203149,
-  "lease_key": "submerged2013",
-  "owner": {
-    "host": "Mac-Studio.local",
-    "pid": 29087,
-    "run_id": "29c65358d9c840d9bb152bb9816aa625"
-  },
+  "detail": "existing per-source outputs found",
   "source_id": "submerged2013",
   "source_name": "submerged2013.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/submerged2013.pdf",
-  "stage": "completed",
-  "started_at": 1777007134.015554,
+  "stage": "existing_outputs",
   "status": "completed",
   "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/submerged2013.summary.md",
-  "unresolved_entries": 1,
-  "updated_at": 1777008424.203149
+  "updated_at": 1777118119.731659
 }

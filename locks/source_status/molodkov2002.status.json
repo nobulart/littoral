@@ -1,23 +1,11 @@
 {
-  "accepted_points": 0,
-  "candidate_points": 0,
   "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/molodkov2002.csv",
-  "detail": "accepted 0 point(s)",
-  "finished_at": 1777002989.061175,
-  "heartbeat_at": 1777002989.061175,
-  "lease_key": "molodkov2002",
-  "owner": {
-    "host": "MacBook-Pro.local",
-    "pid": 80896,
-    "run_id": "02b4e36c1ef64fd9836b4fb904f04ca4"
-  },
+  "detail": "existing per-source outputs found",
   "source_id": "molodkov2002",
   "source_name": "molodkov2002.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/molodkov2002.pdf",
-  "stage": "completed",
-  "started_at": 1777001949.352892,
+  "stage": "existing_outputs",
   "status": "completed",
   "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/molodkov2002.summary.md",
-  "unresolved_entries": 1,
-  "updated_at": 1777002989.061175
+  "updated_at": 1777118118.693125
 }

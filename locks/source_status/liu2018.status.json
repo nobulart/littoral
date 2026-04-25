@@ -1,0 +1,11 @@
+{
+  "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/liu2018.csv",
+  "detail": "existing per-source outputs found",
+  "source_id": "liu2018",
+  "source_name": "liu2018.pdf",
+  "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/liu2018.pdf",
+  "stage": "existing_outputs",
+  "status": "completed",
+  "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/liu2018.summary.md",
+  "updated_at": 1777118118.683608
+}

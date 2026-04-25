@@ -1,20 +1,11 @@
 {
   "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/flood2001.csv",
-  "detail": "running deterministic and inference stages",
-  "finished_at": null,
-  "heartbeat_at": 1777024456.5728629,
-  "lease_key": "flood2001",
-  "owner": {
-    "host": "Mac-Studio.local",
-    "pid": 90974,
-    "run_id": "e4a546571a7740349f98147b665674a4"
-  },
+  "detail": "existing per-source outputs found",
   "source_id": "flood2001",
   "source_name": "flood2001.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/flood2001.pdf",
-  "stage": "extract",
-  "started_at": 1777023343.648134,
-  "status": "running",
+  "stage": "existing_outputs",
+  "status": "completed",
   "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/flood2001.summary.md",
-  "updated_at": 1777024456.5728629
+  "updated_at": 1777118117.646967
 }

@@ -1,23 +1,11 @@
 {
-  "accepted_points": 28,
-  "candidate_points": 31,
   "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/sprigg1979.csv",
-  "detail": "accepted 28 point(s)",
-  "finished_at": 1777009494.108564,
-  "heartbeat_at": 1777009494.108564,
-  "lease_key": "sprigg1979",
-  "owner": {
-    "host": "Mac-Studio.local",
-    "pid": 29087,
-    "run_id": "29c65358d9c840d9bb152bb9816aa625"
-  },
+  "detail": "existing per-source outputs found",
   "source_id": "sprigg1979",
   "source_name": "sprigg1979.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/sprigg1979.pdf",
-  "stage": "completed",
-  "started_at": 1777006442.458876,
+  "stage": "existing_outputs",
   "status": "completed",
   "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/sprigg1979.summary.md",
-  "unresolved_entries": 3,
-  "updated_at": 1777009494.108564
+  "updated_at": 1777118119.730368
 }

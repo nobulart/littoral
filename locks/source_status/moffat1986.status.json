@@ -1,0 +1,11 @@
+{
+  "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/moffat1986.csv",
+  "detail": "existing per-source outputs found",
+  "source_id": "moffat1986",
+  "source_name": "moffat1986.pdf",
+  "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/moffat1986.pdf",
+  "stage": "existing_outputs",
+  "status": "completed",
+  "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/moffat1986.summary.md",
+  "updated_at": 1777118118.692663
+}

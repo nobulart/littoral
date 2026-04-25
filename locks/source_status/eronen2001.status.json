@@ -1,23 +1,11 @@
 {
-  "accepted_points": 4,
-  "candidate_points": 4,
   "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/eronen2001.csv",
-  "detail": "accepted 4 point(s)",
-  "finished_at": 1777001624.701229,
-  "heartbeat_at": 1777001624.701229,
-  "lease_key": "eronen2001",
-  "owner": {
-    "host": "MacBook-Pro.local",
-    "pid": 80896,
-    "run_id": "02b4e36c1ef64fd9836b4fb904f04ca4"
-  },
+  "detail": "existing per-source outputs found",
   "source_id": "eronen2001",
   "source_name": "eronen2001.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/eronen2001.pdf",
-  "stage": "completed",
-  "started_at": 1776991712.764983,
+  "stage": "existing_outputs",
   "status": "completed",
   "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/eronen2001.summary.md",
-  "unresolved_entries": 1,
-  "updated_at": 1777001624.701229
+  "updated_at": 1777118117.642943
 }

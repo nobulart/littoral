@@ -1,0 +1,11 @@
+{
+  "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/fairbridge1955.csv",
+  "detail": "existing per-source outputs found",
+  "source_id": "fairbridge1955",
+  "source_name": "fairbridge1955.pdf",
+  "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/fairbridge1955.pdf",
+  "stage": "existing_outputs",
+  "status": "completed",
+  "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/fairbridge1955.summary.md",
+  "updated_at": 1777118117.644053
+}

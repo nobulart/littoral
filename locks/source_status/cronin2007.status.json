@@ -1,23 +1,11 @@
 {
-  "accepted_points": 6,
-  "candidate_points": 6,
   "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/cronin2007.csv",
-  "detail": "accepted 6 point(s)",
-  "finished_at": 1776990900.558485,
-  "heartbeat_at": 1776990900.558485,
-  "lease_key": "cronin2007",
-  "owner": {
-    "host": "Mac-Studio.local",
-    "pid": 29087,
-    "run_id": "29c65358d9c840d9bb152bb9816aa625"
-  },
+  "detail": "existing per-source outputs found",
   "source_id": "cronin2007",
   "source_name": "cronin2007.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/cronin2007.pdf",
-  "stage": "completed",
-  "started_at": 1776989090.463113,
+  "stage": "existing_outputs",
   "status": "completed",
   "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/cronin2007.summary.md",
-  "unresolved_entries": 0,
-  "updated_at": 1776990900.558485
+  "updated_at": 1777118117.63687
 }

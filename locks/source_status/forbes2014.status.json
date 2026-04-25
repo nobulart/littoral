@@ -1,0 +1,11 @@
+{
+  "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/forbes2014.csv",
+  "detail": "existing per-source outputs found",
+  "source_id": "forbes2014",
+  "source_name": "forbes2014.pdf",
+  "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/forbes2014.pdf",
+  "stage": "existing_outputs",
+  "status": "completed",
+  "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/forbes2014.summary.md",
+  "updated_at": 1777118117.647489
+}

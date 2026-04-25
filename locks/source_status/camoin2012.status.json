@@ -1,23 +1,11 @@
 {
-  "accepted_points": 5,
-  "candidate_points": 5,
   "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/camoin2012.csv",
-  "detail": "accepted 5 point(s)",
-  "finished_at": 1776989088.951351,
-  "heartbeat_at": 1776989088.951351,
-  "lease_key": "camoin2012",
-  "owner": {
-    "host": "Mac-Studio.local",
-    "pid": 29087,
-    "run_id": "29c65358d9c840d9bb152bb9816aa625"
-  },
+  "detail": "existing per-source outputs found",
   "source_id": "camoin2012",
   "source_name": "camoin2012.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/camoin2012.pdf",
-  "stage": "completed",
-  "started_at": 1776986771.0545092,
+  "stage": "existing_outputs",
   "status": "completed",
   "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/camoin2012.summary.md",
-  "unresolved_entries": 0,
-  "updated_at": 1776989088.951351
+  "updated_at": 1777118117.6310022
 }

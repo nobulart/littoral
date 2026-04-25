@@ -1,0 +1,11 @@
+{
+  "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/kibria2015.csv",
+  "detail": "existing per-source outputs found",
+  "source_id": "kibria2015",
+  "source_name": "kibria2015.pdf",
+  "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/kibria2015.pdf",
+  "stage": "existing_outputs",
+  "status": "completed",
+  "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/kibria2015.summary.md",
+  "updated_at": 1777118118.671006
+}

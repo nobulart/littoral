@@ -1,0 +1,11 @@
+{
+  "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/rao1989.csv",
+  "detail": "existing per-source outputs found",
+  "source_id": "rao1989",
+  "source_name": "rao1989.pdf",
+  "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/rao1989.pdf",
+  "stage": "existing_outputs",
+  "status": "completed",
+  "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/rao1989.summary.md",
+  "updated_at": 1777118119.7236311
+}

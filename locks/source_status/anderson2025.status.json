@@ -1,23 +1,11 @@
 {
-  "accepted_points": 1,
-  "candidate_points": 1,
   "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/anderson2025.csv",
-  "detail": "accepted 1 point(s)",
-  "finished_at": 1777012435.85244,
-  "heartbeat_at": 1777012435.85244,
-  "lease_key": "anderson2025",
-  "owner": {
-    "host": "Mac-Studio.local",
-    "pid": 69371,
-    "run_id": "0b46c487f8ea44b98004b3511add45bc"
-  },
+  "detail": "existing per-source outputs found",
   "source_id": "anderson2025",
   "source_name": "anderson2025.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/anderson2025.pdf",
-  "stage": "completed",
-  "started_at": 1777010937.03951,
+  "stage": "existing_outputs",
   "status": "completed",
   "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/anderson2025.summary.md",
-  "unresolved_entries": 0,
-  "updated_at": 1777012435.85244
+  "updated_at": 1777118117.619553
 }

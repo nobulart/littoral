@@ -1,23 +1,11 @@
 {
-  "accepted_points": 19,
-  "candidate_points": 19,
   "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/matthews1967.csv",
-  "detail": "accepted 19 point(s)",
-  "finished_at": 1777003589.494124,
-  "heartbeat_at": 1777003589.494124,
-  "lease_key": "matthews1967",
-  "owner": {
-    "host": "Mac-Studio.local",
-    "pid": 29087,
-    "run_id": "29c65358d9c840d9bb152bb9816aa625"
-  },
+  "detail": "existing per-source outputs found",
   "source_id": "matthews1967",
   "source_name": "matthews1967.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/matthews1967.pdf",
-  "stage": "completed",
-  "started_at": 1777000724.330841,
+  "stage": "existing_outputs",
   "status": "completed",
   "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/matthews1967.summary.md",
-  "unresolved_entries": 0,
-  "updated_at": 1777003589.494124
+  "updated_at": 1777118118.688679
 }

@@ -1,23 +1,11 @@
 {
-  "accepted_points": 3,
-  "candidate_points": 3,
   "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/day1866.csv",
-  "detail": "accepted 3 point(s)",
-  "finished_at": 1776991870.526073,
-  "heartbeat_at": 1776991870.526073,
-  "lease_key": "day1866",
-  "owner": {
-    "host": "MacBook-Pro.local",
-    "pid": 80896,
-    "run_id": "02b4e36c1ef64fd9836b4fb904f04ca4"
-  },
+  "detail": "existing per-source outputs found",
   "source_id": "day1866",
   "source_name": "day1866.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/day1866.pdf",
-  "stage": "completed",
-  "started_at": 1776989724.489442,
+  "stage": "existing_outputs",
   "status": "completed",
   "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/day1866.summary.md",
-  "unresolved_entries": 0,
-  "updated_at": 1776991870.526073
+  "updated_at": 1777118117.638166
 }

@@ -1,0 +1,11 @@
+{
+  "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/nutman2019.csv",
+  "detail": "existing per-source outputs found",
+  "source_id": "nutman2019",
+  "source_name": "nutman2019.pdf",
+  "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/nutman2019.pdf",
+  "stage": "existing_outputs",
+  "status": "completed",
+  "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/nutman2019.summary.md",
+  "updated_at": 1777118118.695749
+}

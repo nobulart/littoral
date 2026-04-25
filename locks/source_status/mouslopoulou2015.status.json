@@ -1,0 +1,11 @@
+{
+  "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/mouslopoulou2015.csv",
+  "detail": "existing per-source outputs found",
+  "source_id": "mouslopoulou2015",
+  "source_name": "mouslopoulou2015.pdf",
+  "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/mouslopoulou2015.pdf",
+  "stage": "existing_outputs",
+  "status": "completed",
+  "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/mouslopoulou2015.summary.md",
+  "updated_at": 1777118118.69488
+}

@@ -1,0 +1,11 @@
+{
+  "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/white1995.csv",
+  "detail": "existing per-source outputs found",
+  "source_id": "white1995",
+  "source_name": "white1995.pdf",
+  "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/white1995.pdf",
+  "stage": "existing_outputs",
+  "status": "completed",
+  "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/white1995.summary.md",
+  "updated_at": 1777118121.7858438
+}

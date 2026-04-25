@@ -1,0 +1,11 @@
+{
+  "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/gharibreza2016.csv",
+  "detail": "existing per-source outputs found",
+  "source_id": "gharibreza2016",
+  "source_name": "gharibreza2016.pdf",
+  "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/gharibreza2016.pdf",
+  "stage": "existing_outputs",
+  "status": "completed",
+  "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/gharibreza2016.summary.md",
+  "updated_at": 1777118117.649923
+}

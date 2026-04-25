@@ -1,0 +1,11 @@
+{
+  "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/zhou2014.csv",
+  "detail": "existing per-source outputs found",
+  "source_id": "zhou2014",
+  "source_name": "zhou2014.pdf",
+  "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/zhou2014.pdf",
+  "stage": "existing_outputs",
+  "status": "completed",
+  "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/zhou2014.summary.md",
+  "updated_at": 1777118122.803415
+}

@@ -1,0 +1,11 @@
+{
+  "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/zinke2005.csv",
+  "detail": "existing per-source outputs found",
+  "source_id": "zinke2005",
+  "source_name": "zinke2005.pdf",
+  "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/zinke2005.pdf",
+  "stage": "existing_outputs",
+  "status": "completed",
+  "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/zinke2005.summary.md",
+  "updated_at": 1777118122.804547
+}

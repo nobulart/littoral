@@ -1,23 +1,11 @@
 {
-  "accepted_points": 3,
-  "candidate_points": 3,
   "csv_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/aharon1986.csv",
-  "detail": "accepted 3 point(s)",
-  "finished_at": 1777013223.1303942,
-  "heartbeat_at": 1777013223.1303942,
-  "lease_key": "aharon1986",
-  "owner": {
-    "host": "Mac-Studio.local",
-    "pid": 69371,
-    "run_id": "0b46c487f8ea44b98004b3511add45bc"
-  },
+  "detail": "existing per-source outputs found",
   "source_id": "aharon1986",
   "source_name": "aharon1986.pdf",
   "source_path": "/Users/craig/ECDO/LITTORAL/data/incoming/aharon1986.pdf",
-  "stage": "completed",
-  "started_at": 1777010935.526898,
+  "stage": "existing_outputs",
   "status": "completed",
   "summary_path": "/Users/craig/ECDO/LITTORAL/outputs/per_source/aharon1986.summary.md",
-  "unresolved_entries": 0,
-  "updated_at": 1777013223.1303942
+  "updated_at": 1777118117.617976
 }

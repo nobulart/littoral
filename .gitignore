@@ -19,7 +19,10 @@ htmlcov/
 
 # Source documents, MinerU intermediates, and generated datasets
 data/
-outputs/
+outputs/*
+!outputs/merged/
+!outputs/merged/**
+outputs/merged/.DS_Store
 logs/
 *.log
 locks/

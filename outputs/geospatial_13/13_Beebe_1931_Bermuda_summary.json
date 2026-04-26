@@ -1,0 +1,35 @@
+{
+  "name": "Beebe_1931_Bermuda",
+  "geocode_label": null,
+  "latitude": 32.2,
+  "longitude": -64.6,
+  "target_elevation_m": -2800.0,
+  "elevation_source": "command_line",
+  "model": "delta_sl = bulge_m * [(P0 dot r)^2 - (P1 dot r)^2]; predicted_elevation = -delta_sl",
+  "bulge_m": 11000.0,
+  "fairbridge_m_per_degree_reference": 245.0,
+  "fairbridge_linear_abs_offset_estimate_deg": 11.428571428571429,
+  "alpha_min": 0.1,
+  "alpha_max": 45.0,
+  "alpha_step": 0.1,
+  "azimuth_step": 0.25,
+  "tolerance_m": 25.0,
+  "candidate_count": 6768,
+  "best_solution": {
+    "offset_deg": 42.7,
+    "orientation_azimuth_deg": 126.5,
+    "candidate_pole_lat": 47.300000000000004,
+    "candidate_pole_lon": 126.5,
+    "predicted_elevation_m": -2799.9927093460988,
+    "target_elevation_m": -2800.0,
+    "residual_m": 0.00729065390123651,
+    "abs_residual_m": 0.00729065390123651
+  },
+  "outputs": {
+    "candidates_csv": "/Users/craig/ECDO/LITTORAL/outputs/geospatial_13/13_Beebe_1931_Bermuda_candidate_orientations.csv",
+    "best_by_offset_csv": "/Users/craig/ECDO/LITTORAL/outputs/geospatial_13/13_Beebe_1931_Bermuda_best_by_offset.csv",
+    "full_grid_csv": "/Users/craig/ECDO/LITTORAL/outputs/geospatial_13/13_Beebe_1931_Bermuda_full_grid.csv",
+    "plot_png": "/Users/craig/ECDO/LITTORAL/outputs/geospatial_13/13_Beebe_1931_Bermuda_candidate_orientations.png",
+    "summary_json": "/Users/craig/ECDO/LITTORAL/outputs/geospatial_13/13_Beebe_1931_Bermuda_summary.json"
+  }
+}

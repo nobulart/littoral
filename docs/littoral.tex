@@ -24,6 +24,8 @@ We compute the first-order spatial gradient of the LITTORAL elevation field and 
 
 Conditioned discrimination tests, comparing observed candidate axes to matched random ensembles, demonstrate statistically significant reductions in integrated path penalties. These results support the hypothesis that global RSL indicators encode a coherent geometric structure consistent with large-scale redistribution processes. 
 
+We further introduce a geodetic inverse test in which reported shoreline elevations are mapped into candidate polar-offset orientations. Using the Beebe (1931) Bermuda submerged-beach report as a descriptive anchor, we show that low-amplitude shoreline indicators and extreme-depth anomalies occupy different regions of the inverse solution space. This motivates a depth-regime interpretation in which shallow, deep, and raised indicators are treated not as a single homogeneous population, but as potentially distinct geometric regimes.
+
 We interpret this structure in the context of geodetic sea-level change as described by \citet{fairbridge1961}, and explore its implications for rotational reorganization frameworks.
 \end{abstract}
 
@@ -34,6 +36,8 @@ Sea level is often treated as a simple global rise or fall. But the geological r
 In this study, we bring together thousands of these observations into a single global dataset and ask a different question: \emph{what shape do these data form?} Instead of assuming a cause, we examine the geometry directly.
 
 We find that these sea-level markers are not randomly distributed. Instead, they follow preferred pathways across the Earth’s surface, forming a pattern that aligns with an independently derived global anisotropy field. This suggests that past sea-level changes may have been influenced by large-scale redistributions of mass or rotation, rather than purely local or gradual processes.
+
+A useful example is William Beebe’s 1931 report of beach-like material dredged from more than 2.5 km below present sea level south of Bermuda. Beebe described water-worn pebbles, coral fragments, and shallow-water shells at abyssal depth. In this paper we use that observation not as proof of a mechanism, but as a clear descriptive anchor: if a former beach is now very deep, what kind of geodetic rotation geometry would be required to make such an elevation possible?
 
 \section{Introduction}
 
@@ -266,6 +270,41 @@ Under such conditions, the redistribution of the oceanic bulge would be governed
 
 The LITTORAL dataset appears to capture precisely such a structure. The alignment of gradient pathways with low-penalty Mach corridors suggests that the observed RSL indicators may represent the surface expression of a global reorganization process.
 
+\section{Geodetic Inversion and the Beebe Anchor}
+
+The preceding analyses examine the spatial structure of the LITTORAL elevation field directly. We next ask the inverse question: for a given reported shoreline elevation at a known location, what range of rotational-geodetic orientations would make that elevation geometrically admissible?
+
+Following the first-order Fairbridge scaling, a polar displacement changes the relationship between the crust and the equilibrium hydrosphere. In its simplest form, the local sea-level perturbation can be approximated by the change in the squared projection of a site vector onto the present and candidate pole vectors:
+\begin{equation}
+\Delta h = B \left[ \left(\mathbf{p}_0 \cdot \mathbf{r}\right)^2 -
+\left(\mathbf{p}_1 \cdot \mathbf{r}\right)^2 \right],
+\end{equation}
+where $\mathbf{r}$ is the unit vector to the observation site, $\mathbf{p}_0$ is the present polar axis, $\mathbf{p}_1$ is a candidate displaced polar axis, and $B$ is the adopted rotational-bulge scale. In the present implementation we use $B=11{,}000$~m, corresponding to the approximate equator-to-pole radius difference used in the Fairbridge-style first-order scaling.
+
+As a descriptive anchor, we use the Bermuda report of \citet{beebe1931}. Beebe reported water-worn pebbles, coral fragments, and shallow-water shells recovered south-southeast of Bermuda at approximately 1,450--1,550 fathoms, with the occurrence interpreted as a submerged sea-beach in situ. Treated simply as a target elevation of approximately $-2800$~m at $(32.2^\circ\mathrm{N}, 64.6^\circ\mathrm{W})$, the inverse calculation identifies the candidate polar offsets capable of satisfying that local condition.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\columnwidth]{../outputs/geospatial_13/13_Beebe_1931_Bermuda_candidate_orientations.png}
+\caption{Single-site geodetic inverse for the Beebe (1931) Bermuda submerged-beach report. The black star marks the Bermuda test location. Colored candidate points show polar-offset orientations that can satisfy a target elevation of approximately $-2800$~m under the first-order geodetic model. The result is not interpreted as a unique solution; rather, it shows that an extreme-depth littoral observation maps to a restricted family of finite-offset polar geometries.}
+\label{fig:beebe_inverse}
+\end{figure}
+
+This calculation is intentionally diagnostic. It does not assert that the Beebe site records a specific polar displacement. Instead, it demonstrates how an anomalous reported elevation can be transformed into a testable geometric constraint. A single site yields a family of admissible orientations. A population of sites, if coherent, should cause those families to intersect or cluster in pole-space.
+
+We therefore extend the same inverse logic to the reported-depth component of the merged LITTORAL dataset. The dataset is divided into depth regimes so that the dense shallow cohort does not numerically overwhelm rarer deep or raised indicators. Separate inversions are then run for shallow, deep, raised, and full reported-elevation populations.
+
+\begin{figure*}[ht]
+\centering
+\includegraphics[width=\textwidth]{../outputs/geospatial_15/15_depth_regime_composite.png}
+\caption{Depth-regime geodetic inverse composite for reported LITTORAL elevations. The upper row shows normalized preference in offset--azimuth parameter space for shallow, deep, raised, and full reported-elevation cohorts. The lower row maps the corresponding candidate-pole preference in north-polar projection. The shallow and full populations are dominated by near-present, low-offset solutions, while the sparse deep and raised regimes occupy distinct finite-offset solution families. This separation indicates that the reported dataset is not well represented as a single homogeneous geodetic population.}
+\label{fig:depth_regime_inverse}
+\end{figure*}
+
+The resulting regime separation is the important result. The shallow population is dominated by near-zero polar offsets, consistent with low-amplitude relative sea-level indicators close to the present hydrospheric configuration. By contrast, the sparse deep and raised regimes preferentially illuminate finite-offset structures in the inverse space. In the present run, the deep cohort contains only ten records, so its solution should be treated cautiously; nevertheless, its preferred family is not identical to the shallow solution. The raised cohort likewise occupies a distinct finite-offset family.
+
+This behavior suggests that the merged reported-elevation dataset is better treated as a mixture of geometric regimes than as a single scalar sea-level population. The Beebe example provides the intuitive end-member: an extreme-depth littoral claim cannot be evaluated by asking only whether it lies above or below present sea level. It must be evaluated by asking what global geodetic configuration would make such a shoreline elevation geometrically admissible, and whether other observations independently support the same configuration.
+
 \section{Constraint Over Explanation}
 
 It is important to emphasize that the present analysis does not assume a specific causal mechanism. Instead, it identifies a geometric constraint: the global distribution of RSL indicators is incompatible with isotropic randomness and exhibits structured alignment with an independent anisotropy field.
@@ -299,6 +338,8 @@ The central result of this study is the identification of coherent, non-random g
 \end{itemize}
 
 Taken together, these observations indicate that the dataset encodes a large-scale geometric constraint.
+
+The geodetic inverse analysis strengthens this interpretation by showing that different elevation regimes project into different regions of polar-orientation space. The shallow reported cohort is dominated by near-present geometry, whereas the sparse deep and raised cohorts illuminate finite-offset solution families. This does not by itself establish a rotational event, but it shows that the dataset behaves like a mixture of geometric regimes rather than a single homogeneous sea-level surface.
 
 \subsection{Geometric Interpretation}
 
@@ -350,6 +391,10 @@ Elevation and depth estimates are subject to uncertainties arising from measurem
 
 The present analysis treats the dataset as temporally aggregated. In reality, the observations span multiple time periods, and their superposition may blur time-dependent structure.
 
+\subsection{Sparse Extreme-Depth Regimes}
+
+The deep inverse regime presently contains only a small number of reported records. Its finite-offset solution family should therefore be interpreted as a diagnostic target rather than a final result. Additional extreme-depth and raised littoral indicators are required before the inferred regime structure can be considered robust. The value of the present analysis is that it defines the test: if such records are real and geometrically coherent, they should converge toward repeatable regions of pole-space under the inverse model.
+
 \section{Future Work}
 
 The results presented here open several avenues for further investigation.
@@ -357,6 +402,10 @@ The results presented here open several avenues for further investigation.
 \subsection{Temporal Stratification}
 
 Separating the dataset into time slices would allow the evolution of the geometric structure to be examined. This could reveal whether the observed alignment strengthens or weakens during specific intervals.
+
+\subsection{Depth-Regime Expansion}
+
+Future LITTORAL development should explicitly expand the deep and raised reported-elevation cohorts. Records analogous to the Beebe (1931) Bermuda submerged-beach report should be geocoded, elevation-normalized, and tested as a separate inverse population rather than being averaged into the dense shallow shoreline dataset. This will determine whether extreme-depth littoral indicators form a coherent finite-offset geodetic regime or dissolve under broader sampling.
 
 \subsection{Regional Analysis}
 
@@ -405,6 +454,13 @@ Fairbridge, R. W. (1961).
 \newblock In \emph{Physics and Chemistry of the Earth}, Vol. 4, pp. 99--185.
 \newblock Pergamon Press.
 \newblock \textbf{Seminal work emphasizing geodetic and rotational contributions to sea-level change.}
+
+\bibitem[Beebe(1931)]{beebe1931}
+Beebe, W. (1931).
+\newblock A submerged beach off Bermuda.
+\newblock \emph{Science}, 74(1929), 629--630.
+\newblock \url{https://www.science.org/doi/10.1126/science.74.1929.629}
+\newblock \textbf{Reports water-worn pebbles, coral fragments, and shallow-water shells from approximately 1,450--1,550 fathoms south-southeast of Bermuda, interpreted by the author as evidence of an in situ submerged sea-beach.}
 
 \bibitem[WALIS Consortium(2020)]{walis2020}
 WALIS Consortium (2020).

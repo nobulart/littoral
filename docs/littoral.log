@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.4.18)  26 APR 2026 16:54
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.4.18)  26 APR 2026 19:42
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -22,38 +22,49 @@ File: size10.clo 2025/01/22 v1.4n Standard LaTeX file (size option)
 \abovecaptionskip=\skip49
 \belowcaptionskip=\skip50
 \bibindent=\dimen148
-) (/usr/local/texlive/2026/texmf-dist/tex/latex/graphics/graphicx.sty
+)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/graphics/graphicx.sty
 Package: graphicx 2024/12/31 v1.2e Enhanced LaTeX Graphics (DPC,SPQR)
+
 (/usr/local/texlive/2026/texmf-dist/tex/latex/graphics/keyval.sty
 Package: keyval 2022/05/29 v1.15 key=value parser (DPC)
 \KV@toks@=\toks17
-) (/usr/local/texlive/2026/texmf-dist/tex/latex/graphics/graphics.sty
+)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/graphics/graphics.sty
 Package: graphics 2024/08/06 v1.4g Standard LaTeX Graphics (DPC,SPQR)
+
 (/usr/local/texlive/2026/texmf-dist/tex/latex/graphics/trig.sty
 Package: trig 2023/12/02 v1.11 sin cos tan (DPC)
-) (/usr/local/texlive/2026/texmf-dist/tex/latex/graphics-cfg/graphics.cfg
+)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/graphics-cfg/graphics.cfg
 File: graphics.cfg 2016/06/04 v1.11 sample graphics configuration
 )
 Package graphics Info: Driver file: pdftex.def on input line 106.
+
 (/usr/local/texlive/2026/texmf-dist/tex/latex/graphics-def/pdftex.def
 File: pdftex.def 2025/09/29 v1.2d Graphics/color driver for pdftex
 ))
 \Gin@req@height=\dimen149
 \Gin@req@width=\dimen150
-) (/usr/local/texlive/2026/texmf-dist/tex/latex/amsmath/amsmath.sty
+)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/amsmath/amsmath.sty
 Package: amsmath 2025/07/09 v2.17z AMS math features
 \@mathmargin=\skip51
+
 For additional information on amsmath, use the `?' option.
 (/usr/local/texlive/2026/texmf-dist/tex/latex/amsmath/amstext.sty
 Package: amstext 2024/11/17 v2.01 AMS text
+
 (/usr/local/texlive/2026/texmf-dist/tex/latex/amsmath/amsgen.sty
 File: amsgen.sty 1999/11/30 v2.0 generic functions
 \@emptytoks=\toks18
 \ex@=\dimen151
-)) (/usr/local/texlive/2026/texmf-dist/tex/latex/amsmath/amsbsy.sty
+))
+(/usr/local/texlive/2026/texmf-dist/tex/latex/amsmath/amsbsy.sty
 Package: amsbsy 1999/11/29 v1.2d Bold Symbols
 \pmbraise@=\dimen152
-) (/usr/local/texlive/2026/texmf-dist/tex/latex/amsmath/amsopn.sty
+)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/amsmath/amsopn.sty
 Package: amsopn 2022/04/08 v2.04 operator names
 )
 \inf@bad=\count283
@@ -103,16 +114,20 @@ LaTeX Info: Redefining \Relbar on input line 970.
 \mathdisplay@stack=\toks22
 LaTeX Info: Redefining \[ on input line 2950.
 LaTeX Info: Redefining \] on input line 2951.
-) (/usr/local/texlive/2026/texmf-dist/tex/latex/natbib/natbib.sty
+)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/natbib/natbib.sty
 Package: natbib 2010/09/13 8.31b (PWD, AO)
 \bibhang=\skip54
 \bibsep=\skip55
 LaTeX Info: Redefining \cite on input line 694.
 \c@NAT@ctr=\count295
-) (/usr/local/texlive/2026/texmf-dist/tex/latex/geometry/geometry.sty
+)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/geometry/geometry.sty
 Package: geometry 2026/03/07 v6.0 Page Geometry
+
 (/usr/local/texlive/2026/texmf-dist/tex/generic/iftex/ifvtex.sty
 Package: ifvtex 2019/10/25 v1.7 ifvtex legacy package. Use iftex instead.
+
 (/usr/local/texlive/2026/texmf-dist/tex/generic/iftex/iftex.sty
 Package: iftex 2024/12/12 v1.0g TeX engine tests
 ))
@@ -128,57 +143,72 @@ Package: iftex 2024/12/12 v1.0g TeX engine tests
 \Gm@layouthoffset=\dimen166
 \Gm@layoutvoffset=\dimen167
 \Gm@dimlist=\toks23
-) (/usr/local/texlive/2026/texmf-dist/tex/latex/hyperref/hyperref.sty
+)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/hyperref/hyperref.sty
 Package: hyperref 2026-01-29 v7.01p Hypertext links for LaTeX
+
 (/usr/local/texlive/2026/texmf-dist/tex/latex/kvsetkeys/kvsetkeys.sty
 Package: kvsetkeys 2022-10-05 v1.19 Key value parser (HO)
-) (/usr/local/texlive/2026/texmf-dist/tex/generic/kvdefinekeys/kvdefinekeys.sty
+)
+(/usr/local/texlive/2026/texmf-dist/tex/generic/kvdefinekeys/kvdefinekeys.sty
 Package: kvdefinekeys 2019-12-19 v1.6 Define keys (HO)
-) (/usr/local/texlive/2026/texmf-dist/tex/generic/pdfescape/pdfescape.sty
+)
+(/usr/local/texlive/2026/texmf-dist/tex/generic/pdfescape/pdfescape.sty
 Package: pdfescape 2019/12/09 v1.15 Implements pdfTeX's escape features (HO)
+
 (/usr/local/texlive/2026/texmf-dist/tex/generic/ltxcmds/ltxcmds.sty
 Package: ltxcmds 2023-12-04 v1.26 LaTeX kernel commands for general use (HO)
-) (/usr/local/texlive/2026/texmf-dist/tex/generic/pdftexcmds/pdftexcmds.sty
+)
+(/usr/local/texlive/2026/texmf-dist/tex/generic/pdftexcmds/pdftexcmds.sty
 Package: pdftexcmds 2020-06-27 v0.33 Utility functions of pdfTeX for LuaTeX (HO
 )
+
 (/usr/local/texlive/2026/texmf-dist/tex/generic/infwarerr/infwarerr.sty
 Package: infwarerr 2019/12/03 v1.5 Providing info/warning/error messages (HO)
 )
 Package pdftexcmds Info: \pdf@primitive is available.
 Package pdftexcmds Info: \pdf@ifprimitive is available.
 Package pdftexcmds Info: \pdfdraftmode found.
-)) (/usr/local/texlive/2026/texmf-dist/tex/latex/hycolor/hycolor.sty
+))
+(/usr/local/texlive/2026/texmf-dist/tex/latex/hycolor/hycolor.sty
 Package: hycolor 2020-01-27 v1.10 Color options for hyperref/bookmark (HO)
-) (/usr/local/texlive/2026/texmf-dist/tex/latex/hyperref/nameref.sty
+)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/hyperref/nameref.sty
 Package: nameref 2026-01-29 v2.58 Cross-referencing by name of section
+
 (/usr/local/texlive/2026/texmf-dist/tex/latex/refcount/refcount.sty
 Package: refcount 2019/12/15 v3.6 Data extraction from label references (HO)
 )
 (/usr/local/texlive/2026/texmf-dist/tex/generic/gettitlestring/gettitlestring.s
 ty
 Package: gettitlestring 2019/12/15 v1.6 Cleanup title references (HO)
-(/usr/local/texlive/2026/texmf-dist/tex/latex/kvoptions/kvoptions.sty
+ (/usr/local/texlive/2026/texmf-dist/tex/latex/kvoptions/kvoptions.sty
 Package: kvoptions 2022-06-15 v3.15 Key value format for package options (HO)
 ))
 \c@section@level=\count299
-) (/usr/local/texlive/2026/texmf-dist/tex/latex/etoolbox/etoolbox.sty
+)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/etoolbox/etoolbox.sty
 Package: etoolbox 2025/10/02 v2.5m e-TeX tools for LaTeX (JAW)
 \etb@tempcnta=\count300
-) (/usr/local/texlive/2026/texmf-dist/tex/generic/stringenc/stringenc.sty
+)
+(/usr/local/texlive/2026/texmf-dist/tex/generic/stringenc/stringenc.sty
 Package: stringenc 2019/11/29 v1.12 Convert strings between diff. encodings (HO
 )
 )
 \@linkdim=\dimen168
 \Hy@linkcounter=\count301
 \Hy@pagecounter=\count302
+
 (/usr/local/texlive/2026/texmf-dist/tex/latex/hyperref/pd1enc.def
 File: pd1enc.def 2026-01-29 v7.01p Hyperref: PDFDocEncoding definition (HO)
 Now handling font encoding PD1 ...
 ... no UTF-8 mapping file for font encoding PD1
-) (/usr/local/texlive/2026/texmf-dist/tex/generic/intcalc/intcalc.sty
+)
+(/usr/local/texlive/2026/texmf-dist/tex/generic/intcalc/intcalc.sty
 Package: intcalc 2019/12/15 v1.3 Expandable calculations with integers (HO)
 )
 \Hy@SavedSpaceFactor=\count303
+
 (/usr/local/texlive/2026/texmf-dist/tex/latex/hyperref/puenc.def
 File: puenc.def 2026-01-29 v7.01p Hyperref: PDF Unicode definition (HO)
 Now handling font encoding PU ...
@@ -192,14 +222,17 @@ Package hyperref Info: Backreferencing OFF on input line 4221.
 Package hyperref Info: Implicit mode ON; LaTeX internals redefined.
 Package hyperref Info: Bookmarks ON on input line 4468.
 \c@Hy@tempcnt=\count304
+
 (/usr/local/texlive/2026/texmf-dist/tex/latex/url/url.sty
 \Urlmuskip=\muskip18
 Package: url 2013/09/16  ver 3.4  Verb mode for urls, etc.
 )
 LaTeX Info: Redefining \url on input line 4807.
 \XeTeXLinkMargin=\dimen169
+
 (/usr/local/texlive/2026/texmf-dist/tex/generic/bitset/bitset.sty
 Package: bitset 2019/12/09 v1.3 Handle bit-vector datatype (HO)
+
 (/usr/local/texlive/2026/texmf-dist/tex/generic/bigintcalc/bigintcalc.sty
 Package: bigintcalc 2019/12/15 v1.5 Expandable calculations on big integers (HO
 )
@@ -219,6 +252,7 @@ Package hyperref Info: PDF/A mode OFF on input line 6114.
 \c@Hfootnote=\count308
 )
 Package hyperref Info: Driver (autodetected): hpdftex.
+
 (/usr/local/texlive/2026/texmf-dist/tex/latex/hyperref/hpdftex.def
 File: hpdftex.def 2026-01-29 v7.01p Hyperref driver for pdfTeX
 \Fld@listcount=\count309
@@ -253,10 +287,12 @@ Package: booktabs 2020/01/12 v1.61803398 Publication quality tables
 \@thisruleclass=\count313
 \@lastruleclass=\count314
 \@thisrulewidth=\dimen184
-) (/usr/local/texlive/2026/texmf-dist/tex/latex/l3backend/l3backend-pdftex.def
+)
+(/usr/local/texlive/2026/texmf-dist/tex/latex/l3backend/l3backend-pdftex.def
 File: l3backend-pdftex.def 2025-10-09 L3 backend support: PDF output (pdfTeX)
 \l__color_backend_stack_int=\count315
-) (./littoral.aux)
+)
+(./littoral.aux)
 \openout1 = `littoral.aux'.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 16.
@@ -277,6 +313,7 @@ LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 16.
 LaTeX Font Info:    ... okay on input line 16.
 LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 16.
 LaTeX Font Info:    ... okay on input line 16.
+
 (/usr/local/texlive/2026/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
 [Loading MPS to PDF converter (version 2006.09.02).]
 \scratchcounter=\count316
@@ -294,6 +331,7 @@ LaTeX Font Info:    ... okay on input line 16.
 Package: epstopdf-base 2020-01-24 v2.11 Base part for package epstopdf
 Package epstopdf-base Info: Redefining graphics rule for `.eps' on input line 4
 85.
+
 (/usr/local/texlive/2026/texmf-dist/tex/latex/latexconfig/epstopdf-sys.cfg
 File: epstopdf-sys.cfg 2010/07/13 v1.3 Configuration of (r)epstopdf for TeX Liv
 e
@@ -337,118 +375,118 @@ Package hyperref Info: Link coloring OFF on input line 16.
 \@outlinefile=\write3
 \openout3 = `littoral.out'.
 
-[1{/usr/local/texlive/2026/texmf-var/fonts/map/pdftex/updmap/pdftex.map}
+ [1{/usr/local/texlive/2026/texmf-var/fonts/map/pdftex/updmap/pdftex.map}
 
 
-{/usr/local/texlive/2026/texmf-dist/fonts/enc/dvips/cm-super/cm-super-ts1.enc}]
-
-Underfull \hbox (badness 3514) in paragraph at lines 58--59
+]
+Underfull \hbox (badness 3514) in paragraph at lines 62--63
 []\OT1/cmr/m/n/10 Indicator type (e.g., beach, reef, sed-i-men-tary
  []
 
-<../outputs/geospatial_01/01_littoral_global_scatter_lon_lat_z.png, id=157, 794
+<../outputs/geospatial_01/01_littoral_global_scatter_lon_lat_z.png, id=167, 794
 .97pt x 433.62pt>
 File: ../outputs/geospatial_01/01_littoral_global_scatter_lon_lat_z.png Graphic
  file (type png)
 <use ../outputs/geospatial_01/01_littoral_global_scatter_lon_lat_z.png>
 Package pdftex.def Info: ../outputs/geospatial_01/01_littoral_global_scatter_lo
-n_lat_z.png  used on input line 66.
+n_lat_z.png  used on input line 70.
 (pdftex.def)             Requested size: 247.94499pt x 135.24126pt.
-<../outputs/geospatial_12/12_littoral_gradient_heatmap.png, id=159, 1084.05pt x
+<../outputs/geospatial_12/12_littoral_gradient_heatmap.png, id=169, 1084.05pt x
  614.295pt>
 File: ../outputs/geospatial_12/12_littoral_gradient_heatmap.png Graphic file (t
 ype png)
 <use ../outputs/geospatial_12/12_littoral_gradient_heatmap.png>
 Package pdftex.def Info: ../outputs/geospatial_12/12_littoral_gradient_heatmap.
-png  used on input line 77.
+png  used on input line 81.
 (pdftex.def)             Requested size: 247.94499pt x 140.49751pt.
 
-Underfull \hbox (badness 5592) in paragraph at lines 82--83
+Underfull \hbox (badness 5592) in paragraph at lines 86--87
 []\OT1/cmr/m/n/10 The re-sult-ing gra-di-ent field re-veals pro-nounced
  []
 
-<../outputs/geospatial_12/12_littoral_mach_field_comparison.png, id=162, 1300.8
+<../outputs/geospatial_12/12_littoral_mach_field_comparison.png, id=172, 1300.8
 6pt x 614.295pt>
 File: ../outputs/geospatial_12/12_littoral_mach_field_comparison.png Graphic fi
 le (type png)
 <use ../outputs/geospatial_12/12_littoral_mach_field_comparison.png>
 Package pdftex.def Info: ../outputs/geospatial_12/12_littoral_mach_field_compar
-ison.png  used on input line 106.
+ison.png  used on input line 110.
 (pdftex.def)             Requested size: 247.94499pt x 117.08281pt.
-[2 <../outputs/geospatial_01/01_littoral_global_scatter_lon_lat_z.png> <../outp
-uts/geospatial_12/12_littoral_gradient_heatmap.png> <../outputs/geospatial_12/1
-2_littoral_mach_field_comparison.png>]
-<../outputs/geospatial_12/12_littoral_mach_field_overlay.png, id=180, 1084.05pt
+[2{/usr/local/texlive/2026/texmf-dist/fonts/enc/dvips/cm-super/cm-super-ts1.enc
+} <../outputs/geospatial_01/01_littoral_global_scatter_lon_lat_z.png> <../outpu
+ts/geospatial_12/12_littoral_gradient_heatmap.png>]
+<../outputs/geospatial_12/12_littoral_mach_field_overlay.png, id=190, 1084.05pt
  x 614.295pt>
 File: ../outputs/geospatial_12/12_littoral_mach_field_overlay.png Graphic file 
 (type png)
 <use ../outputs/geospatial_12/12_littoral_mach_field_overlay.png>
 Package pdftex.def Info: ../outputs/geospatial_12/12_littoral_mach_field_overla
-y.png  used on input line 118.
+y.png  used on input line 122.
 (pdftex.def)             Requested size: 247.94499pt x 140.49751pt.
 
-Underfull \hbox (badness 1466) in paragraph at lines 132--133
+Underfull \hbox (badness 1466) in paragraph at lines 136--137
 []\OT1/cmr/m/n/10 Their cor-re-spon-dence there-fore con-sti-tutes a non-
  []
 
-<../outputs/geospatial_10/10_candidate_axes_over_mach_field.png, id=181, 794.97
+<../outputs/geospatial_10/10_candidate_axes_over_mach_field.png, id=191, 794.97
 pt x 433.62pt>
 File: ../outputs/geospatial_10/10_candidate_axes_over_mach_field.png Graphic fi
 le (type png)
 <use ../outputs/geospatial_10/10_candidate_axes_over_mach_field.png>
 Package pdftex.def Info: ../outputs/geospatial_10/10_candidate_axes_over_mach_f
-ield.png  used on input line 142.
+ield.png  used on input line 146.
 (pdftex.def)             Requested size: 247.94499pt x 135.24126pt.
-
-Underfull \hbox (badness 10000) in paragraph at lines 168--169
+[3 <../outputs/geospatial_12/12_littoral_mach_field_comparison.png> <../outputs
+/geospatial_12/12_littoral_mach_field_overlay.png> <../outputs/geospatial_10/10
+_candidate_axes_over_mach_field.png>]
+Underfull \hbox (badness 10000) in paragraph at lines 172--173
 []\OT1/cmr/m/n/10 Fraction of path be-low a thresh-old
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 169--170
+Underfull \hbox (badness 10000) in paragraph at lines 173--174
 []\OT1/cmr/m/n/10 Integrated penalty along the path
  []
 
-[3 <../outputs/geospatial_12/12_littoral_mach_field_overlay.png> <../outputs/ge
-ospatial_10/10_candidate_axes_over_mach_field.png>]
-Underfull \hbox (badness 1910) in paragraph at lines 188--189
+
+Underfull \hbox (badness 1910) in paragraph at lines 192--193
 []$[]$\OT1/cmr/m/n/10 : frac-tion of the path
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 216--217
+Underfull \hbox (badness 10000) in paragraph at lines 220--221
 []\OT1/cmr/m/n/10 While the point-wise met-rics ($[]$,
  []
 
 
-Underfull \hbox (badness 3492) in paragraph at lines 216--217
+Underfull \hbox (badness 3492) in paragraph at lines 220--221
 []$\OT1/cmr/m/n/10 ) do not show strong sep-a-ra-tion from
  []
 
 
-Underfull \hbox (badness 2221) in paragraph at lines 216--217
+Underfull \hbox (badness 2221) in paragraph at lines 220--221
 \OT1/cmr/m/n/10 penalty is ap-prox-i-mately half that of the ran-dom
  []
 
-<../outputs/geospatial_11/11_top_10pct_by_score_effect_sizes.png, id=191, 722.7
+<../outputs/geospatial_11/11_top_10pct_by_score_effect_sizes.png, id=203, 722.7
 pt x 361.35pt>
 File: ../outputs/geospatial_11/11_top_10pct_by_score_effect_sizes.png Graphic f
 ile (type png)
 <use ../outputs/geospatial_11/11_top_10pct_by_score_effect_sizes.png>
 Package pdftex.def Info: ../outputs/geospatial_11/11_top_10pct_by_score_effect_
-sizes.png  used on input line 220.
+sizes.png  used on input line 224.
 (pdftex.def)             Requested size: 247.94499pt x 123.97115pt.
 <../outputs/geospatial_11/11_top_10pct_by_score_path_integrated_penalty.png, id
-=192, 650.43pt x 361.35pt>
+=204, 650.43pt x 361.35pt>
 File: ../outputs/geospatial_11/11_top_10pct_by_score_path_integrated_penalty.pn
 g Graphic file (type png)
 <use ../outputs/geospatial_11/11_top_10pct_by_score_path_integrated_penalty.png
 >
 Package pdftex.def Info: ../outputs/geospatial_11/11_top_10pct_by_score_path_in
-tegrated_penalty.png  used on input line 227.
+tegrated_penalty.png  used on input line 231.
 (pdftex.def)             Requested size: 247.94499pt x 137.74449pt.
 
-Underfull \hbox (badness 1038) in paragraph at lines 242--242
+Underfull \hbox (badness 1038) in paragraph at lines 246--246
 []\OT1/cmr/bx/n/14.4 Axis Se-lec-tion and Resid-ual
  []
 
@@ -456,181 +494,212 @@ File: ../outputs/geospatial_10/10_candidate_axes_over_mach_field.png Graphic fi
 le (type png)
 <use ../outputs/geospatial_10/10_candidate_axes_over_mach_field.png>
 Package pdftex.def Info: ../outputs/geospatial_10/10_candidate_axes_over_mach_f
-ield.png  used on input line 248.
+ield.png  used on input line 252.
 (pdftex.def)             Requested size: 247.94499pt x 135.24126pt.
-[4 <../outputs/geospatial_11/11_top_10pct_by_score_effect_sizes.png> <../output
-s/geospatial_11/11_top_10pct_by_score_path_integrated_penalty.png>] [5]
-Underfull \hbox (badness 10000) in paragraph at lines 365--365
+[4 <../outputs/geospatial_11/11_top_10pct_by_score_effect_sizes.png>]
+Underfull \hbox (badness 2293) in paragraph at lines 273--273
+[]\OT1/cmr/bx/n/14.4 Geodetic In-ver-sion and the
+ []
+
+<../outputs/geospatial_13/13_Beebe_1931_Bermuda_candidate_orientations.png, id=
+221, 1084.05pt x 614.295pt>
+File: ../outputs/geospatial_13/13_Beebe_1931_Bermuda_candidate_orientations.png
+ Graphic file (type png)
+<use ../outputs/geospatial_13/13_Beebe_1931_Bermuda_candidate_orientations.png>
+
+Package pdftex.def Info: ../outputs/geospatial_13/13_Beebe_1931_Bermuda_candida
+te_orientations.png  used on input line 288.
+(pdftex.def)             Requested size: 247.94499pt x 140.49751pt.
+<../outputs/geospatial_15/15_depth_regime_composite.png, id=222, 1210.5225pt x 
+660.066pt>
+File: ../outputs/geospatial_15/15_depth_regime_composite.png Graphic file (type
+ png)
+<use ../outputs/geospatial_15/15_depth_regime_composite.png>
+Package pdftex.def Info: ../outputs/geospatial_15/15_depth_regime_composite.png
+  used on input line 299.
+(pdftex.def)             Requested size: 505.89pt x 275.846pt.
+[5 <../outputs/geospatial_11/11_top_10pct_by_score_path_integrated_penalty.png>
+] [6 <../outputs/geospatial_13/13_Beebe_1931_Bermuda_candidate_orientations.png
+>]
+Underfull \vbox (badness 1194) has occurred while \output is active []
+
+ [7 <../outputs/geospatial_15/15_depth_regime_composite.png>]
+Underfull \hbox (badness 10000) in paragraph at lines 414--414
 []\OT1/cmr/bx/n/12 Integration with Ad-di-tional
  []
 
-[6]
-Underfull \hbox (badness 2088) in paragraph at lines 417--421
+[8]
+Underfull \hbox (badness 3965) in paragraph at lines 459--464
+\OT1/cmr/bx/n/10 water-worn peb-bles, coral frag-ments, and
+ []
+
+
+Underfull \hbox (badness 2088) in paragraph at lines 473--477
 \OT1/cmr/m/n/10 years.  []$\OT1/cmtt/m/n/10 https : / / doi . org / 10 . 1016 /
  0031-[]0182(86 )
  []
 
 
-Underfull \hbox (badness 1137) in paragraph at lines 423--427
+Underfull \hbox (badness 1137) in paragraph at lines 479--483
 \OT1/cmr/m/n/10 fine-sediment regime.  []$\OT1/cmtt/m/n/10 https : / / doi . or
 g / 10 . 1016 /
  []
 
 
-Underfull \hbox (badness 1127) in paragraph at lines 458--462
+Underfull \hbox (badness 1127) in paragraph at lines 514--518
 []\OT1/cmr/m/n/10 Beaman et al. (2008).  New ev-i-dence for drowned
  []
 
 
-Underfull \hbox (badness 1194) in paragraph at lines 458--462
+Underfull \hbox (badness 1194) in paragraph at lines 514--518
 \OT1/cmr/m/n/10 shelf edge reefs in the Great Bar-rier Reef, Aus-
  []
 
 
-Underfull \hbox (badness 1178) in paragraph at lines 470--474
+Underfull \hbox (badness 1178) in paragraph at lines 526--530
 \OT1/cmtt/m/n/10 org / 10 . 1016 / 1040-[]6182(94 ) 00057-[]C$[]  \OT1/cmr/m/n/
 10 LIT-TORAL
  []
 
 
-Underfull \hbox (badness 2050) in paragraph at lines 482--486
+Underfull \hbox (badness 2050) in paragraph at lines 538--542
 \OT1/cmtt/m/n/10 / / doi . org / 10 . 1016 / j . palaeo . 2020 . 109587$[]  \OT
 1/cmr/m/n/10 LIT-
  []
 
-[7]
-Underfull \hbox (badness 1521) in paragraph at lines 500--504
+
+Underfull \hbox (badness 1521) in paragraph at lines 556--560
 []$\OT1/cmtt/m/n/10 https : / / doi . org / 10 . 1144 / SP411 . 11$[]  \OT1/cmr
 /m/n/10 LIT-TORAL
  []
 
-
-Underfull \hbox (badness 1303) in paragraph at lines 512--516
+[9]
+Underfull \hbox (badness 1303) in paragraph at lines 568--572
 []\OT1/cmr/m/n/10 Cerrone et al. (2021).  De-vel-op-ment and de-for-ma-
  []
 
 
-Underfull \hbox (badness 5288) in paragraph at lines 512--516
+Underfull \hbox (badness 5288) in paragraph at lines 568--572
 \OT1/cmr/m/n/10 (Italy).  []$\OT1/cmtt/m/n/10 https : / / doi . org / 10 . 1016
  / j . geomorph .
  []
 
 
-Underfull \hbox (badness 1521) in paragraph at lines 566--570
+Underfull \hbox (badness 1521) in paragraph at lines 622--626
 \OT1/cmtt/m/n/10 org / 10 . 1016 / j . margeo . 2021 . 106477$[]  \OT1/cmr/m/n/
 10 LIT-TORAL
  []
 
 
-Underfull \hbox (badness 1221) in paragraph at lines 599--603
+Underfull \hbox (badness 1221) in paragraph at lines 655--659
 \OT1/cmr/m/n/10 Sea.  []$\OT1/cmtt/m/n/10 https : / / doi . org / 10 . 1144 / S
 P388 . 18$[]  \OT1/cmr/m/n/10 LIT-
  []
 
-[8]
-Underfull \hbox (badness 3417) in paragraph at lines 639--643
+
+Underfull \hbox (badness 3417) in paragraph at lines 695--699
 \OT1/cmr/m/n/10 SEA.  []$\OT1/cmtt/m/n/10 https : / / doi . org / 10 . 1016 / 0
 025-[]3227(81 )
  []
 
-
-Underfull \hbox (badness 1540) in paragraph at lines 663--667
+[10]
+Underfull \hbox (badness 1540) in paragraph at lines 719--723
 \OT1/cmr/m/n/10 cli-mate in the Chukchi Sea.  []$\OT1/cmtt/m/n/10 https : / / d
 oi . org /
  []
 
 
-Underfull \hbox (badness 2057) in paragraph at lines 669--673
+Underfull \hbox (badness 2057) in paragraph at lines 725--729
 []\OT1/cmr/m/n/10 Koba et al. (1982).  Late Holocene eu-static sea-
  []
 
 
-Underfull \hbox (badness 1521) in paragraph at lines 709--713
+Underfull \hbox (badness 1521) in paragraph at lines 765--769
 \OT1/cmtt/m/n/10 org / 10 . 1016 / j . palaeo . 2013 . 11 . 018$[]  \OT1/cmr/m/
 n/10 LIT-TORAL
  []
 
 
-Underfull \hbox (badness 1776) in paragraph at lines 721--725
+Underfull \hbox (badness 1776) in paragraph at lines 777--781
 \OT1/cmr/m/n/10 Calahonda coastal area (south-east Iberian Penin-
  []
 
 
-Underfull \hbox (badness 1502) in paragraph at lines 743--747
+Underfull \hbox (badness 1502) in paragraph at lines 799--803
 \OT1/cmr/m/n/10 ranean.  []$\OT1/cmtt/m/n/10 https : / / doi . org / 10 . 1016 
 / j . epsl . 2015 .
  []
 
-[9]
-Underfull \hbox (badness 1629) in paragraph at lines 778--782
+[11]
+Underfull \hbox (badness 1629) in paragraph at lines 834--838
 \OT1/cmtt/m/n/10 / / doi . org / 10 . 1016 / 0025-[]3227(82 ) 90056-[]1$[]  \OT
 1/cmr/m/n/10 LIT-
  []
 
 
-Underfull \hbox (badness 1205) in paragraph at lines 819--823
+Underfull \hbox (badness 1205) in paragraph at lines 875--879
 []\OT1/cmr/m/n/10 Spampinato et al. (2012).  Raised Holocene paleo-
  []
 
 
-Underfull \hbox (badness 3158) in paragraph at lines 825--829
+Underfull \hbox (badness 3158) in paragraph at lines 881--885
 \OT1/cmr/m/n/10 CLE.  []$\OT1/cmtt/m/n/10 https : / / doi . org / 10 . 1016 / 0
 037-[]0738(79 )
  []
 
 
-Underfull \hbox (badness 1147) in paragraph at lines 831--835
+Underfull \hbox (badness 1147) in paragraph at lines 887--891
 []\OT1/cmr/m/n/10 Taira (1975).  Holocene crustal move-ments in Tai-
  []
 
 
-Underfull \hbox (badness 1292) in paragraph at lines 837--841
+Underfull \hbox (badness 1292) in paragraph at lines 893--897
 []\OT1/cmr/m/n/10 Thomas et al. (2009).  Penul-ti-mate Deglacial Sea-
  []
 
 
-Underfull \hbox (badness 1005) in paragraph at lines 837--841
+Underfull \hbox (badness 1005) in paragraph at lines 893--897
 \OT1/cmr/m/n/10 tian Corals.  []$\OT1/cmtt/m/n/10 https : / / doi . org / 10 . 
 1126 / science .
  []
 
 
-Underfull \hbox (badness 3724) in paragraph at lines 861--865
+Underfull \hbox (badness 3724) in paragraph at lines 917--921
 []\OT1/cmr/m/n/10 Webster et al. (2004).  Coral-gal com-po-si-tion of
  []
 
-[10]
-Underfull \hbox (badness 2698) in paragraph at lines 891--895
+
+Underfull \hbox (badness 2698) in paragraph at lines 947--951
 []\OT1/cmr/m/n/10 Zhou et al. (2014).  Flu-vial sys-tem de-vel-op-ment
  []
 
-
-Underfull \hbox (badness 10000) in paragraph at lines 897--901
+[12]
+Underfull \hbox (badness 10000) in paragraph at lines 953--957
 \OT1/cmtt/m/n/10 edu / 165291904 / Geometric _ Structure _ of _ Euler _
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 897--901
+Underfull \hbox (badness 10000) in paragraph at lines 953--957
 \OT1/cmtt/m/n/10 Pole _ Compatibility _ Space _ A _ Constraint _ Based _
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 897--901
+Underfull \hbox (badness 10000) in paragraph at lines 953--957
 \OT1/cmtt/m/n/10 Analysis _ of _ Rotational _ Admissibility$[]  \OT1/cmr/bx/n/1
 0 In-
  []
 
 
-Underfull \hbox (badness 2012) in paragraph at lines 897--901
+Underfull \hbox (badness 2012) in paragraph at lines 953--957
 \OT1/cmr/bx/n/10 tro-duces the Mach com-pat-i-bil-ity field and
  []
 
 
-Underfull \hbox (badness 1067) in paragraph at lines 897--901
+Underfull \hbox (badness 1067) in paragraph at lines 953--957
 \OT1/cmr/bx/n/10 form-ing ridge{corridor struc-tures cen-tral to
  []
 
-[11
+[13
 
 ] (./littoral.aux)
  ***********
@@ -638,16 +707,16 @@ LaTeX2e <2025-11-01>
 L3 programming layer <2026-01-19>
  ***********
 Package rerunfilecheck Info: File `littoral.out' has not changed.
-(rerunfilecheck)             Checksum: D82F7841289E0BC53C61E959D71F5444;6021.
+(rerunfilecheck)             Checksum: 630836697F8C6EC615E134C1F53C3238;6655.
  ) 
 Here is how much of TeX's memory you used:
- 10528 strings out of 467525
- 163544 string characters out of 5418982
- 605387 words of memory out of 5000000
- 39183 multiletter control sequences out of 15000+600000
+ 10561 strings out of 467525
+ 164824 string characters out of 5418982
+ 607518 words of memory out of 5000000
+ 39207 multiletter control sequences out of 15000+600000
  636329 words of font info for 70 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 75i,10n,79p,565b,713s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 75i,10n,79p,750b,721s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb
 ></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb>
 </usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb><
@@ -662,13 +731,14 @@ xlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmr6.pfb></usr/local/texli
 ve/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmr7.pfb></usr/local/texlive/
 2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmr9.pfb></usr/local/texlive/202
 6/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/local/texlive/2026
-/texmf-dist/fonts/type1/public/amsfonts/cm/cmti10.pfb></usr/local/texlive/2026/
-texmf-dist/fonts/type1/public/amsfonts/cm/cmtt10.pfb></usr/local/texlive/2026/t
-exmf-dist/fonts/type1/public/cm-super/sfrm1000.pfb>
-Output written on littoral.pdf (11 pages, 5765120 bytes).
+/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb></usr/local/texlive/2026/t
+exmf-dist/fonts/type1/public/amsfonts/cm/cmti10.pfb></usr/local/texlive/2026/te
+xmf-dist/fonts/type1/public/amsfonts/cm/cmtt10.pfb></usr/local/texlive/2026/tex
+mf-dist/fonts/type1/public/cm-super/sfrm1000.pfb>
+Output written on littoral.pdf (13 pages, 8205990 bytes).
 PDF statistics:
- 575 PDF objects out of 1000 (max. 8388607)
- 508 compressed objects within 6 object streams
- 149 named destinations out of 1000 (max. 500000)
- 300 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 615 PDF objects out of 1000 (max. 8388607)
+ 540 compressed objects within 6 object streams
+ 158 named destinations out of 1000 (max. 500000)
+ 334 words of extra memory for PDF output out of 10000 (max. 10000000)
 

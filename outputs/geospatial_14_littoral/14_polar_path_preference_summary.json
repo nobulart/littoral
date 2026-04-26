@@ -1,0 +1,35 @@
+{
+  "input_csv": "/Users/craig/ECDO/LITTORAL/outputs/merged/master_dataset.csv",
+  "n_reported_records": 3185,
+  "z_min_m": -200.0,
+  "z_max_m": 200.0,
+  "alpha_min_deg": 0.1,
+  "alpha_max_deg": 45.0,
+  "alpha_step_deg": 0.25,
+  "azimuth_step_deg": 0.5,
+  "sigma_m": 25.0,
+  "bulge_m": 11000.0,
+  "best_candidate": {
+    "offset_deg": 0.1,
+    "orientation_azimuth_deg": 103.0,
+    "candidate_pole_lat": 89.8999999999998,
+    "candidate_pole_lon": 103.0,
+    "preference_norm": 0.6964549189141329,
+    "preference_0_1": 1.0,
+    "hit_fraction_within_sigma": 0.7089481946624804,
+    "mae_m": 24.832597557892402,
+    "rmse_m": 38.30095517851968
+  },
+  "top_10pct_weighted_centroid": {
+    "lat": 89.82247088453659,
+    "lon": 119.2935780404012
+  },
+  "top_5pct_weighted_centroid": {
+    "lat": 89.71365153014051,
+    "lon": 41.1112404453697
+  },
+  "top_1pct_weighted_centroid": {
+    "lat": 89.9459807680954,
+    "lon": 119.65341131791581
+  }
+}

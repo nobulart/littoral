@@ -33,6 +33,7 @@ import pandas as pd
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_GRADIENT_CSV = PROJECT_ROOT / "outputs" / "geospatial_05" / "05_dominant_gradient.csv"
 DEFAULT_RECORDS_CSV = PROJECT_ROOT / "outputs" / "geospatial_05" / "05_littoral_records_with_predictions_and_residuals.csv"
+MERGED_CSV = PROJECT_ROOT / "outputs" / "merged" / "master_dataset.csv"
 DEFAULT_MACH_CSV = PROJECT_ROOT / "data" / "mach.csv"
 OUTPUT_DIR_MACH_CSV = PROJECT_ROOT / "outputs" / "geospatial_12" / "mach.csv"
 FALLBACK_MACH_CSV = PROJECT_ROOT / "outputs" / "mach.csv"
@@ -111,6 +112,121 @@ def build_field_grid(gradient: dict[str, object], resolution_deg: float) -> pd.D
             "longitude": lon_grid.ravel(),
             "littoral_gradient_m": field,
         }
+    )
+
+
+def reported_observation_value(value, key: str) -> float:
+    if pd.isna(value):
+        return np.nan
+    try:
+        payload = json.loads(str(value))
+    except (TypeError, json.JSONDecodeError):
+        return np.nan
+    return pd.to_numeric(payload.get(key), errors="coerce")
+
+
+def reported_depth_source_mask(df: pd.DataFrame) -> pd.Series:
+    if "depth_source" not in df.columns:
+        return pd.Series(False, index=df.index)
+    return df["depth_source"].map(lambda value: str(value).strip().lower() == "reported" if not pd.isna(value) else False)
+
+
+def choose_reported_z(df: pd.DataFrame) -> pd.DataFrame:
+    out = df.copy()
+    for col in ["latitude", "longitude", "elevation_m", "z_m"]:
+        if col in out.columns:
+            out[col] = pd.to_numeric(out[col], errors="coerce")
+
+    reported_source = reported_depth_source_mask(out)
+    z = pd.Series(np.nan, index=out.index, dtype=float)
+    source = pd.Series("", index=out.index, dtype=object)
+
+    if "z_m" in out.columns:
+        mask = reported_source & out["z_m"].notna()
+        z.loc[mask] = out.loc[mask, "z_m"]
+        source.loc[mask] = out.get("z_source", "precomputed_z_m")
+
+    if "elevation_m" in out.columns:
+        mask = reported_source & z.isna() & out["elevation_m"].notna()
+        z.loc[mask] = out.loc[mask, "elevation_m"]
+        source.loc[mask] = "elevation_m"
+
+    if "reported_observations" in out.columns:
+        reported_depth = out["reported_observations"].map(lambda value: reported_observation_value(value, "reported_depth_m"))
+        reported_elevation = out["reported_observations"].map(lambda value: reported_observation_value(value, "reported_elevation_m"))
+
+        mask = reported_source & z.isna() & reported_elevation.notna()
+        z.loc[mask] = reported_elevation.loc[mask]
+        source.loc[mask] = "reported_observations.reported_elevation_m"
+
+        mask = reported_source & z.isna() & reported_depth.notna()
+        z.loc[mask] = -reported_depth.loc[mask]
+        source.loc[mask] = "reported_observations.reported_depth_m"
+
+    out["z_m"] = z
+    out["z_source"] = source
+    return out
+
+
+def prepare_littoral_records(path: Path, depth_threshold: float = -200.0) -> pd.DataFrame:
+    df = pd.read_csv(path)
+    df = choose_reported_z(df)
+    df["latitude"] = pd.to_numeric(df["latitude"], errors="coerce")
+    df["longitude"] = pd.to_numeric(df["longitude"], errors="coerce")
+    df["z_m"] = pd.to_numeric(df["z_m"], errors="coerce")
+    df = df[
+        reported_depth_source_mask(df)
+        & df["latitude"].notna()
+        & df["longitude"].notna()
+        & df["z_m"].notna()
+        & (df["z_m"] <= 200.0)
+        & (df["z_m"] >= depth_threshold)
+    ].copy()
+    df["longitude"] = normalize_longitude(df["longitude"])
+    df["depth_regime"] = "littoral"
+    df["depth_regime_threshold_m"] = float(depth_threshold)
+    return df
+
+
+def fit_littoral_gradient(records: pd.DataFrame) -> dict[str, object]:
+    if len(records) < 4:
+        raise ValueError("Need at least 4 records to fit LITTORAL l=1 gradient")
+    xyz = latlon_to_unit(records["latitude"].to_numpy(float), records["longitude"].to_numpy(float))
+    z = records["z_m"].to_numpy(float)
+    x1 = np.column_stack([np.ones(len(xyz)), xyz])
+    beta, *_ = np.linalg.lstsq(x1, z, rcond=None)
+    pred = x1 @ beta
+    resid = z - pred
+    ss_res = float(np.sum(resid ** 2))
+    ss_tot = float(np.sum((z - np.mean(z)) ** 2))
+    r2 = 1.0 - ss_res / ss_tot if ss_tot > 0 else np.nan
+    gx, gy, gz = beta[1:]
+    gnorm = float(np.sqrt(gx * gx + gy * gy + gz * gz))
+    axis_lat = float(np.degrees(np.arcsin(gz / gnorm))) if gnorm else np.nan
+    axis_lon = float(np.degrees(np.arctan2(gy, gx))) if gnorm else np.nan
+    return {
+        "r2": float(r2),
+        "rmse": float(np.sqrt(np.mean(resid ** 2))),
+        "mae": float(np.mean(np.abs(resid))),
+        "axis_lat": axis_lat,
+        "axis_lon": axis_lon,
+        "gradient_norm_m": gnorm,
+        "intercept": float(beta[0]),
+        "coefficients": np.asarray(beta[1:], dtype=float),
+        "fit_source": "recomputed_from_master",
+        "n_fit_records": int(len(records)),
+    }
+
+
+def should_recompute_from_master(gradient_csv: Path, records_csv: Path) -> bool:
+    if not MERGED_CSV.exists():
+        return False
+    reference_mtime = MERGED_CSV.stat().st_mtime
+    return (
+        not gradient_csv.exists()
+        or not records_csv.exists()
+        or gradient_csv.stat().st_mtime < reference_mtime
+        or records_csv.stat().st_mtime < reference_mtime
     )
 
 
@@ -687,6 +803,7 @@ def _projection(name: str, ccrs):
 def write_summary(
     path: Path,
     gradient_csv: Path,
+    records_csv: Path,
     grid: pd.DataFrame,
     gradient: dict[str, object],
     args: argparse.Namespace,
@@ -718,12 +835,22 @@ def write_summary(
     payload = {
         "metadata": {
             "gradient_input": str(gradient_csv),
+            "records_input": str(records_csv),
             "mach_input": str(mach_csv) if mach_csv is not None else None,
             "grid_resolution_deg": float(args.resolution_deg),
             "projection": args.projection,
+            "gradient_source_mode": args.gradient_source,
+            "gradient_fit_source": str(gradient.get("fit_source", "csv")),
             "chronology_used": False,
             "origin_assumptions_used": False,
         },
+        "input_freshness": input_freshness(
+            {"records_csv": records_csv}
+            if gradient.get("fit_source") == "recomputed_from_master"
+            else {"gradient_csv": gradient_csv, "records_csv": records_csv},
+            MERGED_CSV,
+        ),
+        "records_input_summary": records_input_summary(records_csv),
         "gradient": {
             "r2": float(gradient["r2"]),
             "rmse": float(gradient["rmse"]),
@@ -733,6 +860,7 @@ def write_summary(
             "gradient_norm_m": float(gradient["gradient_norm_m"]),
             "intercept": float(gradient["intercept"]),
             "coefficients": [float(v) for v in np.asarray(gradient["coefficients"], dtype=float)],
+            "n_fit_records": None if gradient.get("n_fit_records") is None else int(gradient["n_fit_records"]),
             "geometry": {
                 "high_pole_lat": float(gradient["axis_lat"]),
                 "high_pole_lon": float(gradient["axis_lon"]),
@@ -770,6 +898,47 @@ def resolve_mach_path(path: Path | None) -> Path | None:
     return None
 
 
+def input_freshness(paths: dict[str, Path | None], reference: Path) -> dict[str, object]:
+    out: dict[str, object] = {
+        "reference": str(reference),
+        "reference_exists": reference.exists(),
+        "reference_mtime": reference.stat().st_mtime if reference.exists() else None,
+        "inputs": {},
+    }
+    reference_mtime = reference.stat().st_mtime if reference.exists() else None
+    stale = []
+    for name, path in paths.items():
+        if path is None:
+            continue
+        exists = path.exists()
+        mtime = path.stat().st_mtime if exists else None
+        is_stale = bool(exists and reference_mtime is not None and mtime is not None and mtime < reference_mtime)
+        out["inputs"][name] = {
+            "path": str(path),
+            "exists": exists,
+            "mtime": mtime,
+            "older_than_reference": is_stale,
+        }
+        if is_stale:
+            stale.append(name)
+    out["stale_inputs"] = stale
+    return out
+
+
+def records_input_summary(path: Path) -> dict[str, object]:
+    if not path.exists():
+        return {"path": str(path), "exists": False}
+    df = pd.read_csv(path, usecols=lambda col: col in {"source_id", "record_class", "indicator_type"})
+    source_counts = df["source_id"].value_counts().head(20).to_dict() if "source_id" in df.columns else {}
+    return {
+        "path": str(path),
+        "exists": True,
+        "n_records": int(len(df)),
+        "walis_records": int((df["source_id"] == "walis_v1_0_post_review").sum()) if "source_id" in df.columns else None,
+        "top_sources": {str(k): int(v) for k, v in source_counts.items()},
+    }
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description="Render a full-range global heatmap of the LITTORAL l=1 field gradient.",
@@ -781,6 +950,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--out-dir", type=Path, default=OUT_DIR)
     parser.add_argument("--resolution-deg", type=float, default=1.0)
     parser.add_argument("--projection", choices=("robinson", "equalearth", "mollweide", "platecarree"), default="robinson")
+    parser.add_argument(
+        "--gradient-source",
+        choices=("auto", "csv", "master"),
+        default="auto",
+        help="Use step-05 gradient CSV, recompute from master, or auto-recompute when upstream files are stale.",
+    )
     parser.add_argument("--overlay-points", action="store_true", help="Overlay LITTORAL source records from --records-csv.")
     parser.add_argument("--point-limit", type=int, default=1500, help="Maximum point overlay count; 0 disables sampling.")
     parser.add_argument("--no-mach", action="store_true", help="Skip Mach comparison outputs.")
@@ -794,14 +969,24 @@ def main(argv: list[str] | None = None) -> int:
     out_dir = args.out_dir if args.out_dir.is_absolute() else PROJECT_ROOT / args.out_dir
     mach_csv = None if args.no_mach else resolve_mach_path(args.mach_csv)
 
-    gradient = load_gradient(gradient_csv)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    recompute = args.gradient_source == "master" or (
+        args.gradient_source == "auto" and should_recompute_from_master(gradient_csv, records_csv)
+    )
+    active_records_csv = records_csv
+    if recompute:
+        fit_records = prepare_littoral_records(MERGED_CSV)
+        active_records_csv = out_dir / "12_littoral_gradient_source_records.csv"
+        fit_records.to_csv(active_records_csv, index=False)
+        gradient = fit_littoral_gradient(fit_records)
+    else:
+        gradient = load_gradient(gradient_csv)
     grid = build_field_grid(gradient, args.resolution_deg)
     mach_grid = None
     if mach_csv is not None:
         mach_grid = load_mach(mach_csv)
         grid = add_mach_to_littoral_grid(grid, mach_grid)
 
-    out_dir.mkdir(parents=True, exist_ok=True)
     grid_path = out_dir / "12_littoral_gradient_grid.csv"
     png_path = out_dir / "12_littoral_gradient_heatmap.png"
     comparison_png_path = out_dir / "12_littoral_mach_field_comparison.png"
@@ -815,7 +1000,7 @@ def main(argv: list[str] | None = None) -> int:
         png_path,
         resolution_deg=args.resolution_deg,
         projection_name=args.projection,
-        records_csv=records_csv,
+        records_csv=active_records_csv,
         overlay_points=args.overlay_points,
         point_limit=args.point_limit,
     )
@@ -837,10 +1022,11 @@ def main(argv: list[str] | None = None) -> int:
             resolution_deg=args.resolution_deg,
             projection_name=args.projection,
         )
-    write_summary(summary_path, gradient_csv, grid, gradient, args, mach_csv=mach_csv, mach_grid=mach_grid)
+    write_summary(summary_path, gradient_csv, active_records_csv, grid, gradient, args, mach_csv=mach_csv, mach_grid=mach_grid)
 
     print("\nLITTORAL 12 heatmap complete.")
     print(f"Gradient input: {gradient_csv}")
+    print(f"Gradient source mode: {'master recompute' if recompute else 'csv'}")
     print(f"Output PNG: {png_path}")
     if mach_grid is not None:
         print(f"Mach input: {mach_csv}")
@@ -848,6 +1034,18 @@ def main(argv: list[str] | None = None) -> int:
         print(f"Overlay PNG: {overlay_png_path}")
     print(f"Output grid: {grid_path}")
     print(f"Summary: {summary_path}")
+    freshness = input_freshness({"gradient_csv": gradient_csv, "records_csv": active_records_csv}, MERGED_CSV)
+    if freshness["stale_inputs"] and not recompute:
+        print(
+            "Warning: upstream inputs older than merged master: "
+            + ", ".join(str(name) for name in freshness["stale_inputs"])
+        )
+    rec_summary = records_input_summary(active_records_csv)
+    if rec_summary.get("exists"):
+        print(
+            "Records used for step-12 provenance: "
+            f"{rec_summary['n_records']} rows, WALIS={rec_summary['walis_records']}"
+        )
     print(
         "Full field range: "
         f"{grid['littoral_gradient_m'].min():.6g} to {grid['littoral_gradient_m'].max():.6g} m"

@@ -1,0 +1,2 @@
+n,z_min,z_max,z_median,spherical_r2,spherical_axis_lat,spherical_axis_lon,spherical_rmse,best_plane_r2,best_plane_pole_lat,best_plane_pole_lon,best_plane_slope_m_per_degree,best_harmonic_k,best_harmonic_r2,best_harmonic_amplitude_m,best_harmonic_phase_deg
+3176,-158.0,199.0,14.370000000000001,0.002465255971691893,-37.202743453729774,-110.77378223734581,33.54243959934884,0.005435133742738629,-32.0,-76.0,0.05405513997498214,8,0.045618211819815846,11.317339330676996,-124.37900399334394

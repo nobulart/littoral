@@ -1,0 +1,423 @@
+{
+  "metadata": {
+    "input": "/Users/craig/ECDO/LITTORAL/outputs/geospatial_03/03_littoral_working_records_with_cells.csv",
+    "n": 3176,
+    "reported_depth_source_records_only": true,
+    "selection_criteria": "depth_source == reported, latitude/longitude present, and z_m <= 200 m",
+    "depth_threshold_m": -200.0,
+    "lat_bin_deg": 10.0,
+    "lon_bin_deg": 20.0,
+    "bootstraps": 2000,
+    "permutations_per_null": 1000,
+    "plane_step_deg": 4,
+    "grid_step_deg": 2,
+    "chronology_used": false,
+    "origin_assumptions_used": false
+  },
+  "baseline": {
+    "spherical": {
+      "r2": 0.002465255971691893,
+      "rmse": 33.54243959934884,
+      "mae": 19.247328580811484,
+      "axis_lat": -37.202743453729774,
+      "axis_lon": -110.77378223734581,
+      "gradient_norm_m": 2.7581912580975456,
+      "intercept": 19.6762921546489,
+      "coefficients": [
+        -0.77919536201723,
+        -2.0540771675635874,
+        -1.66770518790058
+      ]
+    },
+    "best_plane": {
+      "pole_lat": -32.0,
+      "pole_lon": -76.0,
+      "r2": 0.005435133742738629,
+      "slope_m_per_degree": 0.05405513997498214,
+      "intercept": 18.920014205662287,
+      "rmse": 33.4924708126704,
+      "mae": 19.023498366993657
+    }
+  },
+  "candidate_axis_scores": [
+    {
+      "axis_lat": -37.202743453729774,
+      "axis_lon": -110.77378223734581,
+      "r2": 0.002465255971691893,
+      "slope_m_per_unit_vector": 2.758191258097543,
+      "intercept": 19.6762921546489,
+      "rmse": 33.54243959934884,
+      "mae": 19.247328580811484,
+      "name": "empirical_littoral_axis",
+      "axial_distance_from_empirical_deg": 0.0
+    },
+    {
+      "axis_lat": 37.202743453729774,
+      "axis_lon": 69.22621776265419,
+      "r2": 0.002465255971691893,
+      "slope_m_per_unit_vector": -2.7581912580975434,
+      "intercept": 19.67629215464889,
+      "rmse": 33.54243959934884,
+      "mae": 19.247328580811484,
+      "name": "empirical_antipode",
+      "axial_distance_from_empirical_deg": 0.0
+    },
+    {
+      "axis_lat": 0.0,
+      "axis_lon": 77.0,
+      "r2": 0.0018462483824113196,
+      "slope_m_per_unit_vector": -2.452710004194027,
+      "intercept": 19.399116363951887,
+      "rmse": 33.552845154012516,
+      "mae": 19.37236824050748,
+      "name": "equatorial_077E",
+      "axial_distance_from_empirical_deg": 37.89096006585041
+    },
+    {
+      "axis_lat": 0.0,
+      "axis_lon": 75.0,
+      "r2": 0.001856731034742598,
+      "slope_m_per_unit_vector": -2.468013510384893,
+      "intercept": 19.413359625068473,
+      "rmse": 33.5526689668603,
+      "mae": 19.37236625071677,
+      "name": "equatorial_075E",
+      "axial_distance_from_empirical_deg": 37.58398132239856
+    },
+    {
+      "axis_lat": 0.0,
+      "axis_lon": 31.0,
+      "r2": 0.001170284519696474,
+      "slope_m_per_unit_vector": -2.2346990074645103,
+      "intercept": 20.028808941406847,
+      "rmse": 33.56420446222905,
+      "mae": 19.555347143449126,
+      "name": "ecdo_031E_equatorial",
+      "axial_distance_from_empirical_deg": 51.265657921517146
+    },
+    {
+      "axis_lat": 0.0,
+      "axis_lon": -149.0,
+      "r2": 0.001170284519696474,
+      "slope_m_per_unit_vector": 2.2346990074645134,
+      "intercept": 20.028808941406847,
+      "rmse": 33.56420446222905,
+      "mae": 19.555347143449126,
+      "name": "ecdo_149W_equatorial",
+      "axial_distance_from_empirical_deg": 51.26565792151713
+    },
+    {
+      "axis_lat": 0.0,
+      "axis_lon": 170.0,
+      "r2": 7.505655117756582e-06,
+      "slope_m_per_unit_vector": 0.1853493390401977,
+      "intercept": 20.206746857227454,
+      "rmse": 33.583735516974606,
+      "mae": 19.747561133874182,
+      "name": "excursion_170E_equatorial",
+      "axial_distance_from_empirical_deg": 81.43731466573685
+    },
+    {
+      "axis_lat": 0.0,
+      "axis_lon": -10.0,
+      "r2": 7.505655117756582e-06,
+      "slope_m_per_unit_vector": -0.18534933904019668,
+      "intercept": 20.206746857227454,
+      "rmse": 33.583735516974606,
+      "mae": 19.747561133874186,
+      "name": "excursion_010W_equatorial",
+      "axial_distance_from_empirical_deg": 81.43731466573685
+    },
+    {
+      "axis_lat": 0.0,
+      "axis_lon": 0.0,
+      "r2": 0.00013622255792444804,
+      "slope_m_per_unit_vector": -0.7994192235501523,
+      "intercept": 20.281382172321354,
+      "rmse": 33.58157403398396,
+      "mae": 19.741065632393596,
+      "name": "null_000E_equatorial",
+      "axial_distance_from_empirical_deg": 73.59039354416717
+    },
+    {
+      "axis_lat": 0.0,
+      "axis_lon": 90.0,
+      "r2": 0.0017069451155901083,
+      "slope_m_per_unit_vector": -2.3280824723304683,
+      "intercept": 19.34406073845002,
+      "rmse": 33.55518640548165,
+      "mae": 19.387445089113545,
+      "name": "null_090E_equatorial",
+      "axial_distance_from_empirical_deg": 41.86503950764623
+    },
+    {
+      "axis_lat": 0.0,
+      "axis_lon": 180.0,
+      "r2": 0.00013622255792444804,
+      "slope_m_per_unit_vector": 0.7994192235501513,
+      "intercept": 20.28138217232135,
+      "rmse": 33.58157403398396,
+      "mae": 19.741065632393596,
+      "name": "null_180E_equatorial",
+      "axial_distance_from_empirical_deg": 73.59039354416718
+    }
+  ],
+  "candidate_plane_scores": [
+    {
+      "pole_lat": -32.0,
+      "pole_lon": -76.0,
+      "r2": 0.005435133742738629,
+      "slope_m_per_degree": 0.05405513997498214,
+      "intercept": 18.920014205662287,
+      "rmse": 33.4924708126704,
+      "mae": 19.023498366993657,
+      "name": "empirical_littoral_plane_pole",
+      "axial_distance_from_empirical_pole_deg": 0.0
+    },
+    {
+      "pole_lat": 32.0,
+      "pole_lon": 104.0,
+      "r2": 0.005435133742738518,
+      "slope_m_per_degree": -0.05405513997498208,
+      "intercept": 18.920014205662277,
+      "rmse": 33.4924708126704,
+      "mae": 19.023498366993657,
+      "name": "empirical_antipodal_plane_pole",
+      "axial_distance_from_empirical_pole_deg": 0.0
+    },
+    {
+      "pole_lat": 0.0,
+      "pole_lon": 77.0,
+      "r2": 0.002515185258157193,
+      "slope_m_per_degree": -0.04351854022195808,
+      "intercept": 19.24890445381997,
+      "rmse": 33.54160014436119,
+      "mae": 19.30126557208623,
+      "name": "equatorial_077E_pole",
+      "axial_distance_from_empirical_pole_deg": 40.92074255679586
+    },
+    {
+      "pole_lat": 0.0,
+      "pole_lon": 75.0,
+      "r2": 0.0024915412849723095,
+      "slope_m_per_degree": -0.04358138457541465,
+      "intercept": 19.27680228662839,
+      "rmse": 33.54199767020978,
+      "mae": 19.30530047957858,
+      "name": "equatorial_075E_pole",
+      "axial_distance_from_empirical_pole_deg": 42.12189607508026
+    },
+    {
+      "pole_lat": 0.0,
+      "pole_lon": 31.0,
+      "r2": 0.000778778596136287,
+      "slope_m_per_degree": -0.027422081806354203,
+      "intercept": 20.076579413509332,
+      "rmse": 33.57078180832422,
+      "mae": 19.60094874901397,
+      "name": "ecdo_031E_pole",
+      "axial_distance_from_empirical_pole_deg": 75.64404304846394
+    },
+    {
+      "pole_lat": 0.0,
+      "pole_lon": -149.0,
+      "r2": 0.000778778596136176,
+      "slope_m_per_degree": 0.027422081806354116,
+      "intercept": 20.076579413509332,
+      "rmse": 33.57078180832422,
+      "mae": 19.60094874901397,
+      "name": "ecdo_149W_pole",
+      "axial_distance_from_empirical_pole_deg": 75.64404304846393
+    },
+    {
+      "pole_lat": 0.0,
+      "pole_lon": 170.0,
+      "r2": 9.171484725922774e-05,
+      "slope_m_per_degree": 0.010183053945878174,
+      "intercept": 20.290748086462095,
+      "rmse": 33.58232144697254,
+      "mae": 19.75775811144765,
+      "name": "excursion_170E_pole",
+      "axial_distance_from_empirical_pole_deg": 69.82234075580321
+    },
+    {
+      "pole_lat": 0.0,
+      "pole_lon": -10.0,
+      "r2": 9.171484725922774e-05,
+      "slope_m_per_degree": -0.010183053945878174,
+      "intercept": 20.290748086462095,
+      "rmse": 33.58232144697254,
+      "mae": 19.75775811144765,
+      "name": "excursion_010W_pole",
+      "axial_distance_from_empirical_pole_deg": 69.82234075580321
+    }
+  ],
+  "one_per_cell_bootstrap_summary": {
+    "n": {
+      "mean": 81.0,
+      "median": 81.0,
+      "p05": 81.0,
+      "p25": 81.0,
+      "p75": 81.0,
+      "p95": 81.0
+    },
+    "spherical_r2": {
+      "mean": 0.029226990669514286,
+      "median": 0.026805993608853107,
+      "p05": 0.005440535182700573,
+      "p25": 0.016746610531403472,
+      "p75": 0.03936394579434152,
+      "p95": 0.06067077970449232
+    },
+    "spherical_axis_lat": {
+      "mean": 53.11756404280669,
+      "median": 55.74376612407042,
+      "p05": 17.955666672950073,
+      "p25": 43.80808715492031,
+      "p75": 66.91362855028538,
+      "p95": 80.56054019221746
+    },
+    "spherical_axis_lon": {
+      "mean": -100.55579222040181,
+      "median": -137.6625093306327,
+      "p05": -171.29215710622898,
+      "p25": -154.13951448713487,
+      "p75": -100.51027361614058,
+      "p95": 160.98720178580894
+    },
+    "best_plane_r2": {
+      "mean": 0.030454514841597058,
+      "median": 0.027715537697270642,
+      "p05": 0.00689080734055173,
+      "p25": 0.0177100890570194,
+      "p75": 0.04066607428551414,
+      "p95": 0.06279045542028329
+    },
+    "best_plane_pole_lat": {
+      "mean": -50.734,
+      "median": -60.0,
+      "p05": -84.0,
+      "p25": -72.0,
+      "p75": -44.0,
+      "p95": 28.0
+    },
+    "best_plane_pole_lon": {
+      "mean": 17.606,
+      "median": 24.0,
+      "p05": -148.0,
+      "p25": 0.0,
+      "p75": 52.0,
+      "p95": 136.0
+    }
+  },
+  "null_summaries": {
+    "global": {
+      "summary": {
+        "spherical_r2": {
+          "mean": 0.0009200068351211872,
+          "median": 0.0007726518406153682,
+          "p05": 0.00011645681974398748,
+          "p25": 0.0003854037616571604,
+          "p75": 0.0012540228169793943,
+          "p95": 0.0023501370830930567
+        },
+        "spherical_axis_lat": {
+          "mean": 0.8359564173003395,
+          "median": 0.3182798506517262,
+          "p05": -66.98547778563687,
+          "p25": -29.653569103090213,
+          "p75": 32.77084310873904,
+          "p95": 68.00857898717473
+        },
+        "spherical_axis_lon": {
+          "mean": 2.459184000177673,
+          "median": 5.4490845586918075,
+          "p05": -162.9680797064502,
+          "p25": -79.20204222654314,
+          "p75": 88.32107213388164,
+          "p95": 160.71046203966947
+        },
+        "best_plane_r2": {
+          "mean": 0.00094801960420092,
+          "median": 0.000779698814735108,
+          "p05": 0.0001358774884264946,
+          "p25": 0.00040411977719911896,
+          "p75": 0.0012908591094483168,
+          "p95": 0.002364281567601711
+        },
+        "best_plane_pole_lat": {
+          "mean": -30.024,
+          "median": -28.0,
+          "p05": -76.0,
+          "p25": -48.0,
+          "p75": -12.0,
+          "p95": 0.0
+        },
+        "best_plane_pole_lon": {
+          "mean": 8.288,
+          "median": 20.0,
+          "p05": -164.0,
+          "p25": -72.0,
+          "p75": 100.0,
+          "p95": 164.0
+        }
+      },
+      "spherical_r2_p": 0.03596403596403597,
+      "best_plane_r2_p": 0.000999000999000999
+    },
+    "within_cells": {
+      "summary": {
+        "spherical_r2": {
+          "mean": 0.008947827215173147,
+          "median": 0.008925412406952493,
+          "p05": 0.006242676628650185,
+          "p25": 0.007764169128524484,
+          "p75": 0.009966526526448471,
+          "p95": 0.011742789352317285
+        },
+        "spherical_axis_lat": {
+          "mean": 65.32625927159837,
+          "median": 65.3035858045161,
+          "p05": 61.78180566242439,
+          "p25": 63.775105846373776,
+          "p75": 66.73838163031776,
+          "p95": 69.01107930694215
+        },
+        "spherical_axis_lon": {
+          "mean": -80.2140664694852,
+          "median": -79.97455609550798,
+          "p05": -95.26735018559964,
+          "p25": -85.7360376812755,
+          "p75": -73.9220997825831,
+          "p95": -67.09525908820665
+        },
+        "best_plane_r2": {
+          "mean": 0.008710848654549897,
+          "median": 0.008681223920778025,
+          "p05": 0.006070301212029466,
+          "p25": 0.007520041350269069,
+          "p75": 0.009717701917383859,
+          "p95": 0.011465513959700186
+        },
+        "best_plane_pole_lat": {
+          "mean": -50.904,
+          "median": -60.0,
+          "p05": -64.0,
+          "p25": -64.0,
+          "p75": -60.0,
+          "p95": 60.0
+        },
+        "best_plane_pole_lon": {
+          "mean": 80.28,
+          "median": 92.0,
+          "p05": -80.0,
+          "p25": 88.0,
+          "p75": 97.0,
+          "p95": 104.0
+        }
+      },
+      "spherical_r2_p": 1.0,
+      "best_plane_r2_p": 0.984015984015984
+    }
+  }
+}

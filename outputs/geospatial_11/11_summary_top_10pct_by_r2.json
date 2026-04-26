@@ -1,0 +1,88 @@
+{
+  "metadata": {
+    "mach": "/Users/craig/ECDO/LITTORAL/outputs/mach.csv",
+    "condition_metric": "r2",
+    "top_fraction": 0.1,
+    "n_candidates_total": 750,
+    "n_observed_top": 75,
+    "n_matched_random": 15000,
+    "basin_lat": -49.0,
+    "basin_lon": 46.9888626637867,
+    "low_m_threshold": 0.1314706,
+    "sweep_step_deg": 2.0
+  },
+  "summary": [
+    {
+      "metric": "path_m_mean",
+      "observed_median": 0.14747053596343807,
+      "observed_mean": 0.14716499193961663,
+      "matched_random_median": 0.14570449395561924,
+      "matched_random_mean": 0.1459450816223004,
+      "p_low": 0.5942937137524165,
+      "p_high": 0.405772948470102
+    },
+    {
+      "metric": "path_m_min",
+      "observed_median": 0.12579257446290093,
+      "observed_mean": 0.12540468135383054,
+      "matched_random_median": 0.12443373372016489,
+      "matched_random_mean": 0.1260253814680837,
+      "p_low": 0.5306979534697687,
+      "p_high": 0.46936870875274983
+    },
+    {
+      "metric": "path_frac_below_threshold",
+      "observed_median": 0.143646408839779,
+      "observed_mean": 0.14327808471454878,
+      "matched_random_median": 0.19337016574585636,
+      "matched_random_mean": 0.1844850828729282,
+      "p_low": 0.3783081127924805,
+      "p_high": 0.6352243183787748
+    },
+    {
+      "metric": "path_integrated_penalty",
+      "observed_median": 0.11420748908366968,
+      "observed_mean": 0.18819513414605976,
+      "matched_random_median": 0.21032899594892746,
+      "matched_random_mean": 0.3426186758185939,
+      "p_low": 0.40743950403306445,
+      "p_high": 0.592627158189454
+    },
+    {
+      "metric": "ridge_crossings",
+      "observed_median": 6.0,
+      "observed_mean": 5.52,
+      "matched_random_median": 2.0,
+      "matched_random_mean": 4.4364,
+      "p_low": 0.7376841543897074,
+      "p_high": 0.3677754816345577
+    },
+    {
+      "metric": "longest_low_run_deg",
+      "observed_median": 30.0,
+      "observed_mean": 31.92,
+      "matched_random_median": 48.0,
+      "matched_random_mean": 49.69573333333334,
+      "p_low": 0.3557762815812279,
+      "p_high": 0.6588894073728419
+    },
+    {
+      "metric": "longest_high_run_deg",
+      "observed_median": 168.0,
+      "observed_mean": 174.48,
+      "matched_random_median": 182.0,
+      "matched_random_mean": 197.54973333333334,
+      "p_low": 0.43303779748016796,
+      "p_high": 0.5738950736617559
+    },
+    {
+      "metric": "mean_abs_dM_dtheta",
+      "observed_median": 0.0006982749476379461,
+      "observed_mean": 0.0007020871133854838,
+      "matched_random_median": 0.0006450486524842722,
+      "matched_random_mean": 0.0006018829934578402,
+      "p_low": 0.7334177721485234,
+      "p_high": 0.26664889007399506
+    }
+  ]
+}

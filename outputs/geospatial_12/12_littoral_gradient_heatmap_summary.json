@@ -1,0 +1,104 @@
+{
+  "metadata": {
+    "gradient_input": "/Users/craig/ECDO/LITTORAL/outputs/geospatial_05/05_dominant_gradient.csv",
+    "records_input": "/Users/craig/ECDO/LITTORAL/outputs/geospatial_12/12_littoral_gradient_source_records.csv",
+    "mach_input": "/Users/craig/ECDO/LITTORAL/outputs/geospatial_12/mach.csv",
+    "grid_resolution_deg": 1.0,
+    "projection": "robinson",
+    "gradient_source_mode": "auto",
+    "gradient_fit_source": "recomputed_from_master",
+    "chronology_used": false,
+    "origin_assumptions_used": false
+  },
+  "input_freshness": {
+    "reference": "/Users/craig/ECDO/LITTORAL/outputs/merged/master_dataset.csv",
+    "reference_exists": true,
+    "reference_mtime": 1777166202.3093624,
+    "inputs": {
+      "records_csv": {
+        "path": "/Users/craig/ECDO/LITTORAL/outputs/geospatial_12/12_littoral_gradient_source_records.csv",
+        "exists": true,
+        "mtime": 1777198781.0550182,
+        "older_than_reference": false
+      }
+    },
+    "stale_inputs": []
+  },
+  "records_input_summary": {
+    "path": "/Users/craig/ECDO/LITTORAL/outputs/geospatial_12/12_littoral_gradient_source_records.csv",
+    "exists": true,
+    "n_records": 3185,
+    "walis_records": 3023,
+    "top_sources": {
+      "walis_v1_0_post_review": 3023,
+      "brooke2017": 21,
+      "woodroffe1981": 21,
+      "fleming1998": 12,
+      "sprigg1979": 12,
+      "bilbao-lasa2020": 10,
+      "peterson2016": 10,
+      "taira1975": 9,
+      "sager1992": 7,
+      "beaman2008": 6,
+      "cawthra2015": 6,
+      "wang2015": 6,
+      "hovland1981": 6,
+      "foglini2015": 4,
+      "bateman2011": 3,
+      "aloisi2011": 3,
+      "day1866": 3,
+      "hoffmann2009": 2,
+      "peterson2010": 2,
+      "mccullough1992": 2
+    }
+  },
+  "gradient": {
+    "r2": 0.0025974561522668083,
+    "rmse": 33.67474075735776,
+    "mae": 19.32118321178059,
+    "axis_lat": -31.43735259766442,
+    "axis_lon": -101.85330876130061,
+    "gradient_norm_m": 2.7973631042728235,
+    "intercept": 19.426816324210204,
+    "coefficients": [
+      -0.4902525963037836,
+      -2.3358476563028105,
+      -1.459009408985752
+    ],
+    "n_fit_records": 3185,
+    "geometry": {
+      "high_pole_lat": -31.43735259766442,
+      "high_pole_lon": -101.85330876130061,
+      "low_pole_lat": 31.437352597664425,
+      "low_pole_lon": 78.14669123869942
+    }
+  },
+  "field_range": {
+    "n_grid_cells": 64800,
+    "min_m": 16.629493582505436,
+    "max_m": 22.224139065914972,
+    "midpoint_m": 19.426816324210204,
+    "mean_m": 19.426816324210204,
+    "median_m": 19.426816324210204
+  },
+  "mach_field": {
+    "mach_input": "/Users/craig/ECDO/LITTORAL/outputs/geospatial_12/mach.csv",
+    "n_native_points": 2520,
+    "min_m": 0.117851,
+    "max_m": 0.186731,
+    "midpoint_m": 0.152291,
+    "mean_m": 0.14161585277777777,
+    "median_m": 0.14063,
+    "pearson_with_littoral_gradient_on_grid": -0.17176060161153117,
+    "geometry": {
+      "high_center_lat": -26.070218386339125,
+      "high_center_lon": 19.7464853736208,
+      "low_center_lat": -12.352205782100627,
+      "low_center_lon": 145.39817705049518,
+      "max_lat": -45.0,
+      "max_lon": 40.0,
+      "min_lat": -45.0,
+      "min_lon": 175.0
+    }
+  }
+}

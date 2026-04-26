@@ -23,6 +23,11 @@ outputs/*
 !outputs/merged/
 !outputs/merged/**
 outputs/merged/.DS_Store
+!outputs/geospatial_*/
+!outputs/geospatial_*/**
+outputs/geospatial_*/.DS_Store
+outputs/geospatial_*/_matplotlib/
+!outputs/mach.csv
 logs/
 *.log
 locks/

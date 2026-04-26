@@ -45,6 +45,14 @@ MERGED = PROJECT_ROOT / "outputs" / "merged" / "master_dataset.csv"
 OUT_DIR = PROJECT_ROOT / "outputs" / "geospatial_02"
 
 
+def default_input_path():
+    if IN_01.exists() and MERGED.exists():
+        return IN_01 if IN_01.stat().st_mtime >= MERGED.stat().st_mtime else MERGED
+    if IN_01.exists():
+        return IN_01
+    return MERGED
+
+
 def to_numeric(value):
     return pd.to_numeric(value, errors="coerce")
 
@@ -540,19 +548,36 @@ def main():
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--plane-step", type=int, default=2)
     parser.add_argument("--null-plane-step", type=int, default=4)
-    parser.add_argument("--full-plane-permutations", type=int, default=250)
-    parser.add_argument("--source-bootstrap", type=int, default=500)
+    parser.add_argument("--full-plane-permutations", type=int, default=25)
+    parser.add_argument("--source-bootstrap", type=int, default=50)
     parser.add_argument("--kmax", type=int, default=8)
     parser.add_argument("--min-n", type=int, default=12)
     parser.add_argument("--trim-low", type=float, default=0.02)
     parser.add_argument("--trim-high", type=float, default=0.98)
     parser.add_argument("--depth-threshold", type=float, default=-200.0)
+    parser.add_argument(
+        "--group-analyses",
+        action="store_true",
+        help="Run per-record-class/indicator/source subgroup diagnostics. This is expensive on WALIS-sized inputs.",
+    )
+    parser.add_argument(
+        "--group-plane-step",
+        type=int,
+        default=8,
+        help="Plane-search step for optional subgroup diagnostics.",
+    )
+    parser.add_argument(
+        "--group-full-plane-permutations",
+        type=int,
+        default=0,
+        help="Full plane-rescan permutations for optional subgroup diagnostics.",
+    )
     args = parser.parse_args()
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     rng = np.random.default_rng(args.seed)
 
-    input_path = Path(args.input) if args.input else (IN_01 if IN_01.exists() else MERGED)
+    input_path = Path(args.input) if args.input else default_input_path()
     df = prepare_df(input_path, threshold=args.depth_threshold)
 
     subsets = {
@@ -585,6 +610,7 @@ def main():
     headline_rows = []
 
     for subset_name, sdf in subsets.items():
+        print(f"Running core subset `{subset_name}` with n={len(sdf)}", flush=True)
         res = run_one(subset_name, sdf, args, rng)
         results["subsets"][subset_name] = res
         headline_rows.append(flatten_headline(subset_name, res))
@@ -610,8 +636,22 @@ def main():
     # Group analyses within each depth regime.
     results["groups"] = {}
 
+    if args.group_analyses:
+        group_args = argparse.Namespace(**vars(args))
+        group_args.plane_step = args.group_plane_step
+        group_args.null_plane_step = max(args.group_plane_step, args.null_plane_step)
+        group_args.full_plane_permutations = args.group_full_plane_permutations
+        print(
+            "Running optional subgroup analyses "
+            f"(plane_step={group_args.plane_step}, permutations={group_args.full_plane_permutations})",
+            flush=True,
+        )
+
     for subset_name, sdf in subsets.items():
         results["groups"][subset_name] = {}
+
+        if not args.group_analyses:
+            continue
 
         for col in ["record_class", "indicator_type", "indicator_subtype", "source_id"]:
             if col not in sdf.columns:
@@ -622,7 +662,7 @@ def main():
             for key, g in sdf.groupby(col, dropna=True):
                 if len(g) >= args.min_n:
                     results["groups"][subset_name][col].append(
-                        run_one(f"{subset_name}:{col}:{key}", g.copy(), args, rng)
+                        run_one(f"{subset_name}:{col}:{key}", g.copy(), group_args, rng)
                     )
 
     pd.DataFrame(headline_rows).to_csv(

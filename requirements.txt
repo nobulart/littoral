@@ -6,6 +6,10 @@
 # install path for PDF/document parsing backends.
 mineru[all]==3.1.0
 
+# Optional dependencies for discovery tools
+# Uncomment to install:
+# requests>=2.31.0
+
 # Non-Python runtime tools expected on PATH for full PDF/OCR/LLM operation:
 # - poppler utilities: pdfinfo, pdftotext, pdftoppm
 # - tesseract

@@ -1,0 +1,35 @@
+{
+  "name": "Amuri Bluff",
+  "geocode_label": null,
+  "latitude": -42.562322,
+  "longitude": 173.50782000000004,
+  "target_elevation_m": 168.0,
+  "elevation_source": "command_line",
+  "model": "delta_sl = bulge_m * [(P0 dot r)^2 - (P1 dot r)^2]; predicted_elevation = -delta_sl",
+  "bulge_m": 11000.0,
+  "fairbridge_m_per_degree_reference": 245.0,
+  "fairbridge_linear_abs_offset_estimate_deg": 0.6857142857142857,
+  "alpha_min": 0.1,
+  "alpha_max": 45.0,
+  "alpha_step": 0.1,
+  "azimuth_step": 0.25,
+  "tolerance_m": 25.0,
+  "candidate_count": 5661,
+  "best_solution": {
+    "offset_deg": 5.9,
+    "orientation_azimuth_deg": 72.25,
+    "candidate_pole_lat": 84.10000000000002,
+    "candidate_pole_lon": 72.25,
+    "predicted_elevation_m": 168.00725417424866,
+    "target_elevation_m": 168.0,
+    "residual_m": 0.007254174248657819,
+    "abs_residual_m": 0.007254174248657819
+  },
+  "outputs": {
+    "candidates_csv": "/Users/craig/ECDO/LITTORAL/outputs/geospatial_13/13_Amuri_Bluff_candidate_orientations.csv",
+    "best_by_offset_csv": "/Users/craig/ECDO/LITTORAL/outputs/geospatial_13/13_Amuri_Bluff_best_by_offset.csv",
+    "full_grid_csv": "/Users/craig/ECDO/LITTORAL/outputs/geospatial_13/13_Amuri_Bluff_full_grid.csv",
+    "plot_png": "/Users/craig/ECDO/LITTORAL/outputs/geospatial_13/13_Amuri_Bluff_candidate_orientations.png",
+    "summary_json": "/Users/craig/ECDO/LITTORAL/outputs/geospatial_13/13_Amuri_Bluff_summary.json"
+  }
+}

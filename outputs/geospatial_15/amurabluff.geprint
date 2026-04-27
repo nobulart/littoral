@@ -1,0 +1,62 @@
+[General]
+camera="@ByteArray(<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<kml xmlns=\"http://www.opengis.net/kml/2.2\" xmlns:gx=\"http://www.google.com/kml/ext/2.2\" xmlns:kml=\"http://www.opengis.net/kml/2.2\" xmlns:atom=\"http://www.w3.org/2005/Atom\">\n<Placemark>\n\t<LookAt>\n\t\t<longitude>174.307356197021</longitude>\n\t\t<latitude>-40.59708878967244</latitude>\n\t\t<altitude>0</altitude>\n\t\t<heading>-0.4187547691897208</heading>\n\t\t<tilt>0</tilt>\n\t\t<range>2544800.057680359</range>\n\t\t<gx:altitudeMode>relativeToSeaFloor</gx:altitudeMode>\n\t</LookAt>\n</Placemark>\n</kml>\n)"
+color_mode=0
+print_flags=0
+print_quality=9
+print_type=0
+save_image_quality=0
+scaling_factor=1
+version=2
+
+[Compass]
+Layout\anchor_halign=2
+Layout\anchor_pos=@Variant(\0\0\0\x1a?\xf0\0\0\0\0\0\0?\xef(\xcc\x80\0\0\0)
+Layout\anchor_valign=2
+Layout\size=@Size(72 72)
+Layout\visible=true
+
+[Copyright]
+Layout\anchor_halign=0
+Layout\anchor_pos=@Variant(\0\0\0\x1a\0\0\0\0\0\0\0\0?\xf0\0\0\0\0\0\0)
+Layout\anchor_valign=2
+Layout\size=@Size(214 94)
+Layout\visible=true
+
+[HTML%20Area]
+Layout\anchor_halign=0
+Layout\anchor_pos=@Variant(\0\0\0\x1a\0\0\0\0\0\0\0\0?\xe0\0\0\0\0\0\0)
+Layout\anchor_valign=1
+Layout\size=@Size(406 95)
+Layout\visible=false
+html="<!doctype html>\n<html>\n<head>\n<style type='text/css'>\nbody {\n    font: 100% 'Arial', 'Helvetica', sans-serif;\n    margin: 0;\n}\n\n#white_box {\n    background-color: rgba(255, 255, 255, 0.85);\n    bottom: 4pt;\n    color: rgba(0, 0, 0, 0.85);\n    left: 4pt;\n    outline: 1pt solid rgba(0, 0, 0, 0.2);\n    padding: 8pt 8pt;\n    position: absolute;\n    right: 4pt;\n    top: 4pt;\n}\n</style>\n</head>\n<body>\n<div id='white_box'>\n<p style='font-size: 11pt; white-space: nowrap;'>\nEdit this HTML to add a logo image or custom map title.&nbsp;&nbsp;&nbsp;&nbsp;\n<br />\nUse an <tt>iframe</tt> tag to display an external page.&nbsp;&nbsp;&nbsp;&nbsp;\n</p>\n<div style='height: 12pt; font-size: 0;'>&nbsp;</div>\n</div>\n</body>\n</html>\n"
+
+[Legend]
+Features\1\checked=true
+Features\1\name="Amura Bluff "
+Features\1\pixmap="@Variant(\0\0\0\x41\0\0\0\x1\x89PNG\r\n\x1a\n\0\0\0\rIHDR\0\0\0\x10\0\0\0\x10\b\x6\0\0\0\x1f\xf3\xff\x61\0\0\0\tpHYs\0\0\v\x13\0\0\v\x13\x1\0\x9a\x9c\x18\0\0\x1\x38IDAT8\x8d\x95\x93\x31N\xc3\x30\x14\x86\xbfWYt\x80\xa1\x12\xdd!U\x87\xaa\v\bN\xc0\xc2\x5z\x97\xde\xe\x86H\x1d\x11\xb0\xb4\xdd\x9a\x1e\xa0\x63\x87`;\x8f!65&UK\xa4\xc8\x96\xad\xef\xbd\xef\xb7\x13TUT\xb5\a\xac\0=\xf3]\x5N\f\x80\x88\xbc\xcf\xcb\xc5xX\x8ch\0U\xf0(\xe\xf0\n^\xdb\xb9\v\xe3\xae\xda\x8c\x45\xe4\x43U\xef\x8d\x88,\xe7\xe5\x62|\xf3\xf0hz\xfd>^\xa1!\x2-l\x13\xd8\xaar=\x18\x98\xd9k9\x15\x91\xa5\x1&\xc3\x62\x44\x84=\x8a\xf\xb0\xd3\x38O\f\x14\xf4\xa2\xcf\xe5ma\x80\x89\x1h\xa2j\x80\xa3v\xe[\xe5`\xa3\n@[ hG8\xd5\xfd\x19\x3\x1c\xd7\x1c$\x5\xb2\xcc\xae\x43\xfb\xefZb\x10\xe1\x98\xd9\x1e\xd1>jp*\xb3\xcd\"9U|j\xd0uUifKG\xa4\x96\xa7w\x88p\"s\xbe\x97\x46\x38vU\xbf\x32\x87=\xf\x38\x94\x86\xec\x10\xbb\xae\xca\x66\x9d=\xe1[\xd1\xf6\xdc\x62\x84\xf5\xae\xda\xb8\xba\xae\xcf\xd0\xeM\xbej\xf6\xdb\xca\x1k\tQ>g/\xe5\xf4\xaa(\x8c\xcd\n\xf8\xa4@\x13\xba\xef\xb7\x95{{~Z\x2w$\xcf\xbf~\xe7\b}\x3\xffs\x9f\x12\xces\x11\xd6\0\0\0\0IEND\xae\x42`\x82)"
+Features\size=1
+Layout\anchor_halign=2
+Layout\anchor_pos=@Variant(\0\0\0\x1a?\xf0\0\0\0\0\0\0\0\0\0\0\0\0\0\0)
+Layout\anchor_valign=0
+Layout\size=@Size(149 80)
+Layout\visible=false
+
+[Printer]
+orientation=1
+paper_size=0
+
+[Scale]
+Layout\anchor_halign=2
+Layout\anchor_pos=@Variant(\0\0\0\x1a?\xf0\0\0\0\0\0\0?\xf0\0\0\0\0\0\0)
+Layout\anchor_valign=2
+Layout\size=@Size(360 20)
+Layout\visible=true
+
+[Title%20and%20Description]
+Layout\anchor_halign=0
+Layout\anchor_pos=@Variant(\0\0\0\x1a\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0)
+Layout\anchor_valign=0
+Layout\size=@Size(253 82)
+Layout\visible=false
+description=Write a description for your map.
+title=

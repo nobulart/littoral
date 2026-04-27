@@ -1,0 +1,35 @@
+{
+  "name": "Shropshire",
+  "geocode_label": null,
+  "latitude": 52.680194,
+  "longitude": -2.734589999999997,
+  "target_elevation_m": 180.0,
+  "elevation_source": "command_line",
+  "model": "delta_sl = bulge_m * [(P0 dot r)^2 - (P1 dot r)^2]; predicted_elevation = -delta_sl",
+  "bulge_m": 11000.0,
+  "fairbridge_m_per_degree_reference": 245.0,
+  "fairbridge_linear_abs_offset_estimate_deg": 0.7346938775510204,
+  "alpha_min": 0.1,
+  "alpha_max": 45.0,
+  "alpha_step": 0.1,
+  "azimuth_step": 0.25,
+  "tolerance_m": 25.0,
+  "candidate_count": 5796,
+  "best_solution": {
+    "offset_deg": 21.200000000000003,
+    "orientation_azimuth_deg": 284.25,
+    "candidate_pole_lat": 68.8,
+    "candidate_pole_lon": -75.74999999999999,
+    "predicted_elevation_m": 180.00318053090103,
+    "target_elevation_m": 180.0,
+    "residual_m": 0.0031805309010337623,
+    "abs_residual_m": 0.0031805309010337623
+  },
+  "outputs": {
+    "candidates_csv": "/Users/craig/ECDO/LITTORAL/outputs/geospatial_13/13_Shropshire_candidate_orientations.csv",
+    "best_by_offset_csv": "/Users/craig/ECDO/LITTORAL/outputs/geospatial_13/13_Shropshire_best_by_offset.csv",
+    "full_grid_csv": "/Users/craig/ECDO/LITTORAL/outputs/geospatial_13/13_Shropshire_full_grid.csv",
+    "plot_png": "/Users/craig/ECDO/LITTORAL/outputs/geospatial_13/13_Shropshire_candidate_orientations.png",
+    "summary_json": "/Users/craig/ECDO/LITTORAL/outputs/geospatial_13/13_Shropshire_summary.json"
+  }
+}

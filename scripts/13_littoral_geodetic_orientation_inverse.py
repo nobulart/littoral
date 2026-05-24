@@ -59,6 +59,9 @@ os.environ.setdefault(
 EARTH_BULGE_M = 11000.0
 FAIRBRIDGE_M_PER_DEG = 245.0
 DEFAULT_PROJECTION = "robinson"
+NP_REFERENCE_LAT = -14.0
+NP_REFERENCE_LON = 31.0
+NP_REFERENCE_LABEL = "Np'"
 
 
 def normalize_longitude(lon):
@@ -201,7 +204,7 @@ def solve_grid(
     return candidates.sort_values("abs_residual_m"), best, full
 
 
-def make_plot(candidates, best, lat, lon, target_elevation_m, out_path, projection_name):
+def make_plot(candidates, best, lat, lon, target_elevation_m, site_name, out_path, projection_name):
     import matplotlib.pyplot as plt
     import cartopy.crs as ccrs
     import cartopy.feature as cfeature
@@ -219,6 +222,36 @@ def make_plot(candidates, best, lat, lon, target_elevation_m, out_path, projecti
     ax.gridlines(crs=data_crs, draw_labels=True, linewidth=0.35, alpha=0.35, linestyle="--")
 
     ax.scatter([lon], [lat], transform=data_crs, s=95, marker="*", c="black", zorder=10)
+    ax.text(
+        lon + 3.0,
+        lat + 2.0,
+        site_name,
+        transform=data_crs,
+        fontsize=10,
+        fontweight="bold",
+        color="black",
+        zorder=11,
+    )
+    ax.scatter(
+        [NP_REFERENCE_LON],
+        [NP_REFERENCE_LAT],
+        transform=data_crs,
+        s=95,
+        marker="*",
+        c="red",
+        zorder=10,
+        label=NP_REFERENCE_LABEL,
+    )
+    ax.text(
+        NP_REFERENCE_LON + 3.0,
+        NP_REFERENCE_LAT + 2.0,
+        NP_REFERENCE_LABEL,
+        transform=data_crs,
+        fontsize=10,
+        fontweight="bold",
+        color="red",
+        zorder=11,
+    )
 
     if not candidates.empty:
         sc = ax.scatter(
@@ -361,6 +394,7 @@ def main():
         lat=lat,
         lon=lon,
         target_elevation_m=target_elevation_m,
+        site_name=name,
         out_path=plot_png,
         projection_name=args.projection,
     )

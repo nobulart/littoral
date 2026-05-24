@@ -27,5 +27,13 @@ python "$PROJECT_ROOT/scripts/10_littoral_mach_path_consistency.py" >> "$LOG_FIL
 echo "---------------------------------------------------" >> "$LOG_FILE"
 python "$PROJECT_ROOT/scripts/11_littoral_conditioned_mach_discrimination.py" >> "$LOG_FILE" 2>&1
 echo "---------------------------------------------------" >> "$LOG_FILE"
+python "$PROJECT_ROOT/scripts/12_littoral_heatmap.py" >> "$LOG_FILE" 2>&1
+echo "---------------------------------------------------" >> "$LOG_FILE"
+python "$PROJECT_ROOT/scripts/14_littoral_dataset_geodetic_path_preference.py" >> "$LOG_FILE" 2>&1
+echo "---------------------------------------------------" >> "$LOG_FILE"
+python "$PROJECT_ROOT/scripts/15_littoral_depth_regime_inverse.py" --alpha-max 130 >> "$LOG_FILE" 2>&1
+echo "---------------------------------------------------" >> "$LOG_FILE"
+python "$PROJECT_ROOT/scripts/16_littoral_time_regime_inverse.py" --time-max-ka 50 --alpha-max 120 >> "$LOG_FILE" 2>&1
+echo "---------------------------------------------------" >> "$LOG_FILE"
 date >> "$LOG_FILE"
 echo "---------------------------------------------------" >> "$LOG_FILE"

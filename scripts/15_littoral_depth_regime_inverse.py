@@ -52,6 +52,7 @@ os.environ.setdefault(
 
 EARTH_BULGE_M = 11000.0
 DEFAULT_PROJECTION = "robinson"
+MAP_OUTLINE_COLOR = "#cfcfcf"
 
 
 def normalize_longitude(lon):
@@ -326,6 +327,38 @@ def projection(name, ccrs):
     raise ValueError(f"Unsupported projection: {name}")
 
 
+def pole_lat_extent(grid, pad_deg=0.0):
+    lat = pd.to_numeric(grid["candidate_pole_lat"], errors="coerce")
+    lat = lat[np.isfinite(lat)]
+    if lat.empty:
+        return 30.0, 90.0
+    lat_min = max(-90.0, float(lat.min()) - pad_deg)
+    lat_max = min(90.0, float(lat.max()) + pad_deg)
+    return lat_min, max(lat_min + 0.1, lat_max)
+
+
+def alpha_lat_extent(alpha_min, alpha_max, pad_deg=0.0):
+    lat_min = max(-90.0, 90.0 - float(alpha_max) - pad_deg)
+    lat_max = min(90.0, 90.0 - float(alpha_min) + pad_deg)
+    return lat_min, max(lat_min + 0.1, lat_max)
+
+
+def overprint_map_outlines(ax, cfeature, scale="50m", linewidth=0.5):
+    ax.add_feature(
+        cfeature.COASTLINE.with_scale(scale),
+        edgecolor=MAP_OUTLINE_COLOR,
+        linewidth=linewidth,
+        zorder=20,
+    )
+    ax.add_feature(
+        cfeature.BORDERS.with_scale(scale),
+        edgecolor=MAP_OUTLINE_COLOR,
+        linewidth=linewidth * 0.75,
+        alpha=0.85,
+        zorder=20,
+    )
+
+
 def make_offset_azimuth_heatmap(grid, out_path, title):
     import matplotlib.pyplot as plt
 
@@ -363,7 +396,7 @@ def make_offset_azimuth_heatmap(grid, out_path, title):
     plt.close(fig)
 
 
-def make_polar_preference_map(grid, summary, out_path, lat_min=30.0):
+def make_polar_preference_map(grid, summary, out_path):
     import matplotlib.pyplot as plt
     from matplotlib.colors import PowerNorm
     import cartopy.crs as ccrs
@@ -374,10 +407,10 @@ def make_polar_preference_map(grid, summary, out_path, lat_min=30.0):
 
     fig = plt.figure(figsize=(10, 10))
     ax = plt.axes(projection=proj)
-    ax.set_extent([-180, 180, lat_min, 90], crs=data_crs)
+    lat_min, lat_max = pole_lat_extent(grid)
+    ax.set_extent([-180, 180, lat_min, lat_max], crs=data_crs)
     ax.add_feature(cfeature.LAND.with_scale("50m"), facecolor="#eeeeea", edgecolor="none")
     ax.add_feature(cfeature.OCEAN.with_scale("50m"), facecolor="#f8fbff", edgecolor="none")
-    ax.add_feature(cfeature.COASTLINE.with_scale("50m"), linewidth=0.45)
 
     sc = ax.scatter(
         grid["candidate_pole_lon"],
@@ -415,6 +448,7 @@ def make_polar_preference_map(grid, summary, out_path, lat_min=30.0):
         linewidths=0.8,
         zorder=10,
     )
+    overprint_map_outlines(ax, cfeature, linewidth=0.45)
 
     gl = ax.gridlines(draw_labels=True, linewidth=0.35, alpha=0.35, linestyle="--")
     gl.top_labels = False
@@ -434,7 +468,7 @@ def make_polar_preference_map(grid, summary, out_path, lat_min=30.0):
     plt.close(fig)
 
 
-def make_best_poles_map(summary_df, out_path, projection_name):
+def make_best_poles_map(summary_df, out_path, projection_name, alpha_min, alpha_max):
     import matplotlib.pyplot as plt
     import cartopy.crs as ccrs
     import cartopy.feature as cfeature
@@ -444,11 +478,11 @@ def make_best_poles_map(summary_df, out_path, projection_name):
 
     fig = plt.figure(figsize=(15, 8.5))
     ax = plt.axes(projection=proj)
-    ax.set_global()
+    lat_min, lat_max = alpha_lat_extent(alpha_min, alpha_max, pad_deg=1.0)
+    ax.set_extent([-180, 180, lat_min, lat_max], crs=data_crs)
     ax.set_facecolor("#f7f7f4")
     ax.add_feature(cfeature.LAND.with_scale("50m"), facecolor="#eeeeea", edgecolor="none")
     ax.add_feature(cfeature.OCEAN.with_scale("50m"), facecolor="#f8fbff", edgecolor="none")
-    ax.add_feature(cfeature.COASTLINE.with_scale("50m"), linewidth=0.55)
 
     sizes = 80 + 28 * summary_df["best_offset_deg"].to_numpy(float)
 
@@ -473,6 +507,7 @@ def make_best_poles_map(summary_df, out_path, projection_name):
             fontsize=8,
             zorder=11,
         )
+    overprint_map_outlines(ax, cfeature, linewidth=0.55)
 
     gl = ax.gridlines(draw_labels=True, linewidth=0.35, alpha=0.32, linestyle="--")
     gl.top_labels = False
@@ -559,10 +594,10 @@ def make_composite_plot(summary_df, grid_by_regime, pair_df, out_path):
         ax.set_ylabel("Offset, degrees")
 
         polar_ax = fig.add_subplot(gs[1, idx], projection=ccrs.NorthPolarStereo())
-        polar_ax.set_extent([-180, 180, 30.0, 90], crs=data_crs)
+        lat_min, lat_max = pole_lat_extent(grid)
+        polar_ax.set_extent([-180, 180, lat_min, lat_max], crs=data_crs)
         polar_ax.add_feature(cfeature.LAND.with_scale("50m"), facecolor="#eeeeea", edgecolor="none")
         polar_ax.add_feature(cfeature.OCEAN.with_scale("50m"), facecolor="#f8fbff", edgecolor="none")
-        polar_ax.add_feature(cfeature.COASTLINE.with_scale("50m"), linewidth=0.35)
 
         polar_image = polar_ax.scatter(
             grid["candidate_pole_lon"],
@@ -598,6 +633,7 @@ def make_composite_plot(summary_df, grid_by_regime, pair_df, out_path):
             linewidths=0.6,
             zorder=10,
         )
+        overprint_map_outlines(polar_ax, cfeature, linewidth=0.35)
         gl = polar_ax.gridlines(draw_labels=False, linewidth=0.25, alpha=0.32, linestyle="--")
         polar_ax.set_title(f"{regime} polar preference", fontsize=9.5)
 
@@ -715,7 +751,6 @@ def main():
             scored,
             summary,
             polar_path,
-            lat_min=30.0,
         )
 
         grids_written.append(
@@ -771,7 +806,7 @@ def main():
     pair_df.to_csv(pair_csv, index=False)
 
     best_map = OUT_DIR / "15_regime_best_poles_map.png"
-    make_best_poles_map(summary_df, best_map, args.projection)
+    make_best_poles_map(summary_df, best_map, args.projection, args.alpha_min, args.alpha_max)
 
     composite_plot = OUT_DIR / "15_depth_regime_composite.png"
     make_composite_plot(summary_df, grid_by_regime, pair_df, composite_plot)
